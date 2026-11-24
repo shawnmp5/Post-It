@@ -146,12 +146,42 @@ export const IconArrowRight = make(<path d="M3.5 8h9M9 4.5 12.5 8 9 11.5" />);
 export const IconArrowUp = make(<path d="M8 12.5v-9M4.5 7 8 3.5 11.5 7" />);
 export const IconArrowDown = make(<path d="M8 3.5v9M4.5 9 8 12.5 11.5 9" />);
 
-export function Logo({ size = 20 }) {
+/** POST IT mark: a pink sticky note with a folded corner. */
+export function Logo({ size = 20, title = 'POST IT' }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
-      <path d="M3 2.5h14a.5.5 0 0 1 .5.5v9.6L12.6 17.5H3a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5z" fill="#F3DE8E" />
-      <path d="M17.5 12.6h-4.4a.5.5 0 0 0-.5.5v4.4z" fill="#D8C06C" />
-      <path d="M5.5 6.5h7M5.5 9h5" stroke="#8B7A3A" strokeWidth="1" strokeLinecap="round" opacity="0.55" />
+    <svg width={size} height={size} viewBox="0 0 20 20" role="img" aria-label={title}>
+      <path d="M3 2.5h14a.5.5 0 0 1 .5.5v9.6L12.6 17.5H3a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5z" fill="#F7B9C6" />
+      <path d="M17.5 12.6h-4.4a.5.5 0 0 0-.5.5v4.4z" fill="#E48FA3" />
+      <path d="M5.5 6.5h7M5.5 9h5" stroke="#A9536A" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
     </svg>
   );
 }
+
+export const IconCompose = make(
+  <>
+    <path d="M13 9v3.5a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1H7" />
+    <path d="M12.2 2.3a1.1 1.1 0 0 1 1.5 1.5L8.2 9.3 6 10l.7-2.2z" />
+  </>,
+);
+export const IconSidebar = make(
+  <>
+    <rect x="2" y="3" width="12" height="10" rx="2" />
+    <path d="M6 3v10M3.6 5.6h1M3.6 7.6h1" />
+  </>,
+);
+export const IconFolder = make(
+  <path d="M2.5 4.5a1 1 0 0 1 1-1h2.8l1.4 1.5h4.8a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z" />,
+);
+export const IconFolderPlus = make(
+  <>
+    <path d="M2.5 4.5a1 1 0 0 1 1-1h2.8l1.4 1.5h4.8a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z" />
+    <path d="M8 7.2v3.6M6.2 9h3.6" />
+  </>,
+);
+export const IconChevron = make(<path d="m6 4 4 4-4 4" />);
+export const IconPlusCircle = make(
+  <>
+    <circle cx="8" cy="8" r="6" />
+    <path d="M8 5.3v5.4M5.3 8h5.4" />
+  </>,
+);

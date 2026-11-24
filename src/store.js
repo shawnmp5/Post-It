@@ -123,7 +123,7 @@ function maxZ(notes, topicId) {
 function dataReducer(d, a) {
   switch (a.type) {
     case 'topic/add': {
-      const topic = { id: a.id, name: a.name, createdAt: Date.now(), scrollTop: 0, zoom: 1 };
+      const topic = { id: a.id, name: a.name, createdAt: Date.now(), scrollTop: 0, zoom: 1, ...(a.groupId ? { groupId: a.groupId } : {}) };
       const topics = [...d.topics];
       const at = a.index == null ? topics.length : clamp(a.index, 0, topics.length);
       topics.splice(at, 0, topic);
@@ -184,6 +184,44 @@ function dataReducer(d, a) {
       topics.splice(to, 0, t);
       return { ...d, topics };
     }
+    case 'topic/move': {
+      // Move a topic into a group (or out of one) and place it before another topic.
+      const t = d.topics.find((x) => x.id === a.id);
+      if (!t) return d;
+      const moved = { ...t };
+      if (a.groupId) moved.groupId = a.groupId;
+      else delete moved.groupId;
+      const rest = d.topics.filter((x) => x.id !== a.id);
+      const at = a.beforeId ? rest.findIndex((x) => x.id === a.beforeId) : -1;
+      if (at >= 0) rest.splice(at, 0, moved);
+      else rest.push(moved);
+      return { ...d, topics: rest };
+    }
+
+    case 'group/add': {
+      const g = { id: a.id, name: a.name || 'New Group', collapsed: false };
+      const topics = a.topicId ? d.topics.map((t) => (t.id === a.topicId ? { ...t, groupId: a.id } : t)) : d.topics;
+      return { ...d, groups: [...(d.groups || []), g], topics };
+    }
+    case 'group/rename': {
+      const name = a.name.trim();
+      if (!name) return d;
+      return { ...d, groups: d.groups.map((g) => (g.id === a.id ? { ...g, name } : g)) };
+    }
+    case 'group/toggle':
+      return { ...d, groups: d.groups.map((g) => (g.id === a.id ? { ...g, collapsed: !g.collapsed } : g)) };
+    case 'group/delete':
+      // Topics inside stay; they just leave the group.
+      return {
+        ...d,
+        groups: d.groups.filter((g) => g.id !== a.id),
+        topics: d.topics.map((t) => {
+          if (t.groupId !== a.id) return t;
+          const { groupId, ...rest } = t;
+          return rest;
+        }),
+      };
+
     case 'topic/select':
       if (d.activeTopicId === a.id) return d;
       return { ...d, activeTopicId: a.id };
@@ -278,7 +316,7 @@ function dataReducer(d, a) {
 /* History wrapper — snapshots of topics / notes / connections.        */
 /* ------------------------------------------------------------------ */
 
-const snapshot = (d) => ({ topics: d.topics, notes: d.notes, connections: d.connections });
+const snapshot = (d) => ({ topics: d.topics, notes: d.notes, connections: d.connections, groups: d.groups });
 const pushPast = (past, s) => {
   const next = past.length >= HISTORY_LIMIT ? past.slice(past.length - HISTORY_LIMIT + 1) : past.slice();
   next.push(s);
@@ -290,7 +328,7 @@ function restore(d, s) {
   const view = Object.fromEntries(d.topics.map((t) => [t.id, { scrollTop: t.scrollTop, zoom: t.zoom }]));
   const topics = s.topics.map((t) => (view[t.id] ? { ...t, ...view[t.id] } : t));
   const activeTopicId = topics.some((t) => t.id === d.activeTopicId) ? d.activeTopicId : topics[0]?.id ?? null;
-  return { ...d, topics, notes: s.notes, connections: s.connections, activeTopicId };
+  return { ...d, topics, notes: s.notes, connections: s.connections, groups: s.groups ?? d.groups, activeTopicId };
 }
 
 function rootReducer(state, a) {
@@ -355,9 +393,18 @@ function normalize(raw) {
     ? raw.connections.filter((c) => c && noteIds.has(c.from) && noteIds.has(c.to))
     : [];
   const activeTopicId = topicIds.has(raw?.activeTopicId) ? raw.activeTopicId : topics[0]?.id ?? null;
+  const groups = Array.isArray(raw?.groups)
+    ? raw.groups.filter((g) => g && g.id).map((g) => ({ id: g.id, name: String(g.name || 'Group'), collapsed: !!g.collapsed }))
+    : [];
+  const groupIds = new Set(groups.map((g) => g.id));
   return {
     version: 1,
-    topics: topics.map((t) => ({ scrollTop: 0, zoom: 1, ...t })),
+    groups,
+    topics: topics.map((t) => {
+      const out = { scrollTop: 0, zoom: 1, ...t };
+      if (out.groupId && !groupIds.has(out.groupId)) delete out.groupId;
+      return out;
+    }),
     notes,
     connections,
     activeTopicId,

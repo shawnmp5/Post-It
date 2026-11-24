@@ -6,6 +6,8 @@ import { plainText } from '../blocks.js';
 import { formatWhen } from './Reminders.jsx';
 import {
   IconSearch,
+  IconCompose,
+  IconSidebar,
   IconSliders,
   IconPlus,
   IconMenu,
@@ -25,11 +27,12 @@ import {
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 const MOD = isMac ? '⌘' : 'Ctrl';
 
-export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, onOpenDrawer, onCreateTopic, focusNote }) {
+export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, onOpenDrawer, onCreateTopic, focusNote, sidebarHidden, onShowSidebar }) {
   const topic = data.topics.find((t) => t.id === data.activeTopicId) || null;
   const boardRef = useRef(null);
   const searchBtn = useRef(null);
   const viewBtn = useRef(null);
+  const searchInput = useRef(null);
   const [panel, setPanel] = useState(null); // 'search' | 'view' | 'archive'
   const [query, setQuery] = useState('');
   const [colors, setColors] = useState([]);
@@ -66,7 +69,10 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
   }, [topic?.id]);
 
   const closePanel = useCallback(() => setPanel(null), []);
-  const closeSearch = useCallback(() => setPanel((p) => (p === 'search' ? null : p)), []);
+  const closeSearch = useCallback(() => {
+    setPanel((p) => (p === 'search' ? null : p));
+    searchInput.current?.blur();
+  }, []);
   const filter = useMemo(() => ({ query, colors }), [query, colors]);
 
   const q = query.trim().toLowerCase();
@@ -81,6 +87,11 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
   }, [topicNotes, q, colors]);
 
   const addNote = useCallback(() => boardRef.current?.addNote(), []);
+  useEffect(() => {
+    const onNew = () => setTimeout(() => boardRef.current?.addNote(), 60);
+    window.addEventListener('postit:new-note', onNew);
+    return () => window.removeEventListener('postit:new-note', onNew);
+  }, []);
 
   // Global shortcuts for the workspace.
   useEffect(() => {
@@ -98,6 +109,7 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
       } else if ((mod && k === 'k') || (!typing && !mod && e.key === '/')) {
         e.preventDefault();
         setPanel('search');
+        searchInput.current?.focus();
       } else if (!typing && !mod && (e.key === '+' || e.key === '=')) {
         boardRef.current?.setZoom(boardRef.current.getZoom() + 0.1);
       } else if (!typing && !mod && (e.key === '-' || e.key === '_')) {
@@ -143,9 +155,15 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
   return (
     <main className="workspace">
       <header className="ws-header">
-        {isMobile && (
-          <button type="button" className="icon-btn menu-btn" onClick={onOpenDrawer} aria-label="Open topics">
-            <IconMenu />
+        {(isMobile || sidebarHidden) && (
+          <button
+            type="button"
+            className="icon-btn menu-btn"
+            onClick={isMobile ? onOpenDrawer : onShowSidebar}
+            aria-label="Show topics"
+            title={isMobile ? 'Topics' : `Show sidebar (${MOD}+\\)`}
+          >
+            {isMobile ? <IconMenu /> : <IconSidebar />}
           </button>
         )}
         <div className="ws-title-wrap">
@@ -185,31 +203,64 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
         </div>
 
         <div className="ws-actions">
-          <button
+          <div
             ref={searchBtn}
-            type="button"
-            className={`icon-btn ${panel === 'search' || q || colors.length ? 'is-active' : ''}`}
-            onClick={() => setPanel(panel === 'search' ? null : 'search')}
-            title={`Search notes (${MOD}+K)`}
-            aria-label="Search notes"
+            className={`search-pill ${panel === 'search' || q || colors.length ? 'is-active' : ''}`}
+            onClick={() => searchInput.current?.focus()}
           >
             <IconSearch />
-            {(q || colors.length > 0) && <span className="dot" />}
-          </button>
-          <button
-            ref={viewBtn}
-            type="button"
-            className={`icon-btn ${panel === 'view' || panel === 'archive' ? 'is-active' : ''}`}
-            onClick={() => setPanel(panel === 'view' ? null : 'view')}
-            title="View options"
-            aria-label="View options"
-          >
-            <IconSliders />
-          </button>
-          <button type="button" className="btn btn-primary new-note-btn" onClick={addNote} title="New note (N)">
-            <IconPlus />
-            <span className="new-note-label">New note</span>
-          </button>
+            <input
+              ref={searchInput}
+              id="wall-search"
+              className="search-pill-input"
+              value={query}
+              placeholder="Search"
+              aria-label={`Search ${topic.name}`}
+              autoComplete="off"
+              spellCheck={false}
+              onFocus={() => setPanel('search')}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                if (panel !== 'search') setPanel('search');
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && results.live[0]) boardRef.current?.scrollToNote(results.live[0].id);
+                if (e.key === 'Escape') {
+                  e.currentTarget.blur();
+                  setPanel(null);
+                }
+              }}
+            />
+            {q || colors.length > 0 ? (
+              <button
+                type="button"
+                className="search-clear"
+                aria-label="Clear search"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setQuery('');
+                  setColors([]);
+                }}
+              >
+                <IconClose />
+              </button>
+            ) : (
+              <kbd>{isMac ? '⌘K' : 'Ctrl K'}</kbd>
+            )}
+          </div>
+          <div className="tb-group" role="toolbar" aria-label="Wall options">
+            <button
+              ref={viewBtn}
+              type="button"
+              className={`icon-btn ${panel === 'view' || panel === 'archive' ? 'is-active' : ''}`}
+              onClick={() => setPanel(panel === 'view' ? null : 'view')}
+              title="View options"
+              aria-label="View options"
+            >
+              <IconSliders />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -254,7 +305,7 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
       )}
 
 
-      <div className="floating-controls" role="toolbar" aria-label="Canvas controls">
+      <div className="floating-controls dock" role="toolbar" aria-label="Wall controls">
         <button
           type="button"
           className="icon-btn"
@@ -285,39 +336,16 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
         <button type="button" className="icon-btn" onClick={() => zoomBy(0.1)} disabled={zoom >= ZOOM_MAX} aria-label="Zoom in" title="Zoom in (+)">
           <IconPlus />
         </button>
+        <span className="fc-sep" />
+        <button type="button" className="dock-new new-note-btn" onClick={addNote} title="New note (N)">
+          <IconCompose />
+          <span>New Note</span>
+        </button>
       </div>
       </div>
 
       {panel === 'search' && (
         <Popover anchor={searchBtn.current} onClose={closeSearch} align="end" className="panel search-panel" closeOnScroll={false}>
-          <div className="search-field">
-            <IconSearch />
-            <input
-              autoFocus
-              value={query}
-              placeholder={`Search ${topic.name}…`}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && results.live[0]) {
-                  boardRef.current?.scrollToNote(results.live[0].id);
-                }
-              }}
-              aria-label="Search notes"
-            />
-            {(query || colors.length > 0) && (
-              <button
-                type="button"
-                className="icon-btn small"
-                onClick={() => {
-                  setQuery('');
-                  setColors([]);
-                }}
-                aria-label="Clear search"
-              >
-                <IconClose />
-              </button>
-            )}
-          </div>
           <div className="color-filter" role="group" aria-label="Filter by color">
             {COLORS.map((c) => {
               const on = colors.includes(c.id);

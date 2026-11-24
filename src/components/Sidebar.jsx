@@ -2,15 +2,32 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { COLOR_MAP, uid } from '../store.js';
 import { Popover, MenuItem, MenuSep } from './Popover.jsx';
 import { SettingsPanel } from './SettingsPanel.jsx';
-import { IconPlus, IconMore, IconEdit, IconCopy, IconTrash, IconSettings, IconClose, Logo } from './Icons.jsx';
+import {
+  IconPlus,
+  IconSidebar,
+  IconMore,
+  IconEdit,
+  IconCopy,
+  IconTrash,
+  IconSettings,
+  IconClose,
+  IconFolder,
+  IconFolderPlus,
+  IconChevron,
+  IconCompose,
+  Logo,
+} from './Icons.jsx';
+import { MenuLabel } from './Popover.jsx';
 
 const SIDEBAR_MIN = 200;
 const SIDEBAR_MAX = 440;
 
-export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, onClose, isMobile }) {
+export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, onClose, isMobile, onHide }) {
   const { topics, notes, activeTopicId, settings } = data;
+  const groups = data.groups || [];
+  const [addMenu, setAddMenu] = useState(null); // anchor of the folder+ menu
   const [renamingId, setRenamingId] = useState(null);
-  const [menu, setMenu] = useState(null); // { id, anchor }
+  const [menu, setMenu] = useState(null); // { kind: 'topic' | 'group', id, anchor }
   const [settingsAnchor, setSettingsAnchor] = useState(null);
   const [drag, setDrag] = useState(null); // { id, dy, dropIndex }
   const listRef = useRef(null);
@@ -61,12 +78,34 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
     return out;
   }, [topics, notes]);
 
-  const addTopic = () => {
+  const addTopic = (groupId) => {
     const id = uid('t');
-    dispatch({ type: 'topic/add', id, name: 'Untitled topic', record: true });
+    dispatch({ type: 'topic/add', id, name: 'Untitled topic', groupId: typeof groupId === 'string' ? groupId : undefined, record: true });
+    if (typeof groupId === 'string') {
+      const g = groups.find((x) => x.id === groupId);
+      if (g?.collapsed) dispatch({ type: 'group/toggle', id: groupId });
+    }
     setRenamingId(id);
     onSelectTopic(id, { keepDrawer: true });
   };
+
+  const addGroup = (topicId) => {
+    const id = uid('g');
+    dispatch({ type: 'group/add', id, name: 'New Group', topicId, record: true });
+    setRenamingId(`g:${id}`);
+  };
+
+  // What the list shows, in order: loose topics first, then each group with its topics.
+  const items = useMemo(() => {
+    const ids = new Set(groups.map((g) => g.id));
+    const out = topics.filter((t) => !t.groupId || !ids.has(t.groupId)).map((t) => ({ kind: 'topic', topic: t, groupId: null }));
+    for (const g of groups) {
+      const inside = topics.filter((t) => t.groupId === g.id);
+      out.push({ kind: 'group', group: g, count: inside.length });
+      if (!g.collapsed) for (const t of inside) out.push({ kind: 'topic', topic: t, groupId: g.id });
+    }
+    return out;
+  }, [topics, groups]);
 
   const deleteTopic = async (topic) => {
     const count = notes.filter((n) => n.topicId === topic.id).length;
@@ -87,7 +126,7 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
 
   // Row midpoints are measured once at pick-up so shifting rows don't feed back into the hit test.
   const measureRows = () =>
-    [...listRef.current.querySelectorAll('[data-topic-row]')].map((el) => {
+    [...listRef.current.querySelectorAll('[data-row]')].map((el) => {
       const r = el.getBoundingClientRect();
       return r.top + r.height / 2;
     });
@@ -139,8 +178,23 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
       clearTimeout(st.timer);
       dragRef.current = null;
       if (st.active) {
-        const to = rowIndexAt(e.clientY, st.mids);
-        dispatch({ type: 'topic/reorder', id: st.id, to, record: true });
+        const k = rowIndexAt(e.clientY, st.mids);
+        const seq = itemsRef.current;
+        let ni = k;
+        if (seq[ni]?.topic?.id === st.id) ni++;
+        let pi = k - 1;
+        if (seq[pi]?.topic?.id === st.id) pi--;
+        const next = seq[ni];
+        const prev = seq[pi];
+        let groupId = null;
+        let beforeId = null;
+        if (next?.kind === 'topic') {
+          groupId = next.groupId;
+          beforeId = next.topic.id;
+        } else if (prev) {
+          groupId = prev.kind === 'topic' ? prev.groupId : prev.group.id;
+        }
+        dispatch({ type: 'topic/move', id: st.id, groupId, beforeId, record: true });
         setDrag(null);
         // swallow the click that follows a drag
         const kill = (ev) => {
@@ -174,10 +228,20 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
     };
   }, [dispatch]);
 
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
   const closeMenu = useCallback(() => setMenu(null), []);
+  const closeAdd = useCallback(() => setAddMenu(null), []);
   const closeSettings = useCallback(() => setSettingsAnchor(null), []);
-  const menuTopic = menu && topics.find((t) => t.id === menu.id);
-  const dragIndex = drag ? topics.findIndex((t) => t.id === drag.id) : -1;
+  const menuTopic = menu?.kind === 'topic' && topics.find((t) => t.id === menu.id);
+  const menuGroup = menu?.kind === 'group' && groups.find((g) => g.id === menu.id);
+  const dragIndex = drag ? items.findIndex((it) => it.topic?.id === drag.id) : -1;
+  const shiftFor = (i) => {
+    if (!drag || dragIndex < 0 || i === dragIndex) return 0;
+    if (i > dragIndex && i < drag.dropIndex) return -1;
+    if (i < dragIndex && i >= drag.dropIndex) return 1;
+    return 0;
+  };
 
   const initial = (settings.userName || 'You').trim().charAt(0).toUpperCase();
 
@@ -199,8 +263,12 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
         />
       )}
       <div className="sidebar-brand">
-        <Logo size={20} />
-        <span className="wordmark">POST IT</span>
+        <Logo size={26} />
+        {!isMobile && (
+          <button type="button" className="icon-btn sidebar-close" onClick={onHide} aria-label="Hide sidebar" title="Hide sidebar (Ctrl/⌘+\\)">
+            <IconSidebar />
+          </button>
+        )}
         {isMobile && (
           <button type="button" className="icon-btn sidebar-close" onClick={onClose} aria-label="Close menu">
             <IconClose />
@@ -209,40 +277,79 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
       </div>
 
       <div className="sidebar-section-head">
-        <span className="section-label">My Topics</span>
-        <button type="button" className="icon-btn add-topic" onClick={addTopic} title="New topic" aria-label="New topic">
-          <IconPlus />
-        </button>
+        <span className="section-label">Topics</span>
       </div>
 
       <nav className="topic-list" ref={listRef}>
         {topics.length === 0 && (
-          <button type="button" className="topic-empty" onClick={addTopic}>
+          <button type="button" className="topic-empty" onClick={() => addTopic()}>
             <IconPlus /> Create your first topic
           </button>
         )}
-        {topics.map((t, i) => {
+        {items.map((it, i) => {
+          const shift = shiftFor(i);
+          const shiftStyle = shift ? { transform: `translateY(${shift * 100}%)` } : undefined;
+          if (it.kind === 'group') {
+            const g = it.group;
+            const renaming = renamingId === `g:${g.id}`;
+            return (
+              <div
+                key={`g:${g.id}`}
+                data-row
+                className={`group-row ${g.collapsed ? 'is-collapsed' : ''} ${menu?.id === g.id ? 'menu-open' : ''}`}
+                style={shiftStyle}
+                role="button"
+                tabIndex={0}
+                aria-expanded={!g.collapsed}
+                onClick={() => !renaming && dispatch({ type: 'group/toggle', id: g.id })}
+                onDoubleClick={() => setRenamingId(`g:${g.id}`)}
+                onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    dispatch({ type: 'group/toggle', id: g.id });
+                  }
+                }}
+              >
+                <IconChevron className="group-chev" />
+                <IconFolder className="group-icon" />
+                {renaming ? (
+                  <RenameInput
+                    value={g.name}
+                    onDone={(name) => {
+                      setRenamingId(null);
+                      if (name != null && name.trim() && name.trim() !== g.name) dispatch({ type: 'group/rename', id: g.id, name, record: true });
+                    }}
+                  />
+                ) : (
+                  <span className="topic-name">{g.name}</span>
+                )}
+                <span className="topic-count">{it.count}</span>
+                <button
+                  type="button"
+                  className="topic-more icon-btn"
+                  aria-label={`Options for ${g.name}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenu(menu?.id === g.id ? null : { kind: 'group', id: g.id, anchor: e.currentTarget });
+                  }}
+                >
+                  <IconMore />
+                </button>
+              </div>
+            );
+          }
+          const t = it.topic;
           const isActive = t.id === activeTopicId;
           const isDragging = drag?.id === t.id;
           const s = stats[t.id] || { count: 0 };
-          let shift = 0;
-          if (drag && !isDragging && dragIndex >= 0) {
-            // Make room for the row being dragged.
-            if (i > dragIndex && i < drag.dropIndex) shift = -1;
-            if (i < dragIndex && i >= drag.dropIndex) shift = 1;
-          }
           return (
             <div
               key={t.id}
+              data-row
               data-topic-row
-              className={`topic-row ${isActive ? 'is-active' : ''} ${isDragging ? 'is-dragging' : ''} ${menu?.id === t.id ? 'menu-open' : ''}`}
-              style={
-                isDragging
-                  ? { transform: `translateY(${drag.dy}px)` }
-                  : shift
-                    ? { transform: `translateY(${shift * 100}%)` }
-                    : undefined
-              }
+              className={`topic-row ${it.groupId ? 'in-group' : ''} ${isActive ? 'is-active' : ''} ${isDragging ? 'is-dragging' : ''} ${menu?.id === t.id ? 'menu-open' : ''}`}
+              style={isDragging ? { transform: `translateY(${drag.dy}px)` } : shiftStyle}
               onPointerDown={(e) => onRowPointerDown(e, t)}
               onClick={() => renamingId !== t.id && onSelectTopic(t.id)}
               onDoubleClick={() => setRenamingId(t.id)}
@@ -257,7 +364,7 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
             >
               <span
                 className="topic-swatch"
-                style={{ background: s.color ? COLOR_MAP[s.color]?.bg : 'transparent' }}
+                style={{ background: s.color ? COLOR_MAP[s.color]?.edge : 'transparent' }}
                 aria-hidden="true"
               />
               {renamingId === t.id ? (
@@ -280,7 +387,7 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
                 aria-label={`Options for ${t.name}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  setMenu(menu?.id === t.id ? null : { id: t.id, anchor: e.currentTarget });
+                  setMenu(menu?.id === t.id ? null : { kind: 'topic', id: t.id, anchor: e.currentTarget });
                 }}
               >
                 <IconMore />
@@ -295,15 +402,96 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
           type="button"
           className={`profile ${settingsAnchor ? 'is-open' : ''}`}
           onClick={(e) => setSettingsAnchor(settingsAnchor ? null : e.currentTarget)}
+          title="Settings"
         >
           <span className="avatar">{initial}</span>
           <span className="profile-text">
             <span className="profile-name">{settings.userName || 'You'}</span>
-            <span className="profile-sub">Saved on this device</span>
+            <span className="profile-sub">Settings</span>
           </span>
-          <IconSettings className="profile-gear" />
         </button>
+        <div className="footer-tools">
+          <button
+            type="button"
+            className={`icon-btn ${addMenu ? 'is-active' : ''}`}
+            title="New topic or group"
+            aria-label="New topic or group"
+            onClick={(e) => setAddMenu(addMenu ? null : e.currentTarget)}
+          >
+            <IconFolderPlus />
+          </button>
+          <button
+            type="button"
+            className="icon-btn"
+            title="New note (N)"
+            aria-label="New note"
+            onClick={() => {
+              if (isMobile) onClose();
+              window.dispatchEvent(new Event('postit:new-note'));
+            }}
+          >
+            <IconCompose />
+          </button>
+        </div>
       </div>
+
+      {addMenu && (
+        <Popover anchor={addMenu} onClose={closeAdd} className="menu">
+          <MenuItem
+            icon={IconPlus}
+            onClick={() => {
+              setAddMenu(null);
+              addTopic();
+            }}
+          >
+            New Topic
+          </MenuItem>
+          <MenuItem
+            icon={IconFolder}
+            onClick={() => {
+              setAddMenu(null);
+              addGroup();
+            }}
+          >
+            New Group
+          </MenuItem>
+        </Popover>
+      )}
+
+      {menuGroup && (
+        <Popover anchor={menu.anchor} onClose={closeMenu} align="end" className="menu">
+          <MenuItem
+            icon={IconPlus}
+            onClick={() => {
+              setMenu(null);
+              addTopic(menuGroup.id);
+            }}
+          >
+            New Topic in Group
+          </MenuItem>
+          <MenuItem
+            icon={IconEdit}
+            onClick={() => {
+              setMenu(null);
+              setRenamingId(`g:${menuGroup.id}`);
+            }}
+          >
+            Rename
+          </MenuItem>
+          <MenuSep />
+          <MenuItem
+            icon={IconTrash}
+            danger
+            onClick={() => {
+              setMenu(null);
+              dispatch({ type: 'group/delete', id: menuGroup.id, record: true });
+              toast(`Removed group “${menuGroup.name}” — its topics are kept`, { undo: true });
+            }}
+          >
+            Delete Group
+          </MenuItem>
+        </Popover>
+      )}
 
       {menuTopic && (
         <Popover anchor={menu.anchor} onClose={closeMenu} align="end" className="menu">
@@ -327,6 +515,43 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
             }}
           >
             Duplicate
+          </MenuItem>
+          <MenuSep />
+          <MenuLabel>Move to</MenuLabel>
+          {groups
+            .filter((g) => g.id !== menuTopic.groupId)
+            .map((g) => (
+              <MenuItem
+                key={g.id}
+                icon={IconFolder}
+                onClick={() => {
+                  setMenu(null);
+                  dispatch({ type: 'topic/move', id: menuTopic.id, groupId: g.id, beforeId: null, record: true });
+                  if (g.collapsed) dispatch({ type: 'group/toggle', id: g.id });
+                }}
+              >
+                {g.name}
+              </MenuItem>
+            ))}
+          {menuTopic.groupId && (
+            <MenuItem
+              icon={IconSidebar}
+              onClick={() => {
+                setMenu(null);
+                dispatch({ type: 'topic/move', id: menuTopic.id, groupId: null, beforeId: null, record: true });
+              }}
+            >
+              Out of group
+            </MenuItem>
+          )}
+          <MenuItem
+            icon={IconFolderPlus}
+            onClick={() => {
+              setMenu(null);
+              addGroup(menuTopic.id);
+            }}
+          >
+            New Group…
           </MenuItem>
           <MenuSep />
           <MenuItem

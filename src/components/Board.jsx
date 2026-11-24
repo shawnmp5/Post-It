@@ -568,7 +568,8 @@ export const Board = forwardRef(function Board(
       const el = scrollRef.current;
       const z = live.current.zoom;
       const h = heightOf(n);
-      const top = (n.y + h / 2) * z - el.clientHeight / 2;
+      const pad = parseFloat(getComputedStyle(el).paddingTop) || 0;
+      const top = pad + (n.y + h / 2) * z - (el.clientHeight + pad) / 2;
       const left = (n.x + n.w / 2) * z - el.clientWidth / 2;
       el.scrollTo({ top: Math.max(0, top), left: Math.max(0, left), behavior: 'smooth' });
       setSelectedId(id);
