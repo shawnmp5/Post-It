@@ -15,7 +15,7 @@ npm run build    # production build in dist/
 ## What it does
 
 **Topics (sidebar)**
-- Floating glass sidebar (always visible on desktop; a slide-out menu on phones); the wall runs edge to edge under a floating title, a glass toolbar (search + view) and a bottom dock (undo/redo, zoom, New Note)
+- Floating glass sidebar (hide it with its button or Ctrl/⌘+\\); the wall runs edge to edge under a floating title, a glass toolbar (search + view) and a bottom dock (undo/redo, zoom, New Note)
 - Groups: the folder+ button → New Group; drag topics into a group or use a topic's ⋯ → Move to. Click a group to collapse it; its ⋯ menu adds a topic, renames or removes the group (topics are kept)
 - Unlimited topics with live note counts and a tiny swatch of each topic's most-used color
 - Hover a topic for its ⋯ menu: Rename, Duplicate (copies every note and connection), Delete (with confirm + undo)

@@ -286,9 +286,13 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
           >
             <IconCompose />
           </button>
-          {isMobile && (
+          {isMobile ? (
             <button type="button" className="icon-btn" onClick={onClose} aria-label="Close menu">
               <IconClose />
+            </button>
+          ) : (
+            <button type="button" className="icon-btn" onClick={onHide} aria-label="Hide sidebar" title="Hide sidebar (Ctrl/⌘+\\)">
+              <IconSidebar />
             </button>
           )}
         </div>
