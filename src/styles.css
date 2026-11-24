@@ -795,19 +795,19 @@ body.is-resizing-note * {
 .board-empty-stack span:nth-child(1) {
   left: 4px;
   top: 14px;
-  background: #d2e3f1;
+  background: #86c8ff;
   transform: rotate(-8deg);
 }
 .board-empty-stack span:nth-child(2) {
   left: 36px;
   top: 22px;
-  background: #f5d3d6;
+  background: #ff9dbe;
   transform: rotate(6deg);
 }
 .board-empty-stack span:nth-child(3) {
   left: 20px;
   top: 2px;
-  background: #f6e7a3;
+  background: #ffe45e;
   transform: rotate(-1deg);
 }
 .board-empty-title {
@@ -860,7 +860,7 @@ body.is-resizing-note * {
      a little shade where the bottom edge lifts, then the colour. */
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .085 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
-    linear-gradient(160deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0) 45%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 45%),
     linear-gradient(0deg, rgba(0, 0, 0, 0.055) 0%, rgba(0, 0, 0, 0) 16%),
     var(--note-bg);
   box-shadow:
@@ -1885,7 +1885,7 @@ body.is-dragging-image * {
   width: 17px;
   height: 17px;
   border-radius: 4px;
-  background: var(--note-bg, #f6e7a3);
+  background: var(--note-bg, #ffe45e);
   font-size: 11px;
   font-weight: 700;
 }
@@ -1953,7 +1953,7 @@ body.is-dragging-image * {
   transform: scale(0.96);
 }
 .bm-tile.is-active {
-  background: var(--note-bg, #f6e7a3);
+  background: var(--note-bg, #ffe45e);
   color: #1f1f1d;
 }
 .bm-tile.is-wide {
@@ -2666,14 +2666,14 @@ body.is-dragging-image * {
   --swatch-edge: rgba(0, 0, 0, 0.1);
   /* one slice per palette colour */
   background: conic-gradient(
-    #f6e7a3 0 12.5%,
-    #f5d3d6 0 25%,
-    #d2e3f1 0 37.5%,
-    #dfd8f2 0 50%,
-    #d3eadb 0 62.5%,
-    #f7d9bc 0 75%,
+    #ffe45e 0 12.5%,
+    #ff9dbe 0 25%,
+    #86c8ff 0 37.5%,
+    #bfa2ff 0 50%,
+    #7fe3ae 0 62.5%,
+    #ffad5c 0 75%,
     #ffffff 0 87.5%,
-    #e5e5e1 0
+    #d9d9d4 0
   );
 }
 .swatch:hover {
@@ -4469,7 +4469,7 @@ body,
 :root[data-theme='dark'] .note-paper {
   /* dim with an inner wash (a filter would pull the corner shadows on top) */
   box-shadow:
-    inset 0 0 0 2000px rgba(20, 20, 22, 0.1),
+    inset 0 0 0 2000px rgba(20, 20, 22, 0.06),
     inset 0 -1px 0 rgba(0, 0, 0, 0.04),
     var(--shadow);
 }
