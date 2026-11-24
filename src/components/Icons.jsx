@@ -186,3 +186,16 @@ export const IconPlusCircle = make(
     <path d="M8 5.3v5.4M5.3 8h5.4" />
   </>,
 );
+
+export const IconSpeaker = make(
+  <>
+    <path d="M2.5 6.2v3.6h2.3L8 12.5v-9L4.8 6.2z" />
+    <path d="M10.4 5.9a3 3 0 0 1 0 4.2M12.2 4.2a5.4 5.4 0 0 1 0 7.6" />
+  </>,
+);
+export const IconSpeakerOff = make(
+  <>
+    <path d="M2.5 6.2v3.6h2.3L8 12.5v-9L4.8 6.2z" />
+    <path d="M10.5 6.3l3 3.4M13.5 6.3l-3 3.4" />
+  </>,
+);

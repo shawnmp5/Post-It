@@ -6,6 +6,7 @@ import { Workspace } from './components/Workspace.jsx';
 import { ConfirmDialog } from './components/ConfirmDialog.jsx';
 import { Toast } from './components/Toast.jsx';
 import { Wallpaper } from './components/Wallpaper.jsx';
+import { startRainSound, stopRainSound, setRainVolume } from './rainAudio.js';
 
 const MOBILE_QUERY = '(max-width: 767px)';
 
@@ -164,6 +165,18 @@ export default function App() {
     root.dataset.clear = clearUI ? 'true' : 'false';
     root.dataset.wallpaper = wallpaper;
   }, [clearUI, wallpaper]);
+
+  // Rain sound plays only with the rain wallpaper.
+  const rainSound = wallpaper === 'rain' && !!data.settings.rainSound;
+  const rainVolume = data.settings.rainVolume ?? 0.6;
+  useEffect(() => {
+    setRainVolume(rainVolume);
+  }, [rainVolume]);
+  useEffect(() => {
+    if (rainSound) startRainSound();
+    else stopRainSound();
+  }, [rainSound]);
+  useEffect(() => () => stopRainSound(), []);
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#1c1c1e' : '#f5f5f7');
@@ -176,7 +189,7 @@ export default function App() {
 
   return (
     <div className={`app ${isMobile ? 'is-mobile' : ''} ${sidebarHidden ? 'sidebar-hidden' : ''}`}>
-      <Wallpaper kind={wallpaper} dark={dark} />
+      <Wallpaper kind={wallpaper} dark={dark} lightning={data.settings.lightning !== false} />
       {!sidebarHidden && <Sidebar
         onHide={() => dispatch({ type: 'settings', patch: { sidebarHidden: true } })}
         data={data}

@@ -24,6 +24,8 @@ import {
   IconRestore,
   IconRotateRight,
   IconTrash,
+  IconSpeaker,
+  IconSpeakerOff,
 } from './Icons.jsx';
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
@@ -261,6 +263,18 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
         <div className="ws-actions">
           {!searchSlot && searchField}
           <div className="tb-group" role="toolbar" aria-label="Wall options">
+            {data.settings.wallpaper === 'rain' && (
+              <button
+                type="button"
+                className={`icon-btn rain-sound-btn ${data.settings.rainSound ? 'is-on' : ''}`}
+                onClick={() => dispatch({ type: 'settings', patch: { rainSound: !data.settings.rainSound } })}
+                title={data.settings.rainSound ? 'Mute rain' : 'Play rain sound'}
+                aria-label={data.settings.rainSound ? 'Mute rain' : 'Play rain sound'}
+                aria-pressed={!!data.settings.rainSound}
+              >
+                {data.settings.rainSound ? <IconSpeaker /> : <IconSpeakerOff />}
+              </button>
+            )}
             <button
               ref={viewBtn}
               type="button"

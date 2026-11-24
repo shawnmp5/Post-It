@@ -8,19 +8,22 @@ import { useEffect, useRef } from 'react';
  *   2. rain falling outside, in three depths
  *   3. fog on the glass, plus a mist of tiny droplets stuck to it
  *   4. bigger beads that swell, run down and merge
+ * Now and then lightning flickers through the sky (and `postit:lightning`
+ * is fired so the rain sound can roll thunder in after it).
  */
-export function Wallpaper({ kind, dark }) {
+export function Wallpaper({ kind, dark, lightning = true }) {
   if (kind !== 'rain') return null;
-  return <RainWallpaper dark={dark} />;
+  return <RainWallpaper dark={dark} lightning={lightning} />;
 }
 
-function RainWallpaper({ dark }) {
+function RainWallpaper({ dark, lightning }) {
   const canvasRef = useRef(null);
   const engineRef = useRef(null);
 
   useEffect(() => {
-    const engine = createRain(canvasRef.current, { dark });
+    const engine = createRain(canvasRef.current, { dark, lightning });
     engineRef.current = engine;
+    if (import.meta.env.DEV) window.__rainStrike = () => engine.strike();
     return () => engine.destroy();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -28,6 +31,10 @@ function RainWallpaper({ dark }) {
   useEffect(() => {
     engineRef.current?.setDark(dark);
   }, [dark]);
+
+  useEffect(() => {
+    engineRef.current?.setLightning(lightning);
+  }, [lightning]);
 
   return <canvas ref={canvasRef} className="wallpaper wp-rain" aria-hidden="true" />;
 }
@@ -214,6 +221,56 @@ function paintFog(W, H, pal) {
   return c;
 }
 
+/* A jagged bolt with a few forks, drawn once per strike with its glow. */
+function paintBolt(W, H, x0) {
+  const c = makeCanvas(W, H);
+  const g = c.getContext('2d');
+  const path = (x1, y1, x2, y2, rough) => {
+    let pts = [[x1, y1], [x2, y2]];
+    let d = rough;
+    for (let k = 0; k < 7; k++) {
+      const next = [pts[0]];
+      for (let i = 1; i < pts.length; i++) {
+        const [ax, ay] = pts[i - 1];
+        const [bx, by] = pts[i];
+        next.push([(ax + bx) / 2 + rand(-d, d), (ay + by) / 2 + rand(-d * 0.25, d * 0.25)]);
+        next.push(pts[i]);
+      }
+      pts = next;
+      d *= 0.55;
+    }
+    return pts;
+  };
+  const stroke = (pts, width, alpha) => {
+    g.beginPath();
+    g.moveTo(pts[0][0], pts[0][1]);
+    for (const [x, y] of pts) g.lineTo(x, y);
+    g.globalAlpha = alpha;
+    g.lineWidth = width * 5;
+    g.strokeStyle = 'rgba(170, 195, 255, 0.25)';
+    g.shadowColor = 'rgba(170, 195, 255, 0.9)';
+    g.shadowBlur = 30;
+    g.stroke();
+    g.shadowBlur = 8;
+    g.lineWidth = width;
+    g.strokeStyle = '#f4f7ff';
+    g.stroke();
+  };
+  g.lineJoin = 'round';
+  g.lineCap = 'round';
+  const endY = H * rand(0.55, 0.85);
+  const main = path(x0, -10, x0 + rand(-W * 0.12, W * 0.12), endY, W * 0.06);
+  stroke(main, 2.2, 1);
+  const forks = 2 + Math.floor(Math.random() * 3);
+  for (let f = 0; f < forks; f++) {
+    const [sx, sy] = main[Math.floor(rand(0.15, 0.7) * main.length)];
+    const len = rand(H * 0.12, H * 0.3);
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    stroke(path(sx, sy, sx + dir * rand(len * 0.3, len * 0.8), sy + len, len * 0.12), 1.1, 0.6);
+  }
+  return c;
+}
+
 /* ------------------------------------------------------------------ */
 
 function createRain(canvas, opts) {
@@ -237,6 +294,11 @@ function createRain(canvas, opts) {
   let raf = 0;
   let last = 0;
   let alive = true;
+
+  // Lightning.
+  let lightningOn = !!opts.lightning && !reduced;
+  let untilStrike = rand(5, 12);
+  let strike = null; // { t, pulses, bolt, x, distance }
 
   const LAYERS = [
     { per: 2200, len: [16, 30], speed: [1050, 1300], w: 0.8, a: [0.07, 0.14] },
@@ -352,7 +414,47 @@ function createRain(canvas, opts) {
     specks.length = j;
   }
 
+  function startStrike() {
+    const distance = Math.random();
+    const amp = 1 - distance * 0.55;
+    const pulses = [{ at: 0, amp, decay: 0.08 }];
+    pulses.push({ at: rand(0.1, 0.18), amp: amp * rand(0.45, 0.85), decay: 0.11 });
+    if (Math.random() < 0.5) pulses.push({ at: rand(0.32, 0.5), amp: amp * rand(0.3, 0.6), decay: 0.22 });
+    const x = rand(W * 0.15, W * 0.85);
+    strike = {
+      t: 0,
+      pulses,
+      x,
+      distance,
+      bolt: distance < 0.6 ? paintBolt(W, H, x) : null,
+      end: pulses[pulses.length - 1].at + 1.3,
+    };
+    window.dispatchEvent(new CustomEvent('postit:lightning', { detail: { distance } }));
+  }
+
+  function flash() {
+    if (!strike) return 0;
+    let v = 0;
+    for (const p of strike.pulses) {
+      const t = strike.t - p.at;
+      if (t < 0) continue;
+      v += p.amp * Math.min(1, t / 0.015) * Math.exp(-t / p.decay);
+    }
+    return Math.min(1, v);
+  }
+
   function update(dt) {
+    if (strike) {
+      strike.t += dt;
+      if (strike.t > strike.end) strike = null;
+    } else if (lightningOn) {
+      untilStrike -= dt;
+      if (untilStrike <= 0) {
+        untilStrike = rand(14, 38);
+        startStrike();
+      }
+    }
+
     // Rain outside.
     for (let i = 0; i < streaks.length; i++) {
       const s = streaks[i];
@@ -437,6 +539,31 @@ function createRain(canvas, opts) {
     ctx.drawImage(backdrop, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+    // Lightning: the sky lights up from where it strikes, and a near bolt shows through.
+    const I = flash();
+    if (I > 0.003) {
+      ctx.save();
+      const grad = ctx.createRadialGradient(strike.x, 0, 0, strike.x, 0, Math.hypot(W, H));
+      if (dark) {
+        ctx.globalCompositeOperation = 'lighter';
+        grad.addColorStop(0, `rgba(175, 195, 240, ${0.5 * I})`);
+        grad.addColorStop(0.6, `rgba(120, 140, 190, ${0.2 * I})`);
+        grad.addColorStop(1, `rgba(80, 95, 140, ${0.08 * I})`);
+      } else {
+        grad.addColorStop(0, `rgba(255, 255, 255, ${0.6 * I})`);
+        grad.addColorStop(0.6, `rgba(240, 245, 255, ${0.3 * I})`);
+        grad.addColorStop(1, `rgba(230, 236, 248, ${0.12 * I})`);
+      }
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+      if (strike.bolt) {
+        ctx.globalCompositeOperation = dark ? 'lighter' : 'source-over';
+        ctx.globalAlpha = Math.min(1, I * 1.4);
+        ctx.drawImage(strike.bolt, 0, 0, W, H);
+      }
+      ctx.restore();
+    }
+
     // Rain: everything shares one lean, so rotate once.
     ctx.save();
     ctx.translate(W / 2, 0);
@@ -444,14 +571,14 @@ function createRain(canvas, opts) {
     ctx.translate(-W / 2, 0);
     ctx.globalCompositeOperation = dark ? 'lighter' : 'source-over';
     for (const s of streaks) {
-      ctx.globalAlpha = Math.min(1, s.a * pal.streakAlpha);
+      ctx.globalAlpha = Math.min(1, s.a * pal.streakAlpha * (1 + I * 2.5));
       ctx.drawImage(streakSprite, s.x, s.y - s.len, s.L.w * 2, s.len);
     }
     ctx.restore();
 
     // The glass: fog, then the droplets.
     ctx.save();
-    ctx.globalAlpha = pal.fogOpacity;
+    ctx.globalAlpha = Math.min(1, pal.fogOpacity * (1 + I * 0.6));
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(fog, 0, 0, W, H);
     ctx.restore();
@@ -512,6 +639,13 @@ function createRain(canvas, opts) {
   if (!reduced) raf = requestAnimationFrame(frame);
 
   return {
+    setLightning(on) {
+      lightningOn = !!on && !reduced;
+      if (!lightningOn) strike = null;
+    },
+    strike() {
+      if (!reduced) startStrike();
+    },
     setDark(next) {
       if (!!next === dark) return;
       dark = !!next;

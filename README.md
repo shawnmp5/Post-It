@@ -23,6 +23,8 @@ npm run build    # production build in dist/
 - Drag the sidebar's right edge to make it wider or narrower (double-click the edge to reset)
 - Clear interface (Settings): no panels or lines — just type and icons over the wall; applies live
 - Rain wallpaper (Settings → Wallpaper): heavy rain behind a fogged-up window; beads on the glass swell, run down and merge. A night sky in dark mode and an overcast afternoon in light mode. A still frame with reduced motion
+- Rain sound (Settings, or the speaker button in the toolbar): rain hiss, distant heavy rain with gusts, and drops tapping the glass, all generated live in the browser so it never loops; volume slider
+- Lightning (on by default with the rain wallpaper): flickering flashes, near strikes show a forked bolt; with the sound on, thunder rolls in a moment later — sooner and louder for close strikes. Off with reduced motion
 - Appearance: Light, graphite Dark, or Auto (follows the system) — in Settings, or View → Dark mode
 - Profile / settings at the bottom: your name, new note color (Random by default, or a fixed colour), note font (clean: System, Rounded, Serif, Mono; handwritten: Caveat, Kalam, Patrick Hand, Gochi Hand), tilt and connection toggles, export / import JSON, restore samples, clear all
 

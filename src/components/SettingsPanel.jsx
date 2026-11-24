@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { COLORS, FONTS, emptyData, freshSampleData, normalize } from '../store.js';
-import { IconDownload, IconUpload, IconRestore, IconTrash } from './Icons.jsx';
+import { IconDownload, IconUpload, IconRestore, IconTrash, IconSpeaker, IconSpeakerOff } from './Icons.jsx';
 
 export function SettingsPanel({ data, dispatch, toast, confirm, onDone }) {
   const { settings } = data;
@@ -148,6 +148,29 @@ export function SettingsPanel({ data, dispatch, toast, confirm, onDone }) {
             );
           })}
         </div>
+        {settings.wallpaper === 'rain' && (
+          <div className="rain-options">
+            <Toggle checked={!!settings.rainSound} onChange={(v) => set({ rainSound: v })} label="Rain sound" />
+            {settings.rainSound && (
+              <label className="volume">
+                <span className="sr-only">Rain volume</span>
+                <IconSpeakerOff />
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={settings.rainVolume ?? 0.6}
+                  style={{ '--fill': `${Math.round((settings.rainVolume ?? 0.6) * 100)}%` }}
+                  onChange={(e) => set({ rainVolume: Number(e.target.value) })}
+                  aria-label="Rain volume"
+                />
+                <IconSpeaker />
+              </label>
+            )}
+            <Toggle checked={settings.lightning !== false} onChange={(v) => set({ lightning: v })} label="Lightning" />
+          </div>
+        )}
         <Toggle checked={!!settings.clearUI} onChange={(v) => set({ clearUI: v })} label="Clear interface" />
       </div>
 
