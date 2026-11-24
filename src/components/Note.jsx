@@ -27,7 +27,6 @@ export const Note = memo(function Note({
   editCaret,
   selected,
   dragging,
-  resizing,
   dimmed,
   matched,
   flash,
@@ -92,7 +91,6 @@ export const Note = memo(function Note({
     editing && 'is-editing',
     selected && 'is-selected',
     dragging && 'is-dragging',
-    resizing && 'is-resizing',
     dimmed && 'is-dimmed',
     matched && 'is-matched',
     flash && 'is-flash',
@@ -247,11 +245,7 @@ export const Note = memo(function Note({
         />
       ))}
 
-      {/* Every edge and corner resizes; the frame and handles appear only when you go for a corner. */}
-      <div className="note-frame" aria-hidden="true" />
-      {['n', 'e', 's', 'w'].map((c) => (
-        <div key={c} className={`note-edge is-${c}`} data-resize={c} title="Drag to resize" aria-hidden="true" />
-      ))}
+      {/* Invisible corner grab zones: drag any corner to resize diagonally. */}
       {['nw', 'ne', 'sw', 'se'].map((c) => (
         <div key={c} className={`note-handle is-${c}`} data-resize={c} title="Drag to resize" aria-hidden="true" />
       ))}

@@ -16,7 +16,6 @@
   --text-3: #9a9a94;
   --ink: #1b1b1a;
   --danger: #b3261e;
-  --select: #3b82f6; /* selection frame + handles */
   --radius: 8px;
   --sidebar-w: 272px;
   /* Apple's San Francisco where available; Inter (its closest open match) everywhere else. */
@@ -650,14 +649,6 @@ body.is-resize-nwse,
 body.is-resize-nwse * {
   cursor: nwse-resize !important;
 }
-body.is-resize-ns,
-body.is-resize-ns * {
-  cursor: ns-resize !important;
-}
-body.is-resize-ew,
-body.is-resize-ew * {
-  cursor: ew-resize !important;
-}
 body.is-resizing-note,
 body.is-resizing-note * {
   user-select: none !important;
@@ -1007,7 +998,20 @@ body.is-resizing-note * {
   min-height: 0;
   overflow: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+  scrollbar-color: transparent transparent;
+}
+.note.is-fixed .note-body:hover {
+  scrollbar-color: rgba(0, 0, 0, 0.16) transparent;
+}
+.note.is-fixed .note-body::-webkit-scrollbar {
+  width: 6px;
+}
+.note.is-fixed .note-body::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: transparent;
+}
+.note.is-fixed .note-body:hover::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.16);
 }
 .note-input {
   display: block;
@@ -1037,109 +1041,34 @@ body.is-resizing-note * {
   box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.1);
 }
 
-/* Resize: invisible grab zones on every edge and corner. The blue frame and
-   corner handles only appear when you go for a corner (hover or drag). */
-.note-frame {
-  position: absolute !important;
-  inset: -1px;
-  z-index: 9;
-  border: 1.5px solid var(--select);
-  border-radius: 2px;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-/* Each corner is a fixed 24px grab zone; the white square is drawn inside it. */
+/* Resize: an invisible grab zone on each corner — no frame, no handles, just the cursor. */
 .note-handle {
   position: absolute !important;
   z-index: 12;
-  width: 24px;
-  height: 24px;
-  margin: -12px;
+  width: 22px;
+  height: 22px;
+  margin: -11px;
   touch-action: none;
 }
-.note-handle::after {
-  content: '';
-  position: absolute;
-  inset: 7px;
-  border-radius: 2.5px;
-  background: #fff;
-  box-shadow:
-    0 0 0 1.5px var(--select),
-    0 1px 3px rgba(0, 0, 0, 0.18);
-  opacity: 0;
-  transform: scale(0.4);
-  transition:
-    opacity 0.15s ease,
-    transform 0.2s cubic-bezier(0.3, 1.6, 0.5, 1);
-}
 .note-handle.is-nw {
-  top: -1px;
-  left: -1px;
+  top: 0;
+  left: 0;
   cursor: nwse-resize;
 }
 .note-handle.is-ne {
-  top: -1px;
-  right: -1px;
+  top: 0;
+  right: 0;
   cursor: nesw-resize;
 }
 .note-handle.is-sw {
-  bottom: -1px;
-  left: -1px;
+  bottom: 0;
+  left: 0;
   cursor: nesw-resize;
 }
 .note-handle.is-se {
-  bottom: -1px;
-  right: -1px;
+  bottom: 0;
+  right: 0;
   cursor: nwse-resize;
-}
-.note:has(.note-handle:hover) .note-frame,
-.note.is-resizing .note-frame {
-  opacity: 1;
-}
-.note:has(.note-handle:hover) .note-handle::after,
-.note.is-resizing .note-handle::after {
-  opacity: 1;
-  transform: scale(1);
-}
-.note-handle:hover::after {
-  transform: scale(1.25) !important;
-}
-.note.is-dragging .note-frame,
-.note.is-dragging .note-handle::after {
-  opacity: 0;
-}
-
-.note-edge {
-  position: absolute !important;
-  z-index: 9;
-  touch-action: none;
-}
-.note-edge.is-n,
-.note-edge.is-s {
-  left: 12px;
-  right: 12px;
-  height: 10px;
-  cursor: ns-resize;
-}
-.note-edge.is-n {
-  top: -5px;
-}
-.note-edge.is-s {
-  bottom: -5px;
-}
-.note-edge.is-e,
-.note-edge.is-w {
-  top: 12px;
-  bottom: 12px;
-  width: 10px;
-  cursor: ew-resize;
-}
-.note-edge.is-e {
-  right: -5px;
-}
-.note-edge.is-w {
-  left: -5px;
 }
 
 /* ---------- Note blocks (shared by the read view and the editor) ----------
@@ -1762,7 +1691,7 @@ textarea.blk-cell {
 
 .sticker {
   position: absolute !important;
-  z-index: 10; /* above the edge resize strips, below the corners */
+  z-index: 10; /* below the corner resize zones */
   width: 40px;
   height: 40px;
   margin: -20px 0 0 -20px;
@@ -2633,9 +2562,6 @@ textarea.blk-cell {
     width: 32px;
     height: 32px;
     margin: -16px;
-  }
-  .note-handle::after {
-    inset: 10px;
   }
   .topic-more {
     display: inline-flex;
