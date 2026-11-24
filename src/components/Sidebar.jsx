@@ -4,6 +4,9 @@ import { Popover, MenuItem, MenuSep } from './Popover.jsx';
 import { SettingsPanel } from './SettingsPanel.jsx';
 import { IconPlus, IconMore, IconEdit, IconCopy, IconTrash, IconSettings, IconClose, Logo } from './Icons.jsx';
 
+const SIDEBAR_MIN = 200;
+const SIDEBAR_MAX = 440;
+
 export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, onClose, isMobile }) {
   const { topics, notes, activeTopicId, settings } = data;
   const [renamingId, setRenamingId] = useState(null);
@@ -12,6 +15,33 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
   const [drag, setDrag] = useState(null); // { id, dy, dropIndex }
   const listRef = useRef(null);
   const dragRef = useRef(null);
+  const [liveWidth, setLiveWidth] = useState(null); // width while the edge is being dragged
+  const width = liveWidth ?? settings.sidebarWidth;
+
+  // Drag the sidebar's right edge to resize it; double-click the edge to reset.
+  const onResizeStart = (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = e.currentTarget.parentElement.getBoundingClientRect().width;
+    let w = startW;
+    document.body.classList.add('is-resizing-sidebar');
+    const move = (ev) => {
+      w = Math.round(Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, startW + ev.clientX - startX)));
+      setLiveWidth(w);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      document.body.classList.remove('is-resizing-sidebar');
+      setLiveWidth(null);
+      dispatch({ type: 'settings', patch: { sidebarWidth: w } });
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  };
 
   // Active note count + most common color per topic.
   const stats = useMemo(() => {
@@ -152,7 +182,22 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
   const initial = (settings.userName || 'You').trim().charAt(0).toUpperCase();
 
   return (
-    <aside className={`sidebar ${open ? 'is-open' : ''}`} aria-label="Topics">
+    <aside
+      className={`sidebar ${open ? 'is-open' : ''}`}
+      aria-label="Topics"
+      style={!isMobile && width ? { width } : undefined}
+    >
+      {!isMobile && (
+        <div
+          className="sidebar-resizer"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize sidebar"
+          title="Drag to resize · double-click to reset"
+          onPointerDown={onResizeStart}
+          onDoubleClick={() => dispatch({ type: 'settings', patch: { sidebarWidth: null } })}
+        />
+      )}
       <div className="sidebar-brand">
         <Logo size={20} />
         <span className="wordmark">POST IT</span>

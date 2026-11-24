@@ -60,6 +60,7 @@ export const DEFAULT_SETTINGS = {
   tilt: true,
   showConnections: true,
   defaultColor: 'yellow',
+  sidebarWidth: null, // null = default width for the screen size
 };
 
 /* ------------------------------------------------------------------ */

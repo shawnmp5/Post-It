@@ -18,6 +18,7 @@ npm run build    # production build in dist/
 - Unlimited topics with live note counts and a tiny swatch of each topic's most-used color
 - Hover a topic for its ⋯ menu: Rename, Duplicate (copies every note and connection), Delete (with confirm + undo)
 - Drag topics to reorder them (long-press on touch screens); double-click to rename
+- Drag the sidebar's right edge to make it wider or narrower (double-click the edge to reset)
 - Profile / settings at the bottom: your name, default note color, tilt and connection toggles, export / import JSON, restore samples, clear all
 
 **The wall (workspace)**
