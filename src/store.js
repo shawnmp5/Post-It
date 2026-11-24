@@ -109,6 +109,8 @@ export const DEFAULT_SETTINGS = {
   sidebarWidth: null, // null = default width for the screen size
   noteFont: 'clean',
   theme: 'light', // 'light' | 'dark' | 'system'
+  clearUI: false, // transparent interface: no panels, no lines
+  wallpaper: 'none', // 'none' | 'night' | 'aurora'
 };
 
 /* ------------------------------------------------------------------ */

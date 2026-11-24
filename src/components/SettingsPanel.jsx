@@ -127,6 +127,31 @@ export function SettingsPanel({ data, dispatch, toast, confirm, onDone }) {
       </div>
 
       <div className="field">
+        <span className="field-label">Wallpaper</span>
+        <div className="wp-picker" role="radiogroup" aria-label="Wallpaper">
+          {[
+            ['none', 'None'],
+            ['night', 'Night sky'],
+            ['aurora', 'Aurora'],
+          ].map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={(settings.wallpaper || 'none') === id}
+              className={`wp-tile is-${id} ${(settings.wallpaper || 'none') === id ? 'is-active' : ''}`}
+              onClick={() => set({ wallpaper: id })}
+            >
+              <span className="wp-thumb" aria-hidden="true" />
+              <span className="wp-name">{label}</span>
+            </button>
+          ))}
+        </div>
+        {settings.wallpaper === 'night' && <p className="wp-hint">Night sky always uses the dark look.</p>}
+        <Toggle checked={!!settings.clearUI} onChange={(v) => set({ clearUI: v })} label="Clear interface" />
+      </div>
+
+      <div className="field">
         <span className="field-label">Note font</span>
         {['Clean', 'Handwritten'].map((group) => (
           <div key={group} className="font-group">

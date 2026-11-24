@@ -21,6 +21,7 @@ npm run build    # production build in dist/
 - Hover a topic for its ⋯ menu: Rename, Duplicate (copies every note and connection), Delete (with confirm + undo)
 - Drag topics to reorder them (long-press on touch screens); double-click to rename
 - Drag the sidebar's right edge to make it wider or narrower (double-click the edge to reset)
+- Style: Wallpaper (None, an animated Night sky, or a drifting Aurora) and Clear interface — no panels or lines, just type and icons over the wall. Both apply live
 - Appearance: Light, graphite Dark, or Auto (follows the system) — in Settings, or View → Dark mode
 - Profile / settings at the bottom: your name, new note color (Random by default, or a fixed colour), note font (clean: System, Rounded, Serif, Mono; handwritten: Caveat, Kalam, Patrick Hand, Gochi Hand), tilt and connection toggles, export / import JSON, restore samples, clear all
 
