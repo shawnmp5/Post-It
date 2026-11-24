@@ -3,7 +3,7 @@ import { COLOR_MAP, uid } from '../store.js';
 import { IconMore } from './Icons.jsx';
 import { NoteBody, highlight } from './NoteBody.jsx';
 import { SlashMenu } from './SlashMenu.jsx';
-import { TRIGGER, applyCommand, continueList, filterCommands, imageFileToDataURL, toggleCheck } from '../blocks.js';
+import { TRIGGER, applyCommand, continueList, filterCommands, imageFileToDataURL, menuLayout, moveInMenu, toggleCheck } from '../blocks.js';
 
 function autosize(el) {
   if (!el) return;
@@ -192,10 +192,12 @@ export const Note = memo(function Note({
 
   const onFieldKey = (e, field) => {
     if (field === 'body' && slash) {
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if (['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
-        const n = items.length || 1;
-        setSlash((s) => ({ ...s, active: (s.active + (e.key === 'ArrowDown' ? 1 : n - 1)) % n }));
+        if (!items.length) return;
+        const { rows } = menuLayout(items, slash.query);
+        const cur = Math.min(slash.active, items.length - 1);
+        setSlash((s) => ({ ...s, active: moveInMenu(rows, cur, e.key) }));
         return;
       }
       if ((e.key === 'Enter' || e.key === 'Tab') && items.length) {
@@ -336,6 +338,8 @@ export const Note = memo(function Note({
               <SlashMenu
                 at={slash.at}
                 items={items}
+                query={slash.query}
+                tint={color.bg}
                 active={Math.min(slash.active, Math.max(0, items.length - 1))}
                 onPick={pick}
                 onHover={(i) => setSlash((s) => s && { ...s, active: i })}

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { MENU_COLS, TRIGGER, menuLayout, todayString } from '../blocks.js';
 
 const ICONS = {
   bullet: (
@@ -56,23 +57,25 @@ const ICONS = {
   ),
 };
 
-/** Command menu shown at the caret after typing the trigger key in a note. */
-export function SlashMenu({ at, items, active, onPick, onHover, onClose }) {
+/** Block menu shown at the caret after typing the trigger key: grouped tiles tinted with the note's color. */
+export function SlashMenu({ at, items, query, active, tint, onPick, onHover, onClose }) {
   const ref = useRef(null);
-  const [pos, setPos] = useState({ left: at.left, top: at.bottom + 6 });
+  const [pos, setPos] = useState({ left: at.left, top: at.bottom + 8 });
+  const { sections } = menuLayout(items, query);
+  const current = items[active];
 
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    let top = at.bottom + 6;
-    if (top + r.height > window.innerHeight - 8) top = Math.max(8, at.top - r.height - 6);
-    const left = Math.max(8, Math.min(at.left - 10, window.innerWidth - r.width - 8));
+    let top = at.bottom + 8;
+    if (top + r.height > window.innerHeight - 8) top = Math.max(8, at.top - r.height - 8);
+    const left = Math.max(8, Math.min(at.left - 14, window.innerWidth - r.width - 8));
     setPos({ left, top });
   }, [at, items.length]);
 
   useEffect(() => {
-    ref.current?.querySelector('.slash-item.is-active')?.scrollIntoView({ block: 'nearest' });
+    ref.current?.querySelector('.bm-tile.is-active')?.scrollIntoView({ block: 'nearest' });
   }, [active]);
 
   useEffect(() => {
@@ -87,35 +90,73 @@ export function SlashMenu({ at, items, active, onPick, onHover, onClose }) {
     };
   }, [onClose]);
 
+  const tip = !current
+    ? null
+    : current.id === 'date'
+      ? `Adds ${todayString()}`
+      : current.hint
+        ? (
+            <>
+              Shortcut: start a line with <code>{current.hint}</code>
+            </>
+          )
+        : current.tip;
+
   return createPortal(
     <div
       ref={ref}
-      className="popover is-ready slash-menu"
-      style={{ left: pos.left, top: pos.top }}
+      className="popover is-ready block-menu"
+      style={{ left: pos.left, top: pos.top, '--note-bg': tint }}
       role="listbox"
       aria-label="Insert block"
       // Keep focus (and the caret) in the note while picking.
       onMouseDown={(e) => e.preventDefault()}
       onPointerDown={(e) => e.stopPropagation()}
     >
-      {items.length === 0 ? (
-        <div className="slash-empty">No matching blocks</div>
-      ) : (
-        items.map((c, i) => (
-          <button
-            key={c.id}
-            type="button"
-            role="option"
-            aria-selected={i === active}
-            className={`slash-item ${i === active ? 'is-active' : ''}`}
-            onMouseEnter={() => onHover(i)}
-            onClick={() => onPick(c)}
-          >
-            <span className={`slash-icon ${ICONS[c.icon] ? '' : 'is-text'}`}>{ICONS[c.icon] || c.icon}</span>
-            <span className="slash-label">{c.label}</span>
-            {c.hint && <span className="slash-hint">{c.hint}</span>}
-          </button>
-        ))
+      <div className="bm-head">
+        <span className="bm-query">
+          <span className="bm-trigger">{TRIGGER}</span>
+          {query ? query : <span className="bm-placeholder">type to filter</span>}
+        </span>
+        <span className="bm-keys" aria-hidden="true">
+          ← → ↑ ↓ <kbd>↵</kbd>
+        </span>
+      </div>
+      <div className="bm-body">
+        {items.length === 0 && <div className="bm-empty">Nothing matches “{query}”</div>}
+        {sections.map((sec, si) => (
+          <div key={sec.label ?? si} className="bm-section">
+            {sec.label && <div className="bm-label">{sec.label}</div>}
+            <div className="bm-grid">
+              {sec.items.map(({ cmd, index }, i) => {
+                // A lone tile on the last row stretches across instead of sitting by itself.
+                const wide = i === sec.items.length - 1 && sec.items.length % MENU_COLS === 1;
+                return (
+                  <button
+                    key={cmd.id}
+                    type="button"
+                    role="option"
+                    aria-selected={index === active}
+                    aria-label={cmd.label}
+                    className={`bm-tile ${wide ? 'is-wide' : ''} ${index === active ? 'is-active' : ''}`}
+                    onMouseEnter={() => onHover(index)}
+                    onClick={() => onPick(cmd)}
+                  >
+                    <span className={`bm-icon ${ICONS[cmd.icon] ? '' : 'is-glyph'}`}>{ICONS[cmd.icon] || cmd.icon}</span>
+                    <span className="bm-name">{wide ? cmd.label : cmd.short}</span>
+                    {wide && cmd.id === 'date' && <span className="bm-aside">{todayString()}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+      {current && (
+        <div className="bm-foot">
+          <strong>{current.label}</strong>
+          {tip && <span>{tip}</span>}
+        </div>
       )}
     </div>,
     document.body,

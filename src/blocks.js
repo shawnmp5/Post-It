@@ -11,20 +11,55 @@ export const TRIGGER = '\\';
 const PREFIX_RE = /^(#{1,3} |- \[[ xX]\] ?|[-*] |\d+\. |> ?)/;
 
 export const COMMANDS = [
-  { id: 'text', label: 'Text', icon: '¶', keys: 'paragraph plain normal' },
-  { id: 'h1', label: 'Heading 1', icon: 'H1', hint: '#', keys: 'title big h1' },
-  { id: 'h2', label: 'Heading 2', icon: 'H2', hint: '##', keys: 'subtitle h2' },
-  { id: 'h3', label: 'Heading 3', icon: 'H3', hint: '###', keys: 'h3 small' },
-  { id: 'bullet', label: 'Bulleted list', icon: 'bullet', hint: '-', keys: 'ul unordered dash' },
-  { id: 'number', label: 'Numbered list', icon: 'number', hint: '1.', keys: 'ol ordered' },
-  { id: 'check', label: 'Checklist', icon: 'check', hint: '[]', keys: 'todo task checkbox' },
-  { id: 'table', label: 'Table', icon: 'table', keys: 'grid rows columns' },
-  { id: 'image', label: 'Image', icon: 'image', keys: 'photo picture upload' },
-  { id: 'quote', label: 'Quote', icon: 'quote', hint: '>', keys: 'blockquote citation' },
-  { id: 'code', label: 'Code block', icon: 'code', hint: '```', keys: 'snippet pre' },
-  { id: 'divider', label: 'Divider', icon: 'divider', hint: '---', keys: 'line hr separator rule' },
-  { id: 'date', label: 'Today’s date', icon: 'date', keys: 'today now day calendar time' },
+  { id: 'text', label: 'Text', short: 'Text', group: 'Write', icon: 'Aa', keys: 'paragraph plain normal', tip: 'Plain text' },
+  { id: 'h1', label: 'Heading 1', short: 'Heading 1', group: 'Write', icon: 'H1', hint: '#', keys: 'title big h1' },
+  { id: 'h2', label: 'Heading 2', short: 'Heading 2', group: 'Write', icon: 'H2', hint: '##', keys: 'subtitle h2' },
+  { id: 'h3', label: 'Heading 3', short: 'Heading 3', group: 'Write', icon: 'H3', hint: '###', keys: 'h3 small' },
+  { id: 'bullet', label: 'Bulleted list', short: 'Bullets', group: 'Lists', icon: 'bullet', hint: '-', keys: 'ul unordered dash bullets' },
+  { id: 'number', label: 'Numbered list', short: 'Numbers', group: 'Lists', icon: 'number', hint: '1.', keys: 'ol ordered numbers' },
+  { id: 'check', label: 'Checklist', short: 'Checklist', group: 'Lists', icon: 'check', hint: '- [ ]', keys: 'todo task checkbox' },
+  { id: 'quote', label: 'Quote', short: 'Quote', group: 'Lists', icon: 'quote', hint: '>', keys: 'blockquote citation' },
+  { id: 'table', label: 'Table', short: 'Table', group: 'Insert', icon: 'table', keys: 'grid rows columns', tip: 'Adds a 2-column table' },
+  { id: 'image', label: 'Image', short: 'Image', group: 'Insert', icon: 'image', keys: 'photo picture upload', tip: 'Pick a file, or paste one' },
+  { id: 'code', label: 'Code block', short: 'Code', group: 'Insert', icon: 'code', hint: '```', keys: 'snippet pre' },
+  { id: 'divider', label: 'Divider', short: 'Divider', group: 'Insert', icon: 'divider', hint: '---', keys: 'line hr separator rule' },
+  { id: 'date', label: 'Today\u2019s date', short: 'Date', group: 'Insert', icon: 'date', keys: 'today now day calendar time' },
 ];
+
+export const MENU_COLS = 4;
+
+/**
+ * Lay the visible commands out as the menu shows them: grouped sections when
+ * unfiltered, one grid of matches when filtered. `rows` holds item indexes per
+ * visual row, used for arrow-key movement.
+ */
+export function menuLayout(items, query) {
+  const sections = [];
+  if (query.trim()) sections.push({ label: null, items: items.map((cmd, index) => ({ cmd, index })) });
+  else
+    items.forEach((cmd, index) => {
+      let sec = sections[sections.length - 1];
+      if (!sec || sec.label !== cmd.group) sections.push((sec = { label: cmd.group, items: [] }));
+      sec.items.push({ cmd, index });
+    });
+  const rows = [];
+  for (const sec of sections)
+    for (let i = 0; i < sec.items.length; i += MENU_COLS) rows.push(sec.items.slice(i, i + MENU_COLS).map((x) => x.index));
+  return { sections, rows };
+}
+
+/** Next active index for an arrow key in the tile grid. */
+export function moveInMenu(rows, active, key) {
+  const r = rows.findIndex((row) => row.includes(active));
+  if (r < 0) return 0;
+  const c = rows[r].indexOf(active);
+  const flat = rows.flat();
+  const i = flat.indexOf(active);
+  if (key === 'ArrowRight') return flat[(i + 1) % flat.length];
+  if (key === 'ArrowLeft') return flat[(i - 1 + flat.length) % flat.length];
+  const nr = key === 'ArrowDown' ? (r + 1) % rows.length : (r - 1 + rows.length) % rows.length;
+  return rows[nr][Math.min(c, rows[nr].length - 1)];
+}
 
 export function filterCommands(query) {
   const q = query.trim().toLowerCase();
