@@ -29,6 +29,22 @@ export function formatWhen(ts, now = new Date()) {
   return `${d.toLocaleDateString(undefined, opts)}, ${time(d)}`;
 }
 
+/** Compact label for the chip on a note: "Today 6 PM", "Tomorrow 9 AM", "Sat 10 AM", "Nov 30 9 AM". */
+export function formatShort(ts, now = new Date()) {
+  const d = new Date(ts);
+  const t = d.getMinutes()
+    ? d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+    : d.toLocaleTimeString(undefined, { hour: 'numeric' });
+  if (sameDay(d, now)) return `Today ${t}`;
+  if (sameDay(d, addDays(now, 1))) return `Tomorrow ${t}`;
+  if (sameDay(d, addDays(now, -1))) return `Yesterday ${t}`;
+  const days = (at(d, 0) - at(now, 0)) / 864e5;
+  if (days > 0 && days < 7) return `${d.toLocaleDateString(undefined, { weekday: 'short' })} ${t}`;
+  const opts = { month: 'short', day: 'numeric' };
+  if (d.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
+  return `${d.toLocaleDateString(undefined, opts)} ${t}`;
+}
+
 /** Quick picks, computed from now. */
 function presets(now = new Date()) {
   const list = [];
@@ -134,9 +150,9 @@ export function ReminderChip({ reminder, onOpen, onDone }) {
         <span className="rc-bell" aria-hidden="true">
           <BellIcon />
         </span>
-        <span className="rc-text">
+        <span className="rc-text" title={formatWhen(reminder.at)}>
           {due ? 'Due · ' : ''}
-          {formatWhen(reminder.at)}
+          {formatShort(reminder.at)}
         </span>
       </button>
       <button

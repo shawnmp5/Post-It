@@ -154,24 +154,72 @@ function BlockList({ blocks, mode, images, query, sizeKey, ed, onToggle, onPatch
       const run = blocks.slice(j + 1, i + 1);
       if (run.length >= 2) {
         const done = run.filter((x) => x.checked).length;
-        out.push(
-          <div
-            key={`${b.id}-progress`}
-            className={`blk-progress ${done === run.length ? 'is-complete' : ''}`}
-            aria-label={`${done} of ${run.length} done`}
-          >
-            <span className="blk-progress-bar">
-              <i style={{ width: `${(done / run.length) * 100}%` }} />
-            </span>
-            <span className="blk-progress-text">
-              {done === run.length ? 'All done' : `${done}/${run.length}`}
-            </span>
-          </div>,
-        );
+        // Keyed by position (not block id) so the meter survives re-parsing and can tell when it *becomes* complete.
+        out.push(<ProgressMeter key={`progress-${j + 1}`} done={done} total={run.length} />);
       }
     }
   });
   return out;
+}
+
+const CONFETTI_COLORS = ['#ff6b6b', '#ffb703', '#52b788', '#4d96ff', '#c77dff', '#ff8fab'];
+const CONFETTI = Array.from({ length: 14 }, (_, k) => {
+  const angle = (-160 + (k * 140) / 13 + ((k * 37) % 11) - 5) * (Math.PI / 180);
+  const dist = 34 + ((k * 53) % 28);
+  return {
+    dx: Math.round(Math.cos(angle) * dist),
+    dy: Math.round(Math.sin(angle) * dist),
+    r: ((k * 97) % 360) - 180,
+    c: CONFETTI_COLORS[k % CONFETTI_COLORS.length],
+    round: k % 3 === 0,
+  };
+});
+
+/** Checklist progress. Finishing the list gets a little celebration. */
+function ProgressMeter({ done, total }) {
+  const complete = done === total;
+  const was = useRef(complete);
+  const [party, setParty] = useState(0); // bumps to replay the celebration
+  useEffect(() => {
+    if (complete && !was.current) setParty((p) => p + 1);
+    was.current = complete;
+  }, [complete]);
+  useEffect(() => {
+    if (!party) return undefined;
+    const t = setTimeout(() => setParty(0), 1400);
+    return () => clearTimeout(t);
+  }, [party]);
+
+  return (
+    <div className={`blk-progress ${complete ? 'is-complete' : ''} ${party ? 'is-party' : ''}`} aria-label={`${done} of ${total} done`}>
+      <span className="blk-progress-bar">
+        <i style={{ width: `${(done / total) * 100}%` }} />
+      </span>
+      <span className="blk-progress-text">
+        {complete ? (
+          <>
+            <svg viewBox="0 0 12 12" aria-hidden="true">
+              <path d="M2.5 6.3 5 8.6l4.6-5" />
+            </svg>
+            All done
+          </>
+        ) : (
+          `${done}/${total}`
+        )}
+      </span>
+      {!!party && (
+        <span className="confetti" key={party} aria-hidden="true">
+          {CONFETTI.map((p, k) => (
+            <i
+              key={k}
+              className={p.round ? 'is-round' : ''}
+              style={{ '--dx': `${p.dx}px`, '--dy': `${p.dy}px`, '--r': `${p.r}deg`, '--c': p.c, '--d': `${(k % 5) * 18}ms` }}
+            />
+          ))}
+        </span>
+      )}
+    </div>
+  );
 }
 
 const PLACEHOLDER = {

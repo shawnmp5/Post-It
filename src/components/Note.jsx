@@ -3,7 +3,7 @@ import { COLOR_MAP } from '../store.js';
 import { IconMore } from './Icons.jsx';
 import { BlockEditor, NoteView, highlight } from './NoteBlocks.jsx';
 import { NoteSticker } from './Stickers.jsx';
-import { ReminderChip } from './Reminders.jsx';
+import { BellIcon, ReminderChip } from './Reminders.jsx';
 
 function autosize(el) {
   if (!el) return;
@@ -136,6 +136,19 @@ export const Note = memo(function Note({
         <span className="note-tape-strip" style={{ width: tape.w }} />
       </div>
       <div className="note-bar">
+        <button
+          type="button"
+          className={`note-react note-remind ${note.reminder ? 'has-reminder' : ''}`}
+          aria-label={note.reminder ? 'Change reminder' : 'Remind me'}
+          title={note.reminder ? 'Change reminder' : 'Remind me'}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            api.openReminder(note.id, e.currentTarget);
+          }}
+        >
+          <BellIcon width="14" height="14" />
+        </button>
         <button
           type="button"
           className="note-react"

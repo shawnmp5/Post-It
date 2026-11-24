@@ -978,7 +978,6 @@ body.is-resizing-note * {
 
 .note-bar {
   flex: none;
-  z-index: 7; /* buttons stay above stickers */
   height: 30px;
   display: flex;
   align-items: center;
@@ -988,6 +987,8 @@ body.is-resizing-note * {
 }
 .note-react,
 .note-more {
+  position: relative;
+  z-index: 12; /* above the tape and stickers so they're always clickable */
   width: 26px;
   height: 22px;
   display: inline-flex;
@@ -1360,12 +1361,102 @@ textarea.blk-cell {
     width 0.45s var(--ease),
     background 0.3s ease;
 }
+.blk-progress {
+  position: relative;
+}
 .blk-progress.is-complete .blk-progress-bar i {
-  background: #4f8f67;
+  background: linear-gradient(90deg, #40a96b, #52c47f);
+}
+/* A light sweep across the bar when the list is finished */
+.blk-progress.is-party .blk-progress-bar i {
+  background:
+    linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.85) 50%, transparent 70%) -100% 0 / 200% 100% no-repeat,
+    linear-gradient(90deg, #40a96b, #52c47f);
+  animation: bar-shine 0.9s ease 0.15s;
+}
+.blk-progress.is-complete .blk-progress-bar {
+  height: 3px;
+  transition: height 0.2s ease;
+}
+.blk-progress-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.blk-progress-text svg {
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .blk-progress.is-complete .blk-progress-text {
-  color: #4f8f67;
-  font-weight: 600;
+  color: #3a9a60;
+  font-weight: 650;
+}
+.blk-progress.is-party .blk-progress-text {
+  animation: done-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.confetti {
+  position: absolute;
+  right: 22px;
+  top: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.confetti i {
+  position: absolute;
+  left: -2px;
+  top: -3px;
+  width: 4px;
+  height: 7px;
+  border-radius: 1px;
+  background: var(--c);
+  opacity: 0;
+  animation: confetti-burst 1.05s cubic-bezier(0.15, 0.7, 0.3, 1) var(--d) forwards;
+}
+.confetti i.is-round {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+@keyframes confetti-burst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0) scale(0.6);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), calc(var(--dy) + 18px)) rotate(var(--r)) scale(1);
+  }
+}
+@keyframes bar-shine {
+  from {
+    background-position:
+      -100% 0,
+      0 0;
+  }
+  to {
+    background-position:
+      200% 0,
+      0 0;
+  }
+}
+@keyframes done-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* Quote */
@@ -1977,61 +2068,86 @@ body.is-dragging-image * {
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
-  margin-top: 9px;
+  max-width: 100%; /* never wider than the note */
+  margin-top: 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.5);
-  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.05);
   font-family: var(--font);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 500;
-  color: rgba(0, 0, 0, 0.62);
+  color: rgba(0, 0, 0, 0.55);
   transition: background 0.15s ease, color 0.15s ease;
 }
 .reminder-chip:hover {
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.75);
 }
 .rc-main {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  height: 22px;
-  padding: 0 4px 0 8px;
+  gap: 4px;
+  min-width: 0;
+  height: 20px;
+  padding: 0 8px 0 7px;
   border-radius: 999px;
+}
+.rc-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 .rc-bell {
   display: inline-flex;
+  flex: none;
   transform-origin: 50% 10%;
 }
+.rc-bell svg {
+  width: 11px;
+  height: 11px;
+}
+/* The ✓ takes no space until you hover (or the reminder is due). */
 .rc-done {
-  width: 22px;
-  height: 22px;
+  flex: none;
+  width: 0;
+  height: 20px;
+  margin-left: -4px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   border-radius: 50%;
   opacity: 0;
-  transition: opacity 0.15s ease, background 0.15s ease;
+  transition:
+    width 0.18s var(--ease),
+    margin 0.18s var(--ease),
+    opacity 0.15s ease,
+    background 0.15s ease;
 }
 .reminder-chip:hover .rc-done,
 .reminder-chip.is-due .rc-done {
+  width: 20px;
+  margin-left: -6px;
+  margin-right: 1px;
   opacity: 1;
 }
 .rc-done:hover {
   background: rgba(0, 0, 0, 0.08);
 }
 .rc-done svg {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 1.9;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.note-remind.has-reminder {
+  color: #e08600;
+}
 .reminder-chip.is-due {
-  background: rgba(255, 59, 48, 0.14);
-  box-shadow: inset 0 0 0 0.5px rgba(255, 59, 48, 0.35);
+  background: rgba(255, 59, 48, 0.13);
   color: #c4271f;
 }
 .reminder-chip.is-due .rc-bell {
