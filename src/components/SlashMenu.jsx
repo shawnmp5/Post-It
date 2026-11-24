@@ -97,7 +97,7 @@ export function SlashMenu({ at, items, query, active, tint, onPick, onHover, onC
       : current.hint
         ? (
             <>
-              Shortcut: start a line with <code>{current.hint}</code>
+              or type <code>{current.hint}</code>
             </>
           )
         : current.tip;
@@ -144,7 +144,11 @@ export function SlashMenu({ at, items, query, active, tint, onPick, onHover, onC
                   >
                     <span className={`bm-icon ${ICONS[cmd.icon] ? '' : 'is-glyph'}`}>{ICONS[cmd.icon] || cmd.icon}</span>
                     <span className="bm-name">{wide ? cmd.label : cmd.short}</span>
-                    {wide && cmd.id === 'date' && <span className="bm-aside">{todayString()}</span>}
+                    {wide && cmd.id === 'date' && (
+                      <span className="bm-aside">
+                        {new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      </span>
+                    )}
                   </button>
                 );
               })}

@@ -20,11 +20,37 @@ export const COLOR_MAP = Object.fromEntries(COLORS.map((c) => [c.id, c]));
 
 /** Note handwriting options. `scale` evens out how large each face looks. */
 export const FONTS = [
-  { id: 'caveat', name: 'Caveat', family: "'Caveat', cursive", scale: 1.32, titleWeight: 700 },
-  { id: 'kalam', name: 'Kalam', family: "'Kalam', cursive", scale: 1.02, titleWeight: 700 },
-  { id: 'patrick', name: 'Patrick Hand', family: "'Patrick Hand', cursive", scale: 1.16, titleWeight: 400 },
-  { id: 'gochi', name: 'Gochi Hand', family: "'Gochi Hand', cursive", scale: 1.14, titleWeight: 400 },
-  { id: 'clean', name: 'Clean', family: 'var(--font)', scale: 1, titleWeight: 600 },
+  // Clean — Apple's system faces where available, with close open-source stand-ins elsewhere.
+  { id: 'clean', group: 'Clean', name: 'System', family: 'var(--font)', scale: 1, titleWeight: 600 },
+  {
+    id: 'rounded',
+    group: 'Clean',
+    name: 'Rounded',
+    family: "ui-rounded, 'SF Pro Rounded', 'Nunito', var(--font)",
+    scale: 1.02,
+    titleWeight: 700,
+  },
+  {
+    id: 'serif',
+    group: 'Clean',
+    name: 'Serif',
+    family: "ui-serif, 'New York', 'Source Serif 4', Georgia, serif",
+    scale: 1.06,
+    titleWeight: 600,
+  },
+  {
+    id: 'mono',
+    group: 'Clean',
+    name: 'Mono',
+    family: "ui-monospace, SFMono-Regular, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace",
+    scale: 0.9,
+    titleWeight: 600,
+  },
+  // Handwritten
+  { id: 'caveat', group: 'Handwritten', name: 'Caveat', family: "'Caveat', cursive", scale: 1.32, titleWeight: 700 },
+  { id: 'kalam', group: 'Handwritten', name: 'Kalam', family: "'Kalam', cursive", scale: 1.02, titleWeight: 700 },
+  { id: 'patrick', group: 'Handwritten', name: 'Patrick', family: "'Patrick Hand', cursive", scale: 1.16, titleWeight: 400 },
+  { id: 'gochi', group: 'Handwritten', name: 'Gochi', family: "'Gochi Hand', cursive", scale: 1.14, titleWeight: 400 },
 ];
 export const FONT_MAP = Object.fromEntries(FONTS.map((f) => [f.id, f]));
 

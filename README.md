@@ -19,7 +19,7 @@ npm run build    # production build in dist/
 - Hover a topic for its ⋯ menu: Rename, Duplicate (copies every note and connection), Delete (with confirm + undo)
 - Drag topics to reorder them (long-press on touch screens); double-click to rename
 - Drag the sidebar's right edge to make it wider or narrower (double-click the edge to reset)
-- Profile / settings at the bottom: your name, default note color, note font (Caveat, Kalam, Patrick Hand, Gochi Hand or Clean), tilt and connection toggles, export / import JSON, restore samples, clear all
+- Profile / settings at the bottom: your name, default note color, note font (clean: System, Rounded, Serif, Mono; handwritten: Caveat, Kalam, Patrick Hand, Gochi Hand), tilt and connection toggles, export / import JSON, restore samples, clear all
 
 **The wall (workspace)**
 - Freeform placement — grab a note by its tape and drop it anywhere, no grid snapping; the wall grows downward as you go

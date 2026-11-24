@@ -99,26 +99,34 @@ export function SettingsPanel({ data, dispatch, toast, confirm, onDone }) {
 
       <div className="field">
         <span className="field-label">Note font</span>
-        <div className="font-grid" role="radiogroup" aria-label="Note font">
-          {FONTS.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              role="radio"
-              aria-checked={(settings.noteFont || 'clean') === f.id}
-              className={`font-tile ${(settings.noteFont || 'clean') === f.id ? 'is-active' : ''}`}
-              onClick={() => set({ noteFont: f.id })}
-            >
-              <span
-                className="font-sample"
-                style={{ fontFamily: f.family, fontSize: `${15 * f.scale}px`, fontWeight: f.titleWeight }}
-              >
-                Buy milk
-              </span>
-              <span className="font-name">{f.name}</span>
-            </button>
-          ))}
-        </div>
+        {['Clean', 'Handwritten'].map((group) => (
+          <div key={group} className="font-group">
+            <span className="font-group-label">{group}</span>
+            <div className="font-grid" role="radiogroup" aria-label={`${group} fonts`}>
+              {FONTS.filter((f) => f.group === group).map((f) => {
+                const on = (settings.noteFont || 'clean') === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    className={`font-tile ${on ? 'is-active' : ''}`}
+                    onClick={() => set({ noteFont: f.id })}
+                  >
+                    <span
+                      className="font-sample"
+                      style={{ fontFamily: f.family, fontSize: `${14 * f.scale}px`, fontWeight: f.titleWeight }}
+                    >
+                      Aa
+                    </span>
+                    <span className="font-name">{f.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="field">

@@ -11,7 +11,7 @@ export const TRIGGER = '\\';
 const PREFIX_RE = /^(#{1,3} |- \[[ xX]\] ?|[-*] |\d+\. |> ?)/;
 
 export const COMMANDS = [
-  { id: 'text', label: 'Text', short: 'Text', group: 'Write', icon: 'Aa', keys: 'paragraph plain normal', tip: 'Plain text' },
+  { id: 'text', label: 'Text', short: 'Text', group: 'Write', icon: 'Aa', keys: 'paragraph plain normal' },
   { id: 'h1', label: 'Heading 1', short: 'Heading 1', group: 'Write', icon: 'H1', hint: '#', keys: 'title big h1' },
   { id: 'h2', label: 'Heading 2', short: 'Heading 2', group: 'Write', icon: 'H2', hint: '##', keys: 'subtitle h2' },
   { id: 'h3', label: 'Heading 3', short: 'Heading 3', group: 'Write', icon: 'H3', hint: '###', keys: 'h3 small' },
@@ -19,8 +19,8 @@ export const COMMANDS = [
   { id: 'number', label: 'Numbered list', short: 'Numbers', group: 'Lists', icon: 'number', hint: '1.', keys: 'ol ordered numbers' },
   { id: 'check', label: 'Checklist', short: 'Checklist', group: 'Lists', icon: 'check', hint: '- [ ]', keys: 'todo task checkbox' },
   { id: 'quote', label: 'Quote', short: 'Quote', group: 'Lists', icon: 'quote', hint: '>', keys: 'blockquote citation' },
-  { id: 'table', label: 'Table', short: 'Table', group: 'Insert', icon: 'table', keys: 'grid rows columns', tip: 'Adds a 2-column table' },
-  { id: 'image', label: 'Image', short: 'Image', group: 'Insert', icon: 'image', keys: 'photo picture upload', tip: 'Pick a file, or paste one' },
+  { id: 'table', label: 'Table', short: 'Table', group: 'Insert', icon: 'table', keys: 'grid rows columns', tip: 'Tab between cells' },
+  { id: 'image', label: 'Image', short: 'Image', group: 'Insert', icon: 'image', keys: 'photo picture upload', tip: 'or paste one' },
   { id: 'code', label: 'Code block', short: 'Code', group: 'Insert', icon: 'code', hint: '```', keys: 'snippet pre' },
   { id: 'divider', label: 'Divider', short: 'Divider', group: 'Insert', icon: 'divider', hint: '---', keys: 'line hr separator rule' },
   { id: 'date', label: 'Today\u2019s date', short: 'Date', group: 'Insert', icon: 'date', keys: 'today now day calendar time' },
