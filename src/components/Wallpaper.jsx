@@ -165,18 +165,6 @@ function paintBackdrop(W, H, dpr, pal) {
   g.fillStyle = grad;
   g.fillRect(0, 0, W, H);
 
-  // Grain keeps the dark gradients from banding.
-  const n = makeCanvas(128, 128);
-  const ng = n.getContext('2d');
-  const img = ng.createImageData(128, 128);
-  for (let i = 0; i < img.data.length; i += 4) {
-    const v = Math.random() * 255;
-    img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
-    img.data[i + 3] = 10;
-  }
-  ng.putImageData(img, 0, 0);
-  g.fillStyle = g.createPattern(n, 'repeat');
-  g.fillRect(0, 0, W, H);
   return c;
 }
 
