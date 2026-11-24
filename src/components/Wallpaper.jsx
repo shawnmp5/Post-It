@@ -7,8 +7,7 @@ import { useEffect, useRef } from 'react';
  *   1. a soft night sky (or an overcast afternoon in light mode)
  *   2. rain falling outside, in three depths
  *   3. fog on the glass, plus a mist of tiny droplets stuck to it
- *   4. bigger beads that swell, run down, merge and smear clear trails
- *      through the fog, which slowly fogs back over
+ *   4. bigger beads that swell, run down and merge
  */
 export function Wallpaper({ kind, dark }) {
   if (kind !== 'rain') return null;
@@ -215,27 +214,12 @@ function paintFog(W, H, pal) {
   return c;
 }
 
-/* Soft round brush for wiping fog. */
-function makeBrush() {
-  const S = 64;
-  const c = makeCanvas(S, S);
-  const g = c.getContext('2d');
-  const grad = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
-  grad.addColorStop(0, 'rgba(0,0,0,1)');
-  grad.addColorStop(0.5, 'rgba(0,0,0,0.9)');
-  grad.addColorStop(1, 'rgba(0,0,0,0)');
-  g.fillStyle = grad;
-  g.fillRect(0, 0, S, S);
-  return c;
-}
-
 /* ------------------------------------------------------------------ */
 
 function createRain(canvas, opts) {
   const ctx = canvas.getContext('2d');
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const streakSprite = makeStreakSprite();
-  const brush = makeBrush();
   let dark = !!opts.dark;
   let pal = dark ? PALETTES.dark : PALETTES.light;
   let dropSprite = makeDropSprite(dark);
@@ -247,12 +231,7 @@ function createRain(canvas, opts) {
   let mist = null; // canvas holding the tiny droplets stuck to the glass
   let mctx = null;
   let specks = []; // [x, y, r, alpha] for each tiny droplet on `mist`
-  let fogSource = null; // the full fog
-  let fogMask = null; // where beads have wiped it (opaque = clear)
-  let fogLayer = null; // fogSource minus fogMask, drawn each frame
-  let fmask = null;
-  let flayer = null;
-  let refogClock = 0;
+  let fog = null; // condensation on the glass
   let beads = [];
   let streaks = [];
   let raf = 0;
@@ -349,19 +328,13 @@ function createRain(canvas, opts) {
     mist = makeCanvas(W * dpr, H * dpr);
     mctx = mist.getContext('2d');
     mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    fogSource = paintFog(W, H, pal);
-    fogMask = makeCanvas(fogSource.width, fogSource.height);
-    fmask = fogMask.getContext('2d');
-    fogLayer = makeCanvas(fogSource.width, fogSource.height);
-    flayer = fogLayer.getContext('2d');
+    fog = paintFog(W, H, pal);
     seed();
     if (reduced) draw(0);
   }
 
-  // Wipe the mist under a sliding bead, and smear a clear path through the fog.
+  // Wipe the tiny droplets under a sliding bead.
   function wipe(x, y, r) {
-    const fr = r * 1.55 * FOG_SCALE;
-    fmask.drawImage(brush, x * FOG_SCALE - fr, y * FOG_SCALE - fr, fr * 2, fr * 2);
     mctx.save();
     mctx.globalCompositeOperation = 'destination-out';
     mctx.beginPath();
@@ -380,17 +353,6 @@ function createRain(canvas, opts) {
   }
 
   function update(dt) {
-    // Wiped paths slowly fog back over (stepped so 8-bit alpha keeps fading).
-    refogClock += dt;
-    if (refogClock > 0.5) {
-      refogClock = 0;
-      fmask.save();
-      fmask.globalCompositeOperation = 'destination-out';
-      fmask.globalAlpha = 0.05;
-      fmask.fillRect(0, 0, fogMask.width, fogMask.height);
-      fmask.restore();
-    }
-
     // Rain outside.
     for (let i = 0; i < streaks.length; i++) {
       const s = streaks[i];
@@ -487,15 +449,11 @@ function createRain(canvas, opts) {
     }
     ctx.restore();
 
-    // The glass: fog with the wiped paths cut out, then the droplets.
-    flayer.globalCompositeOperation = 'copy';
-    flayer.drawImage(fogSource, 0, 0);
-    flayer.globalCompositeOperation = 'destination-out';
-    flayer.drawImage(fogMask, 0, 0);
+    // The glass: fog, then the droplets.
     ctx.save();
     ctx.globalAlpha = pal.fogOpacity;
     ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(fogLayer, 0, 0, W, H);
+    ctx.drawImage(fog, 0, 0, W, H);
     ctx.restore();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(mist, 0, 0);
@@ -560,7 +518,7 @@ function createRain(canvas, opts) {
       pal = dark ? PALETTES.dark : PALETTES.light;
       dropSprite = makeDropSprite(dark);
       backdrop = paintBackdrop(W, H, dpr, pal);
-      fogSource = paintFog(W, H, pal);
+      fog = paintFog(W, H, pal);
       redrawMist();
       if (reduced) draw();
     },
