@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Board } from './Board.jsx';
 import { Popover, MenuItem, MenuSep, MenuLabel } from './Popover.jsx';
 import { COLORS, COLOR_MAP, ZOOM_MAX, ZOOM_MIN } from '../store.js';
+import { plainText } from '../blocks.js';
 import {
   IconSearch,
   IconSliders,
@@ -474,10 +475,10 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
   );
 }
 
-const firstLine = (s) => s.split('\n').find((l) => l.trim()) || '';
+const firstLine = (s) => plainText(s).split('\n').find((l) => l.trim()) || '';
 
 function snippet(n, q) {
-  const body = n.body.replace(/\s+/g, ' ').trim();
+  const body = plainText(n.body).replace(/\s+/g, ' ').trim();
   if (!q) return body.slice(0, 80);
   const i = body.toLowerCase().indexOf(q);
   if (i < 0) return body.slice(0, 80);

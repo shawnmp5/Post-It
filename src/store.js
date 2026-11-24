@@ -1,5 +1,6 @@
 import { useEffect, useReducer, useRef } from 'react';
 import { createSeedData } from './seed.js';
+import { imageRefs } from './blocks.js';
 
 export const STORAGE_KEY = 'postit:v1';
 const HISTORY_LIMIT = 120;
@@ -49,6 +50,7 @@ export function makeNote(topicId, partial = {}) {
     rotation: randomTilt(),
     z: 1,
     archived: false,
+    images: {},
     createdAt: now,
     updatedAt: now,
     ...partial,
@@ -285,7 +287,14 @@ function normalize(raw) {
   const notes = Array.isArray(raw?.notes)
     ? raw.notes
         .filter((n) => n && n.id && topicIds.has(n.topicId))
-        .map(({ pinned, ...n }) => ({ ...makeNote(n.topicId), ...n, title: String(n.title ?? ''), body: String(n.body ?? '') }))
+        .map(({ pinned, ...n }) => {
+          const body = String(n.body ?? '');
+          // Keep only images the text still points at.
+          const refs = imageRefs(body);
+          const images = {};
+          for (const id of refs) if (n.images?.[id]) images[id] = n.images[id];
+          return { ...makeNote(n.topicId), ...n, title: String(n.title ?? ''), body, images };
+        })
     : [];
   const noteIds = new Set(notes.map((n) => n.id));
   const connections = Array.isArray(raw?.connections)
@@ -357,7 +366,7 @@ export function useStore() {
     if (lastSaved.current === state.data) return undefined;
     const t = setTimeout(() => {
       save(state.data);
-      lastSaved.current = state.data;
+        lastSaved.current = state.data;
     }, 250);
     return () => clearTimeout(t);
   }, [state.data]);

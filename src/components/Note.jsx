@@ -1,6 +1,9 @@
-import { memo, useEffect, useLayoutEffect, useRef } from 'react';
-import { COLOR_MAP } from '../store.js';
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { COLOR_MAP, uid } from '../store.js';
 import { IconMore } from './Icons.jsx';
+import { NoteBody, highlight } from './NoteBody.jsx';
+import { SlashMenu } from './SlashMenu.jsx';
+import { TRIGGER, applyCommand, continueList, filterCommands, imageFileToDataURL, toggleCheck } from '../blocks.js';
 
 function autosize(el) {
   if (!el) return;
@@ -8,23 +11,33 @@ function autosize(el) {
   el.style.height = `${el.scrollHeight}px`;
 }
 
-/** Wrap occurrences of `query` in <mark> so search hits are visible on the wall. */
-function highlight(text, query) {
-  if (!query) return text;
-  const q = query.toLowerCase();
-  const lower = text.toLowerCase();
-  const out = [];
-  let i = 0;
-  let k = 0;
-  while (i < text.length) {
-    const j = lower.indexOf(q, i);
-    if (j < 0) break;
-    if (j > i) out.push(text.slice(i, j));
-    out.push(<mark key={k++}>{text.slice(j, j + q.length)}</mark>);
-    i = j + q.length;
-  }
-  if (i < text.length) out.push(text.slice(i));
-  return out;
+/** Viewport rect of the caret inside a textarea (mirror-element technique). */
+function caretRect(ta) {
+  const cs = getComputedStyle(ta);
+  const div = document.createElement('div');
+  for (const k of [
+    'boxSizing', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth', 'borderRightWidth',
+    'borderBottomWidth', 'borderLeftWidth', 'fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'letterSpacing',
+    'lineHeight', 'textTransform', 'wordSpacing', 'tabSize',
+  ])
+    div.style[k] = cs[k];
+  Object.assign(div.style, {
+    position: 'absolute',
+    visibility: 'hidden',
+    whiteSpace: 'pre-wrap',
+    overflowWrap: 'anywhere',
+    top: `${ta.offsetTop}px`,
+    left: `${ta.offsetLeft}px`,
+    width: `${ta.offsetWidth}px`,
+  });
+  div.textContent = ta.value.slice(0, ta.selectionStart);
+  const mark = document.createElement('span');
+  mark.textContent = '\u200b';
+  div.appendChild(mark);
+  ta.parentNode.appendChild(div);
+  const r = mark.getBoundingClientRect();
+  div.remove();
+  return { left: r.left, top: r.top, bottom: r.bottom };
 }
 
 /** Small stable variation per note so the tape doesn't look copy-pasted. */
@@ -57,6 +70,12 @@ export const Note = memo(function Note({
   const titleRef = useRef(null);
   const bodyRef = useRef(null);
   const dirty = useRef(false);
+  const pendingSel = useRef(null);
+  const fileRef = useRef(null);
+  const imageAt = useRef(null);
+  const latestBody = useRef(note.body);
+  latestBody.current = note.body;
+  const [slash, setSlash] = useState(null); // { from, query, at, active }
   const fixed = note.h != null;
   const color = COLOR_MAP[note.color] || COLOR_MAP.yellow;
   const tape = tapeFor(note.id);
@@ -69,8 +88,20 @@ export const Note = memo(function Note({
   }, [api, note.id]);
 
   useEffect(() => {
-    if (!editing) dirty.current = false;
+    if (!editing) {
+      dirty.current = false;
+      setSlash(null);
+    }
   }, [editing]);
+
+  // Restore the caret after a command rewrote the text.
+  useLayoutEffect(() => {
+    const sel = pendingSel.current;
+    if (!sel || !bodyRef.current) return;
+    pendingSel.current = null;
+    bodyRef.current.focus({ preventScroll: true });
+    bodyRef.current.setSelectionRange(sel[0], sel[1]);
+  }, [note.body]);
 
   // Enter edit mode: focus the clicked field and place the caret where the user clicked.
   useLayoutEffect(() => {
@@ -100,7 +131,94 @@ export const Note = memo(function Note({
     api.update(note.id, { [field]: value });
   };
 
+  const setBody = (res, extraPatch) => {
+    if (!dirty.current) {
+      dirty.current = true;
+      api.checkpoint();
+    }
+    pendingSel.current = [res.selStart, res.selEnd];
+    api.update(note.id, { body: res.value, ...extraPatch });
+  };
+
+  const closeSlash = useCallback(() => setSlash(null), []);
+  const items = slash ? filterCommands(slash.query) : [];
+
+  const pick = (cmd) => {
+    const ta = bodyRef.current;
+    if (!slash || !ta) return;
+    const from = slash.from;
+    const to = ta.selectionStart;
+    setSlash(null);
+    if (cmd.id === 'image') {
+      const v = ta.value.slice(0, from) + ta.value.slice(to);
+      setBody({ value: v, selStart: from, selEnd: from });
+      imageAt.current = from;
+      fileRef.current?.click();
+      return;
+    }
+    setBody(applyCommand(ta.value, from, to, cmd.id));
+  };
+
+  const insertImage = async (file, at) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    try {
+      const url = await imageFileToDataURL(file);
+      const id = uid('img');
+      const body = latestBody.current;
+      const pos = Math.min(at ?? body.length, body.length);
+      const res = applyCommand(body, pos, pos, 'image', { imageId: id });
+      api.checkpoint();
+      pendingSel.current = [res.selStart, res.selEnd];
+      api.update(note.id, { body: res.value, images: { ...(note.images || {}), [id]: url } });
+    } catch {
+      api.toast?.('That image couldn\u2019t be read');
+    }
+  };
+
+  // Track the trigger key and the text typed after it.
+  const onBodyChange = (e) => {
+    const ta = e.target;
+    const v = ta.value;
+    const pos = ta.selectionStart;
+    change('body', v);
+    if (slash) {
+      const q = v.slice(slash.from + 1, pos);
+      if (pos <= slash.from || v[slash.from] !== TRIGGER || /\s/.test(q) || q.length > 24) setSlash(null);
+      else setSlash((s) => s && { ...s, query: q, active: 0 });
+    } else if (v[pos - 1] === TRIGGER && (pos === 1 || /\s/.test(v[pos - 2])) && v.length > note.body.length) {
+      setSlash({ from: pos - 1, query: '', active: 0, at: caretRect(ta) });
+    }
+  };
+
   const onFieldKey = (e, field) => {
+    if (field === 'body' && slash) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const n = items.length || 1;
+        setSlash((s) => ({ ...s, active: (s.active + (e.key === 'ArrowDown' ? 1 : n - 1)) % n }));
+        return;
+      }
+      if ((e.key === 'Enter' || e.key === 'Tab') && items.length) {
+        e.preventDefault();
+        pick(items[Math.min(slash.active, items.length - 1)]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setSlash(null);
+        return;
+      }
+    }
+    if (field === 'body' && e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      const ta = e.currentTarget;
+      const res = continueList(ta.value, ta.selectionStart, ta.selectionEnd);
+      if (res) {
+        e.preventDefault();
+        setBody(res);
+        return;
+      }
+    }
     if (e.key === 'Escape') {
       e.preventDefault();
       api.stopEditing(note.id);
@@ -199,28 +317,65 @@ export const Note = memo(function Note({
               ref={bodyRef}
               className="note-body note-input"
               value={note.body}
-              placeholder="Write something…"
+              placeholder={`Write something… or type ${TRIGGER} for blocks`}
               spellCheck
               onPointerDown={(e) => e.stopPropagation()}
-              onChange={(e) => change('body', e.target.value)}
+              onChange={onBodyChange}
               onKeyDown={(e) => onFieldKey(e, 'body')}
               onFocus={() => api.fieldFocus(note.id, 'body')}
+              onBlur={closeSlash}
+              onClick={() => slash && setSlash(null)}
+              onPaste={(e) => {
+                const file = [...(e.clipboardData?.files || [])].find((f) => f.type.startsWith('image/'));
+                if (!file) return;
+                e.preventDefault();
+                insertImage(file, e.currentTarget.selectionStart);
+              }}
             />
+            {slash && (
+              <SlashMenu
+                at={slash.at}
+                items={items}
+                active={Math.min(slash.active, Math.max(0, items.length - 1))}
+                onPick={pick}
+                onHover={(i) => setSlash((s) => s && { ...s, active: i })}
+                onClose={closeSlash}
+              />
+            )}
           </>
         ) : (
           <>
             {note.title && (
-              <div className="note-title" data-field="title">
+              <div className="note-title" data-field="title" data-offset="0">
                 {highlight(note.title, query)}
               </div>
             )}
             <div className="note-body" data-field="body" data-empty={note.body ? undefined : ''}>
-              {highlight(note.body, query)}
+              <NoteBody
+                body={note.body}
+                images={note.images}
+                query={query}
+                onToggleCheck={(mark) => {
+                  api.checkpoint();
+                  api.update(note.id, { body: toggleCheck(note.body, mark) });
+                }}
+              />
             </div>
           </>
         )}
       </div>
 
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = '';
+          insertImage(f, imageAt.current);
+        }}
+      />
       <div className="note-resize" data-resize title="Drag to resize" aria-hidden="true" />
     </div>
   );

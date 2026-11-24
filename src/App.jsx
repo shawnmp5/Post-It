@@ -85,6 +85,18 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [dispatch]);
 
+  // localStorage is limited (~5 MB); large images can fill it.
+  useEffect(() => {
+    let last = 0;
+    const onFail = () => {
+      if (Date.now() - last < 8000) return;
+      last = Date.now();
+      toast('Couldn\u2019t save: browser storage is full. Remove some images to free space.');
+    };
+    window.addEventListener('postit:save-failed', onFail);
+    return () => window.removeEventListener('postit:save-failed', onFail);
+  }, [toast]);
+
   const activeName = data.topics.find((t) => t.id === data.activeTopicId)?.name;
   useEffect(() => {
     document.title = activeName ? `${activeName} — POST IT` : 'POST IT';

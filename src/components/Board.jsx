@@ -36,14 +36,19 @@ function caretOffsetAt(el, x, y) {
       offset = r.startOffset;
     }
   }
-  if (!node || !el.contains(node) || node.nodeType !== Node.TEXT_NODE) return null;
-  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  if (!node || !el.contains(node)) return null;
+  // Formatted blocks carry data-offset = their position in the raw text.
+  const host = (node.nodeType === Node.TEXT_NODE ? node.parentElement : node).closest('[data-offset]');
+  if (!host || !el.contains(host)) return null;
+  const base = Number(host.dataset.offset);
+  if (node.nodeType !== Node.TEXT_NODE) return base;
+  const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT);
   let total = 0;
   while (walker.nextNode()) {
-    if (walker.currentNode === node) return total + offset;
+    if (walker.currentNode === node) return base + total + offset;
     total += walker.currentNode.length;
   }
-  return null;
+  return base;
 }
 
 const isTyping = () => {
@@ -611,6 +616,7 @@ export const Board = forwardRef(function Board(
       },
       pointerDown: (e, id) => notePointerDown(e, id),
       checkpoint: () => dispatch({ type: 'checkpoint' }),
+      toast: (msg) => toast(msg),
       update: (id, patch) => dispatch({ type: 'note/update', id, patch }),
       startEdit,
       stopEditing: () => setEditing(null),
