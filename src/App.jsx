@@ -5,7 +5,6 @@ import { Sidebar } from './components/Sidebar.jsx';
 import { Workspace } from './components/Workspace.jsx';
 import { ConfirmDialog } from './components/ConfirmDialog.jsx';
 import { Toast } from './components/Toast.jsx';
-import { Wallpaper } from './components/Wallpaper.jsx';
 
 const MOBILE_QUERY = '(max-width: 767px)';
 
@@ -156,15 +155,11 @@ export default function App() {
     m.addEventListener('change', on);
     return () => m.removeEventListener('change', on);
   }, []);
-  const wallpaper = data.settings.wallpaper || 'none';
   const clearUI = !!data.settings.clearUI;
-  // The night sky is a dark backdrop, so the interface goes dark with it.
-  const dark = wallpaper === 'night' || themePref === 'dark' || (themePref === 'system' && systemDark);
+  const dark = themePref === 'dark' || (themePref === 'system' && systemDark);
   useEffect(() => {
-    const root = document.documentElement;
-    root.dataset.clear = clearUI ? 'true' : 'false';
-    root.dataset.wallpaper = wallpaper;
-  }, [clearUI, wallpaper]);
+    document.documentElement.dataset.clear = clearUI ? 'true' : 'false';
+  }, [clearUI]);
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#1c1c1e' : '#f5f5f7');
@@ -177,7 +172,6 @@ export default function App() {
 
   return (
     <div className={`app ${isMobile ? 'is-mobile' : ''} ${sidebarHidden ? 'sidebar-hidden' : ''}`}>
-      <Wallpaper kind={wallpaper} />
       {!sidebarHidden && <Sidebar
         onHide={() => dispatch({ type: 'settings', patch: { sidebarHidden: true } })}
         data={data}
