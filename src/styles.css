@@ -777,96 +777,68 @@ body.is-resizing-note * {
 
 /* ==========================================================================
    Sticky notes
+   The root carries position + shadow; the paper layer inside is the colored sheet.
    ========================================================================== */
 
 .note {
   --note-ink: #23231f;
+  --shadow: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.07)) drop-shadow(0 7px 9px rgba(0, 0, 0, 0.1));
   position: absolute;
   top: 0;
   left: 0;
   display: flex;
   flex-direction: column;
-  background: var(--note-bg);
-  border-radius: 3px 3px 5px 5px;
   color: var(--note-ink);
-  box-shadow:
-    0 0 0 0.5px rgba(0, 0, 0, 0.04),
-    0 1px 1px rgba(0, 0, 0, 0.05),
-    0 3px 6px -2px rgba(0, 0, 0, 0.06),
-    0 14px 22px -14px rgba(0, 0, 0, 0.28);
-  cursor: grab;
+  filter: var(--shadow);
+  cursor: text;
   touch-action: auto;
   transition:
     transform 0.26s var(--ease),
-    box-shadow 0.2s ease,
+    filter 0.2s ease,
     opacity 0.2s ease,
     scale 0.18s var(--ease),
-    filter 0.2s ease,
     width 0.2s var(--ease);
   will-change: transform;
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
 }
-.note.is-white {
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.06),
-    0 1px 1px rgba(0, 0, 0, 0.05),
-    0 3px 6px -2px rgba(0, 0, 0, 0.06),
-    0 14px 22px -14px rgba(0, 0, 0, 0.28);
-}
 .note.is-auto {
-  min-height: 132px;
+  min-height: 140px;
 }
-/* A faint adhesive strip along the top edge, like the real thing. */
-.note::before {
-  content: '';
+.note-paper {
   position: absolute;
-  inset: 0 0 auto 0;
-  height: 26px;
-  border-radius: 3px 3px 0 0;
-  background: rgba(0, 0, 0, 0.014);
+  inset: 0;
+  background: var(--note-bg);
+  border-radius: 1px;
   pointer-events: none;
 }
-.note:hover {
-  box-shadow:
-    0 0 0 0.5px rgba(0, 0, 0, 0.05),
-    0 1px 1px rgba(0, 0, 0, 0.05),
-    0 4px 8px -2px rgba(0, 0, 0, 0.07),
-    0 18px 28px -16px rgba(0, 0, 0, 0.32);
+.note.is-white .note-paper {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.07);
 }
-.note.is-selected {
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.16),
-    0 2px 2px rgba(0, 0, 0, 0.05),
-    0 6px 12px -4px rgba(0, 0, 0, 0.08),
-    0 22px 34px -18px rgba(0, 0, 0, 0.36);
+.note > :not(.note-paper) {
+  position: relative;
+}
+.note:hover {
+  --shadow: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.08)) drop-shadow(0 11px 12px rgba(0, 0, 0, 0.13));
+}
+.note.is-selected,
+.note.is-editing,
+.note.is-matched {
+  --shadow: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.09)) drop-shadow(0 14px 14px rgba(0, 0, 0, 0.16));
 }
 .note.is-dragging {
+  --shadow: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.08)) drop-shadow(0 24px 20px rgba(0, 0, 0, 0.2));
   scale: 1.03;
   cursor: grabbing;
-  transition: box-shadow 0.2s ease, scale 0.18s var(--ease);
-  box-shadow:
-    0 0 0 0.5px rgba(0, 0, 0, 0.05),
-    0 6px 10px -2px rgba(0, 0, 0, 0.08),
-    0 30px 44px -18px rgba(0, 0, 0, 0.4);
+  transition: filter 0.2s ease, scale 0.18s var(--ease);
 }
 .note.is-editing {
   cursor: default;
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.2),
-    0 4px 8px -2px rgba(0, 0, 0, 0.07),
-    0 24px 38px -18px rgba(0, 0, 0, 0.36);
 }
 .note.is-dimmed {
   opacity: 0.22;
-  filter: saturate(0.4);
-}
-.note.is-matched {
-  box-shadow:
-    0 0 0 2px rgba(27, 27, 26, 0.75),
-    0 4px 8px -2px rgba(0, 0, 0, 0.07),
-    0 18px 28px -16px rgba(0, 0, 0, 0.32);
+  filter: saturate(0.4) var(--shadow);
 }
 .note.is-flash {
   animation: note-flash 1.2s ease;
@@ -875,46 +847,64 @@ body.is-resizing-note * {
   animation: note-in 0.32s var(--ease);
 }
 .board-wrap.is-connecting .note.is-connect-target:hover {
-  box-shadow:
-    0 0 0 2px var(--ink),
-    0 18px 28px -16px rgba(0, 0, 0, 0.32);
+  --shadow: drop-shadow(0 0 1px rgba(0, 0, 0, 0.7)) drop-shadow(0 14px 14px rgba(0, 0, 0, 0.18));
+}
+
+/* A strip of translucent tape holding the note to the wall — and the handle for moving it.
+   The outer element is an unclipped, slightly larger hit area; the strip inside is the visual. */
+.note-tape {
+  position: absolute !important;
+  top: -15px;
+  left: 50%;
+  z-index: 3;
+  padding: 5px 8px;
+  cursor: grab;
+  touch-action: none;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
+}
+.note-tape-strip {
+  display: block;
+  height: 23px;
+  background: rgba(238, 238, 232, 0.78);
+  -webkit-backdrop-filter: blur(1px);
+  backdrop-filter: blur(1px);
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.5);
+  clip-path: polygon(
+    0 0, 100% 0, 98% 20%, 100% 40%, 98% 60%, 100% 80%, 98% 100%,
+    0 100%, 2% 80%, 0 60%, 2% 40%, 0 20%
+  );
+  transition: background 0.15s, transform 0.18s var(--ease);
+}
+.note-tape:hover .note-tape-strip {
+  background: rgba(246, 246, 241, 0.9);
+}
+.note.is-dragging .note-tape-strip {
+  background: rgba(248, 248, 244, 0.92);
+  transform: scaleY(1.06);
 }
 
 .note-pinhead {
   position: absolute;
-  top: -5px;
+  top: 50%;
   left: 50%;
   width: 13px;
   height: 13px;
-  margin-left: -6.5px;
+  margin: -6.5px 0 0 -6.5px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, #6b6b66 0 18%, #2a2a28 60%);
   box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3), 1px 4px 4px -1px rgba(0, 0, 0, 0.18);
-  z-index: 2;
   pointer-events: none;
 }
 
 .note-bar {
-  position: relative;
   flex: none;
-  height: 26px;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  height: 30px;
+  display: flex;
   align-items: center;
-  padding: 2px 3px 0;
-  touch-action: none;
-}
-.note-grip {
-  display: none;
-  grid-column: 2;
-  width: 26px;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(0, 0, 0, 0.13);
+  justify-content: flex-end;
+  padding: 6px 4px 0 10px;
 }
 .note-more {
-  grid-column: 3;
-  justify-self: end;
   width: 26px;
   height: 22px;
   display: inline-flex;
@@ -944,7 +934,7 @@ body.is-resizing-note * {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  padding: 0 16px 18px;
+  padding: 2px 16px 20px;
 }
 .note-title {
   font-size: 15px;
@@ -1006,15 +996,15 @@ body.is-resizing-note * {
 }
 
 .note-resize {
-  position: absolute;
+  position: absolute !important;
   right: 0;
   bottom: 0;
   width: 18px;
   height: 18px;
   cursor: nwse-resize;
+  touch-action: none;
   opacity: 0;
   transition: opacity 0.15s;
-  touch-action: none;
 }
 .note-resize::after {
   content: '';
@@ -1023,9 +1013,8 @@ body.is-resizing-note * {
   bottom: 4px;
   width: 7px;
   height: 7px;
-  border-right: 1.5px solid rgba(0, 0, 0, 0.32);
-  border-bottom: 1.5px solid rgba(0, 0, 0, 0.32);
-  border-bottom-right-radius: 2px;
+  border-right: 1.5px solid rgba(0, 0, 0, 0.3);
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.3);
 }
 .note:hover .note-resize,
 .note.is-selected .note-resize,
@@ -1662,16 +1651,13 @@ body.is-resizing-note * {
    ========================================================================== */
 
 @media (hover: none) {
-  .note-grip {
-    display: block;
-  }
-  .note-more,
-  .note-resize {
+  .note-more {
     opacity: 1;
   }
   .note-resize {
     width: 26px;
     height: 26px;
+    opacity: 0.7;
   }
   .topic-more {
     display: inline-flex;
@@ -1783,6 +1769,6 @@ body.is-resizing-note * {
     bottom: calc(76px + env(safe-area-inset-bottom));
   }
   .note-content {
-    padding: 0 14px 16px;
+    padding: 2px 14px 20px;
   }
 }

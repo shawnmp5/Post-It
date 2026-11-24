@@ -21,9 +21,9 @@ npm run build    # production build in dist/
 - Profile / settings at the bottom: your name, default note color, tilt and connection toggles, export / import JSON, restore samples, clear all
 
 **The wall (workspace)**
-- Freeform placement — drag notes anywhere, no grid snapping; the wall grows downward as you go
+- Freeform placement — grab a note by its tape and drop it anywhere, no grid snapping; the wall grows downward as you go
 - Click a note to edit it right where you clicked; click outside (or press Esc) to finish
-- Drag the corner to resize; ⋯ menu → *Fit height to text* returns to auto height
+- Drag the bottom-right corner to resize; ⋯ menu → *Fit height to text* returns to auto height
 - 8 muted colors, slight tilt (adjustable per note, or turn off globally), pins, duplicate, archive, delete
 - Connect two related notes with a line (⋯ → *Connect to note…*); click a line to remove it
 - Search titles and text in the current topic, filter by color; matching notes are highlighted on the wall

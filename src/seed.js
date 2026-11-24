@@ -70,7 +70,7 @@ export function createSeedData() {
     ...wall(
       personal.id,
       [
-        ['Welcome to POST IT', 'Click any note to edit it.\nDrag notes anywhere on the wall.\nPress N for a new note.\n\nThe ⋯ menu has colors, pins, tilt, connections and more.', 'yellow', { pinned: true, w: 250 }],
+        ['Welcome to POST IT', 'Click a note to edit it.\nDrag the tape to move it.\nDrag the corner to resize.\nPress N for a new note.\n\nThe ⋯ menu has colors, pins, tilt, connections and more.', 'yellow', { pinned: true, w: 250 }],
         ['Call grandma', 'Sunday after lunch. Ask about the garden and the lemon cake recipe.', 'pink'],
         ['Dentist', 'Thursday 2:30 pm\nBring insurance card', 'blue', { pinned: true }],
         ['Morning routine', 'Glass of water first\nStretch 10 min\nNo phone until 9', 'mint'],

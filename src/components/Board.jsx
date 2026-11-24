@@ -298,8 +298,8 @@ export const Board = forwardRef(function Board(
     setSelectedId(id);
     dispatch({ type: 'note/front', id });
 
-    // On touch screens the note body scrolls the wall; the top bar and corner move / resize.
-    const canMove = e.pointerType !== 'touch' || isGrip || isResize;
+    // Notes move only by their tape and resize from the bottom-right corner; the body is for reading and editing.
+    const canMove = isGrip || isResize;
     if (canMove) {
       e.currentTarget.setPointerCapture?.(e.pointerId);
       if (e.pointerType === 'touch') e.preventDefault();
@@ -319,6 +319,7 @@ export const Board = forwardRef(function Board(
       orig: { x: note.x, y: note.y, w: note.w, h: note.h ?? heightOf(note) },
       moved: false,
       canMove,
+      isGrip,
       wasEditing,
       field: fieldEl?.dataset.field || null,
       fieldEl,
@@ -405,7 +406,7 @@ export const Board = forwardRef(function Board(
       if (!g || e.pointerId !== g.pointerId) return;
       if (g.kind === 'move' && !g.moved) {
         const quickTap = performance.now() - g.t0 < 600;
-        if (!g.wasEditing && (g.pointerType !== 'touch' || quickTap)) {
+        if (!g.wasEditing && !g.isGrip && (g.pointerType !== 'touch' || quickTap)) {
           // A click (not a drag) opens the note for editing right where you clicked.
           let field = g.field || 'body';
           let caret = g.fieldEl ? caretOffsetAt(g.fieldEl, e.clientX, e.clientY) : null;

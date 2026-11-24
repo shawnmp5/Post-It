@@ -27,6 +27,14 @@ function highlight(text, query) {
   return out;
 }
 
+/** Small stable variation per note so the tape doesn't look copy-pasted. */
+function tapeFor(id) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  h = Math.abs(h);
+  return { rot: ((h % 9) - 4) * 0.9, dx: ((h >> 4) % 15) - 7, w: 68 + ((h >> 8) % 16) };
+}
+
 export const Note = memo(function Note({
   note,
   api,
@@ -51,6 +59,7 @@ export const Note = memo(function Note({
   const dirty = useRef(false);
   const fixed = note.h != null;
   const color = COLOR_MAP[note.color] || COLOR_MAP.yellow;
+  const tape = tapeFor(note.id);
 
   // Report rendered height so the canvas can size itself and draw connections.
   useLayoutEffect(() => {
@@ -146,9 +155,18 @@ export const Note = memo(function Note({
         if (!editing && !e.target.closest('button')) e.preventDefault();
       }}
     >
-      {note.pinned && <span className="note-pinhead" aria-label="Pinned" />}
-      <div className="note-bar" data-grip>
-        <span className="note-grip" aria-hidden="true" />
+      <div className="note-paper" aria-hidden="true" />
+      {/* The tape is the handle: grab it to move the note. */}
+      <div
+        className="note-tape"
+        data-grip
+        title="Drag to move"
+        style={{ transform: `translateX(calc(-50% + ${tape.dx}px)) rotate(${tape.rot}deg)` }}
+      >
+        <span className="note-tape-strip" style={{ width: tape.w }} />
+        {note.pinned && <span className="note-pinhead" aria-label="Pinned" />}
+      </div>
+      <div className="note-bar">
         <button
           type="button"
           className="note-more"
@@ -205,7 +223,7 @@ export const Note = memo(function Note({
         )}
       </div>
 
-      <div className="note-resize" data-resize aria-hidden="true" />
+      <div className="note-resize" data-resize title="Drag to resize" aria-hidden="true" />
     </div>
   );
 });
