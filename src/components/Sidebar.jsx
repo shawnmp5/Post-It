@@ -263,18 +263,43 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
         />
       )}
       <div className="sidebar-brand">
-        <Logo size={26} />
-        {!isMobile && (
-          <button type="button" className="icon-btn sidebar-close" onClick={onHide} aria-label="Hide sidebar" title="Hide sidebar (Ctrl/⌘+\\)">
-            <IconSidebar />
+        <Logo size={24} />
+        <div className="brand-tools">
+          <button
+            type="button"
+            className={`icon-btn ${addMenu ? 'is-active' : ''}`}
+            title="New topic or group"
+            aria-label="New topic or group"
+            onClick={(e) => setAddMenu(addMenu ? null : e.currentTarget)}
+          >
+            <IconFolderPlus />
           </button>
-        )}
-        {isMobile && (
-          <button type="button" className="icon-btn sidebar-close" onClick={onClose} aria-label="Close menu">
-            <IconClose />
+          <button
+            type="button"
+            className="icon-btn"
+            title="New note (N)"
+            aria-label="New note"
+            onClick={() => {
+              if (isMobile) onClose();
+              window.dispatchEvent(new Event('postit:new-note'));
+            }}
+          >
+            <IconCompose />
           </button>
-        )}
+          {isMobile ? (
+            <button type="button" className="icon-btn" onClick={onClose} aria-label="Close menu">
+              <IconClose />
+            </button>
+          ) : (
+            <button type="button" className="icon-btn" onClick={onHide} aria-label="Hide sidebar" title="Hide sidebar (Ctrl/⌘+\\)">
+              <IconSidebar />
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* The wall's search field is placed here while the sidebar is showing. */}
+      <div id="sidebar-search-slot" className="sidebar-search-slot" />
 
       <div className="sidebar-section-head">
         <span className="section-label">Topics</span>
@@ -409,30 +434,8 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
             <span className="profile-name">{settings.userName || 'You'}</span>
             <span className="profile-sub">Settings</span>
           </span>
+          <IconSettings className="profile-gear" />
         </button>
-        <div className="footer-tools">
-          <button
-            type="button"
-            className={`icon-btn ${addMenu ? 'is-active' : ''}`}
-            title="New topic or group"
-            aria-label="New topic or group"
-            onClick={(e) => setAddMenu(addMenu ? null : e.currentTarget)}
-          >
-            <IconFolderPlus />
-          </button>
-          <button
-            type="button"
-            className="icon-btn"
-            title="New note (N)"
-            aria-label="New note"
-            onClick={() => {
-              if (isMobile) onClose();
-              window.dispatchEvent(new Event('postit:new-note'));
-            }}
-          >
-            <IconCompose />
-          </button>
-        </div>
       </div>
 
       {addMenu && (

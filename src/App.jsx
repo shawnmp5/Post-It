@@ -146,6 +146,21 @@ export default function App() {
     };
   }, [dispatch, toast]);
 
+  // Appearance: light, graphite dark, or follow the system.
+  const themePref = data.settings.theme || 'light';
+  const [systemDark, setSystemDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
+  useEffect(() => {
+    const m = window.matchMedia('(prefers-color-scheme: dark)');
+    const on = () => setSystemDark(m.matches);
+    m.addEventListener('change', on);
+    return () => m.removeEventListener('change', on);
+  }, []);
+  const dark = themePref === 'dark' || (themePref === 'system' && systemDark);
+  useEffect(() => {
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#1c1c1e' : '#f5f5f7');
+  }, [dark]);
+
   const activeName = data.topics.find((t) => t.id === data.activeTopicId)?.name;
   useEffect(() => {
     document.title = activeName ? `${activeName} — POST IT` : 'POST IT';

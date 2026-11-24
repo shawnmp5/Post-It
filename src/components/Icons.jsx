@@ -169,6 +169,7 @@ export const IconSidebar = make(
     <path d="M6 3v10M3.6 5.6h1M3.6 7.6h1" />
   </>,
 );
+export const IconMoon = make(<path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z" />);
 export const IconFolder = make(
   <path d="M2.5 4.5a1 1 0 0 1 1-1h2.8l1.4 1.5h4.8a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z" />,
 );

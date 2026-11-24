@@ -4112,3 +4112,446 @@ body,
     opacity: 0;
   }
 }
+
+/* ==========================================================================
+   Graphite dark mode
+   Charcoal surfaces, smoky glass, graphite accents. Notes keep their colours
+   (slightly softened) and their dark ink.
+   ========================================================================== */
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg-app: #1c1c1e;
+  --bg-sidebar: #232325;
+  --bg-elev: #2c2c2e;
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-press: rgba(255, 255, 255, 0.1);
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --text: #f5f5f7;
+  --text-2: rgba(235, 235, 245, 0.62);
+  --text-3: rgba(235, 235, 245, 0.36);
+  --ink: #d1d1d6;
+  --graphite: #8e8e93;
+  --material: rgba(44, 44, 46, 0.72);
+  --material-strong: rgba(38, 38, 40, 0.94);
+  --material-border: rgba(255, 255, 255, 0.1);
+  --fill: rgba(118, 118, 128, 0.24);
+  --fill-strong: rgba(118, 118, 128, 0.36);
+  --focus: rgba(152, 152, 157, 0.55);
+  --shadow-pop: 0 18px 44px -14px rgba(0, 0, 0, 0.6), 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+:root[data-theme='dark'] ::selection {
+  background: rgba(152, 152, 157, 0.4);
+}
+:root[data-theme='dark'] body,
+:root[data-theme='dark'] .app,
+:root[data-theme='dark'] .workspace,
+:root[data-theme='dark'] .board-scroll {
+  background: var(--bg-app);
+  color: var(--text);
+}
+:root[data-theme='dark'] .board-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: var(--bg-app);
+}
+
+/* Sidebar */
+:root[data-theme='dark'] .sidebar {
+  background: rgba(40, 40, 42, 0.78);
+  box-shadow:
+    0 0 0 0.5px rgba(255, 255, 255, 0.08),
+    0 16px 40px -16px rgba(0, 0, 0, 0.7);
+}
+@media (max-width: 767px) {
+  :root[data-theme='dark'] .sidebar {
+    background: rgba(32, 32, 34, 0.96);
+  }
+}
+:root[data-theme='dark'] .sidebar-footer {
+  border-top-color: rgba(255, 255, 255, 0.07);
+}
+:root[data-theme='dark'] .section-label,
+:root[data-theme='dark'] .topic-count {
+  color: var(--text-3);
+}
+:root[data-theme='dark'] .topic-row {
+  color: rgba(245, 245, 247, 0.85);
+}
+:root[data-theme='dark'] .topic-row:hover,
+:root[data-theme='dark'] .group-row:hover,
+:root[data-theme='dark'] .profile:hover,
+:root[data-theme='dark'] .profile.is-open {
+  background: rgba(255, 255, 255, 0.06);
+}
+:root[data-theme='dark'] .topic-row.is-active {
+  background: rgba(255, 255, 255, 0.11);
+  color: #fff;
+}
+:root[data-theme='dark'] .topic-row.is-dragging {
+  background: #3a3a3c;
+}
+:root[data-theme='dark'] .group-row,
+:root[data-theme='dark'] .group-chev,
+:root[data-theme='dark'] .group-icon {
+  color: var(--text-2);
+}
+:root[data-theme='dark'] .topic-swatch {
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+}
+:root[data-theme='dark'] .avatar {
+  background: linear-gradient(180deg, #8e8e93, #636366);
+}
+:root[data-theme='dark'] .footer-tools .icon-btn,
+:root[data-theme='dark'] .sidebar-close {
+  color: var(--text-2);
+}
+:root[data-theme='dark'] .footer-tools .icon-btn:hover:not(:disabled) {
+  color: #fff;
+}
+:root[data-theme='dark'] .topic-rename {
+  background: #1c1c1e;
+  color: var(--text);
+}
+:root[data-theme='dark'] .topic-empty {
+  border-color: var(--line-strong);
+  color: var(--text-2);
+}
+
+/* Header, toolbar, dock */
+:root[data-theme='dark'] .ws-header {
+  background: linear-gradient(180deg, #1c1c1e 0%, #1c1c1e 58%, rgba(28, 28, 30, 0) 100%);
+}
+:root[data-theme='dark'] .ws-sub,
+:root[data-theme='dark'] .ws-meta {
+  color: var(--text-3);
+}
+:root[data-theme='dark'] .menu-btn,
+:root[data-theme='dark'] .ws-actions,
+:root[data-theme='dark'] .floating-controls.dock {
+  background: rgba(44, 44, 46, 0.78);
+  box-shadow:
+    0 0 0 0.5px rgba(255, 255, 255, 0.1),
+    0 14px 34px -14px rgba(0, 0, 0, 0.7);
+  color: var(--text-2);
+}
+:root[data-theme='dark'] .search-pill,
+:root[data-theme='dark'] .ws-actions .search-pill {
+  background: rgba(118, 118, 128, 0.24);
+  color: var(--text-3);
+}
+:root[data-theme='dark'] .search-pill-input {
+  color: var(--text);
+}
+:root[data-theme='dark'] .search-pill-input::placeholder {
+  color: var(--text-3);
+}
+:root[data-theme='dark'] .search-pill:focus-within,
+:root[data-theme='dark'] .search-pill.is-active {
+  background: #3a3a3c;
+  color: var(--text);
+}
+:root[data-theme='dark'] .search-pill kbd {
+  color: var(--text-3);
+}
+:root[data-theme='dark'] .tb-group .icon-btn,
+:root[data-theme='dark'] .icon-btn {
+  color: var(--text-2);
+}
+:root[data-theme='dark'] .tb-group .icon-btn:hover:not(:disabled),
+:root[data-theme='dark'] .icon-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+:root[data-theme='dark'] .tb-group .icon-btn.is-active,
+:root[data-theme='dark'] .icon-btn.is-active {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  box-shadow: none;
+}
+:root[data-theme='dark'] .zoom-value {
+  color: var(--text-2);
+}
+:root[data-theme='dark'] .zoom-value:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+:root[data-theme='dark'] .fc-sep {
+  background: rgba(255, 255, 255, 0.14);
+}
+:root[data-theme='dark'] .dock-new {
+  background: #f5f5f7;
+  color: #1c1c1e;
+}
+:root[data-theme='dark'] .dock-new:hover {
+  background: #fff;
+}
+
+/* Buttons, fields, switches */
+:root[data-theme='dark'] .btn-primary {
+  background: #f5f5f7;
+  border-color: #f5f5f7;
+  color: #1c1c1e;
+}
+:root[data-theme='dark'] .btn-primary:hover {
+  background: #fff;
+  border-color: #fff;
+}
+:root[data-theme='dark'] .btn:not(.btn-primary):not(.btn-danger),
+:root[data-theme='dark'] .text-btn {
+  background: var(--fill);
+  color: var(--text);
+}
+:root[data-theme='dark'] .btn:not(.btn-primary):not(.btn-danger):hover,
+:root[data-theme='dark'] .text-btn:hover {
+  background: var(--fill-strong);
+  color: #fff;
+}
+:root[data-theme='dark'] .text-input {
+  background: var(--fill);
+  color: var(--text);
+}
+:root[data-theme='dark'] .text-input:focus {
+  background: #3a3a3c;
+}
+:root[data-theme='dark'] kbd {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: var(--text-2);
+}
+:root[data-theme='dark'] .toggle input:checked + .toggle-track,
+:root[data-theme='dark'] .menu-check.is-on {
+  background: var(--graphite);
+}
+:root[data-theme='dark'] .seg {
+  background: var(--fill);
+}
+:root[data-theme='dark'] .seg button {
+  color: var(--text-2);
+}
+:root[data-theme='dark'] .seg button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+:root[data-theme='dark'] .seg .seg-value {
+  background: #636366;
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+:root[data-theme='dark'] .swatch.is-active {
+  box-shadow:
+    inset 0 0 0 1px var(--swatch-edge),
+    0 0 0 2px #2c2c2e,
+    0 0 0 3.5px #d1d1d6;
+}
+:root[data-theme='dark'] .font-tile {
+  background: var(--fill);
+}
+:root[data-theme='dark'] .font-tile:hover {
+  background: var(--fill-strong);
+}
+:root[data-theme='dark'] .font-tile.is-active {
+  background: #3a3a3c;
+  box-shadow: 0 0 0 1.5px #d1d1d6;
+}
+:root[data-theme='dark'] .font-sample,
+:root[data-theme='dark'] .font-tile.is-active .font-name {
+  color: var(--text);
+}
+
+/* Popovers, menus, panels */
+:root[data-theme='dark'] .popover,
+:root[data-theme='dark'] .block-menu {
+  background: var(--material-strong);
+  border-color: var(--material-border);
+  color: var(--text);
+}
+:root[data-theme='dark'] .menu-item {
+  color: var(--text);
+}
+:root[data-theme='dark'] .menu-item:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+:root[data-theme='dark'] .menu-item.is-danger {
+  color: #ff6961;
+}
+:root[data-theme='dark'] .menu-item.is-danger .menu-item-icon {
+  color: #ff6961;
+}
+:root[data-theme='dark'] .menu-item.is-danger:hover {
+  background: rgba(255, 105, 97, 0.14);
+}
+:root[data-theme='dark'] .menu-sep,
+:root[data-theme='dark'] .menu-foot,
+:root[data-theme='dark'] .color-filter,
+:root[data-theme='dark'] .panel-head,
+:root[data-theme='dark'] .rp-custom,
+:root[data-theme='dark'] .bm-foot {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+:root[data-theme='dark'] .menu-sep {
+  background: rgba(255, 255, 255, 0.1);
+}
+:root[data-theme='dark'] .result-row:hover,
+:root[data-theme='dark'] .archive-row:hover,
+:root[data-theme='dark'] .rp-item:hover,
+:root[data-theme='dark'] .sp-item:hover,
+:root[data-theme='dark'] .bm-tile:hover,
+:root[data-theme='dark'] .rp-clear:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+:root[data-theme='dark'] .result-row mark {
+  background: rgba(255, 214, 10, 0.35);
+}
+:root[data-theme='dark'] .bm-tile {
+  color: var(--text-2);
+}
+:root[data-theme='dark'] .bm-tile.is-active {
+  color: #1c1c1e;
+}
+:root[data-theme='dark'] .bm-foot code,
+:root[data-theme='dark'] .bm-keys kbd {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-2);
+}
+:root[data-theme='dark'] .bm-foot strong {
+  color: var(--text);
+}
+:root[data-theme='dark'] .filter-bar {
+  background: var(--material-strong);
+  border-color: var(--material-border);
+  color: var(--text-2);
+}
+:root[data-theme='dark'] .filter-bar strong {
+  color: var(--text);
+}
+
+/* Alerts and toasts */
+:root[data-theme='dark'] .dialog {
+  background: rgba(44, 44, 46, 0.98);
+  box-shadow:
+    0 0 0 0.5px rgba(255, 255, 255, 0.1),
+    0 30px 70px -20px rgba(0, 0, 0, 0.8);
+}
+:root[data-theme='dark'] .dialog-backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+:root[data-theme='dark'] .toast {
+  background: rgba(58, 58, 60, 0.92);
+  box-shadow:
+    0 0 0 0.5px rgba(255, 255, 255, 0.1),
+    0 16px 36px -14px rgba(0, 0, 0, 0.7);
+}
+:root[data-theme='dark'] .toast-undo {
+  color: #d1d1d6;
+}
+
+/* The wall */
+:root[data-theme='dark'] .board-empty-title {
+  color: var(--text);
+}
+:root[data-theme='dark'] .conn-line,
+:root[data-theme='dark'] .conn-end {
+  stroke: #8e8e93;
+  fill: none;
+}
+:root[data-theme='dark'] .conn-end {
+  fill: #8e8e93;
+  stroke: none;
+}
+:root[data-theme='dark'] .conn.is-hover .conn-line {
+  stroke: #f5f5f7;
+}
+:root[data-theme='dark'] .connect-hint {
+  background: #3a3a3c;
+}
+/* Notes: a touch softer so they don't glare on charcoal */
+:root[data-theme='dark'] .note-paper {
+  /* dim with an inner wash (a filter would pull the corner shadows on top) */
+  box-shadow:
+    inset 0 0 0 2000px rgba(20, 20, 22, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04),
+    var(--shadow);
+}
+:root[data-theme='dark'] .note-tape-strip {
+  background: rgba(225, 225, 220, 0.55);
+}
+:root[data-theme='dark'] .img-drop-line {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* ---------- Sidebar: tools in the top row, search under it ---------- */
+.sidebar-brand {
+  gap: 8px;
+  height: 56px;
+  padding: 0 10px 0 18px;
+}
+.brand-tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+.brand-tools .icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: rgba(0, 0, 0, 0.5);
+}
+.brand-tools .icon-btn:hover:not(:disabled),
+.brand-tools .icon-btn.is-active {
+  color: #000;
+}
+.sidebar-search-slot {
+  padding: 0 12px 8px;
+}
+.sidebar-search-slot:empty {
+  display: none;
+}
+.sidebar-search-slot .search-pill {
+  width: 100%;
+  height: 32px;
+  border-radius: 9px;
+  background: rgba(118, 118, 128, 0.1);
+}
+.sidebar-search-slot .search-pill kbd {
+  padding: 1px 5px;
+  border: 0;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+  font-size: 10.5px;
+}
+.sidebar-section-head {
+  padding: 10px 14px 6px 22px;
+}
+.section-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.38);
+}
+.sidebar-footer {
+  flex-direction: column;
+}
+.sidebar-footer .profile {
+  width: 100%;
+}
+.topic-count {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+  font-size: 11px;
+}
+:root[data-theme='dark'] .brand-tools .icon-btn {
+  color: var(--text-2);
+}
+:root[data-theme='dark'] .brand-tools .icon-btn:hover:not(:disabled),
+:root[data-theme='dark'] .brand-tools .icon-btn.is-active {
+  color: #fff;
+}
+:root[data-theme='dark'] .sidebar-search-slot .search-pill {
+  background: rgba(118, 118, 128, 0.22);
+}
+:root[data-theme='dark'] .sidebar-search-slot .search-pill kbd {
+  background: rgba(255, 255, 255, 0.08);
+}

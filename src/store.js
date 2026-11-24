@@ -108,6 +108,7 @@ export const DEFAULT_SETTINGS = {
   newNoteColor: 'random', // 'random' or a colour id
   sidebarWidth: null, // null = default width for the screen size
   noteFont: 'clean',
+  theme: 'light', // 'light' | 'dark' | 'system'
 };
 
 /* ------------------------------------------------------------------ */

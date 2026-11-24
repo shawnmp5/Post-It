@@ -105,6 +105,28 @@ export function SettingsPanel({ data, dispatch, toast, confirm, onDone }) {
       </div>
 
       <div className="field">
+        <span className="field-label">Appearance</span>
+        <div className="seg wide appearance" role="radiogroup" aria-label="Appearance">
+          {[
+            ['light', 'Light'],
+            ['dark', 'Dark'],
+            ['system', 'Auto'],
+          ].map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={(settings.theme || 'light') === id}
+              className={(settings.theme || 'light') === id ? 'seg-value' : ''}
+              onClick={() => set({ theme: id })}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="field">
         <span className="field-label">Note font</span>
         {['Clean', 'Handwritten'].map((group) => (
           <div key={group} className="font-group">

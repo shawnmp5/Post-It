@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Board } from './Board.jsx';
 import { Popover, MenuItem, MenuSep, MenuLabel } from './Popover.jsx';
 import { COLORS, COLOR_MAP, ZOOM_MAX, ZOOM_MIN } from '../store.js';
@@ -8,6 +9,7 @@ import {
   IconSearch,
   IconCompose,
   IconSidebar,
+  IconMoon,
   IconSliders,
   IconPlus,
   IconMenu,
@@ -33,6 +35,10 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
   const searchBtn = useRef(null);
   const viewBtn = useRef(null);
   const searchInput = useRef(null);
+  const [searchSlot, setSearchSlot] = useState(null);
+  useLayoutEffect(() => {
+    setSearchSlot(!isMobile && !sidebarHidden ? document.getElementById('sidebar-search-slot') : null);
+  }, [isMobile, sidebarHidden]);
   const [panel, setPanel] = useState(null); // 'search' | 'view' | 'archive'
   const [query, setQuery] = useState('');
   const [colors, setColors] = useState([]);
@@ -150,6 +156,56 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
     );
   }
 
+  // One search field: in the sidebar when it's showing, otherwise in the toolbar.
+  const searchField = (
+  <div
+    ref={searchBtn}
+    className={`search-pill ${panel === 'search' || q || colors.length ? 'is-active' : ''}`}
+    onClick={() => searchInput.current?.focus()}
+  >
+    <IconSearch />
+    <input
+      ref={searchInput}
+      id="wall-search"
+      className="search-pill-input"
+      value={query}
+      placeholder="Search"
+      aria-label={`Search ${topic.name}`}
+      autoComplete="off"
+      spellCheck={false}
+      onFocus={() => setPanel('search')}
+      onChange={(e) => {
+        setQuery(e.target.value);
+        if (panel !== 'search') setPanel('search');
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && results.live[0]) boardRef.current?.scrollToNote(results.live[0].id);
+        if (e.key === 'Escape') {
+          e.currentTarget.blur();
+          setPanel(null);
+        }
+      }}
+    />
+    {q || colors.length > 0 ? (
+      <button
+        type="button"
+        className="search-clear"
+        aria-label="Clear search"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={(e) => {
+          e.stopPropagation();
+          setQuery('');
+          setColors([]);
+        }}
+      >
+        <IconClose />
+      </button>
+    ) : (
+      <kbd>{isMac ? '⌘K' : 'Ctrl K'}</kbd>
+    )}
+  </div>
+  );
+
   const zoomBy = (d) => boardRef.current?.setZoom(Math.round((zoom + d) * 10) / 10);
 
   return (
@@ -203,52 +259,7 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
         </div>
 
         <div className="ws-actions">
-          <div
-            ref={searchBtn}
-            className={`search-pill ${panel === 'search' || q || colors.length ? 'is-active' : ''}`}
-            onClick={() => searchInput.current?.focus()}
-          >
-            <IconSearch />
-            <input
-              ref={searchInput}
-              id="wall-search"
-              className="search-pill-input"
-              value={query}
-              placeholder="Search"
-              aria-label={`Search ${topic.name}`}
-              autoComplete="off"
-              spellCheck={false}
-              onFocus={() => setPanel('search')}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                if (panel !== 'search') setPanel('search');
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && results.live[0]) boardRef.current?.scrollToNote(results.live[0].id);
-                if (e.key === 'Escape') {
-                  e.currentTarget.blur();
-                  setPanel(null);
-                }
-              }}
-            />
-            {q || colors.length > 0 ? (
-              <button
-                type="button"
-                className="search-clear"
-                aria-label="Clear search"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setQuery('');
-                  setColors([]);
-                }}
-              >
-                <IconClose />
-              </button>
-            ) : (
-              <kbd>{isMac ? '⌘K' : 'Ctrl K'}</kbd>
-            )}
-          </div>
+          {!searchSlot && searchField}
           <div className="tb-group" role="toolbar" aria-label="Wall options">
             <button
               ref={viewBtn}
@@ -264,6 +275,7 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
         </div>
       </header>
 
+      {searchSlot && createPortal(searchField, searchSlot)}
       <div className="ws-body">
       <Board
         key={topic.id}
@@ -345,7 +357,7 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
       </div>
 
       {panel === 'search' && (
-        <Popover anchor={searchBtn.current} onClose={closeSearch} align="end" className="panel search-panel" closeOnScroll={false}>
+        <Popover anchor={searchBtn.current} onClose={closeSearch} align={searchSlot ? 'start' : 'end'} className="panel search-panel" closeOnScroll={false}>
           <div className="color-filter" role="group" aria-label="Filter by color">
             {COLORS.map((c) => {
               const on = colors.includes(c.id);
@@ -448,6 +460,15 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
             Tidy up notes
           </MenuItem>
           <MenuSep />
+          <MenuItem
+            icon={IconMoon}
+            checked={document.documentElement.dataset.theme === 'dark'}
+            onClick={() =>
+              dispatch({ type: 'settings', patch: { theme: document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark' } })
+            }
+          >
+            Dark mode
+          </MenuItem>
           <MenuItem
             icon={IconRotateRight}
             checked={data.settings.tilt}
