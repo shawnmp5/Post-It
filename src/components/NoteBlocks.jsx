@@ -121,7 +121,7 @@ const CheckMark = () => (
 /* Rendering — shared by the read view and the editor so they line up  */
 /* ------------------------------------------------------------------ */
 
-function BlockList({ blocks, mode, images, query, sizeKey, ed, onToggle }) {
+function BlockList({ blocks, mode, images, query, sizeKey, ed, onToggle, onPatch }) {
   const pos = positions(blocks);
   const out = [];
   let n = 0;
@@ -141,6 +141,7 @@ function BlockList({ blocks, mode, images, query, sizeKey, ed, onToggle }) {
         sizeKey={sizeKey}
         ed={ed}
         onToggle={onToggle}
+        onPatch={onPatch}
       />,
     );
     // A small progress meter under each checklist.
@@ -181,7 +182,7 @@ const PLACEHOLDER = {
   code: 'Code',
 };
 
-function Block({ b, i, n, start, sole, mode, images, query, sizeKey, ed, onToggle }) {
+function Block({ b, i, n, start, sole, mode, images, query, sizeKey, ed, onToggle, onPatch }) {
   const edit = mode === 'edit';
 
   const field = (extraCls = '') =>
@@ -282,10 +283,12 @@ function Block({ b, i, n, start, sole, mode, images, query, sizeKey, ed, onToggl
     case 'image': {
       const src = b.src?.startsWith('img:') ? images?.[b.src.slice(4)] : /^(https?:|data:image\/)/.test(b.src || '') ? b.src : null;
       return (
-        <div className="blk blk-image">
-          {src ? <img src={src} alt={b.alt || ''} draggable={false} /> : <div className="blk-img-missing">Image not found</div>}
-          {remove('Remove image')}
-        </div>
+        <ImageBlock
+          b={b}
+          src={src}
+          removeBtn={remove('Remove image')}
+          onWidth={(w) => (edit ? ed.patch(i, { width: w }) : onPatch?.(i, { width: w }))}
+        />
       );
     }
     case 'table':
@@ -293,6 +296,57 @@ function Block({ b, i, n, start, sole, mode, images, query, sizeKey, ed, onToggl
     default:
       return <div className={`blk blk-text ${sole ? 'is-sole' : ''}`}>{field()}</div>;
   }
+}
+
+/** Image with side handles: drag either one to resize (the image stays centred). */
+function ImageBlock({ b, src, removeBtn, onWidth }) {
+  const ref = useRef(null);
+  const [live, setLive] = useState(null); // width % while dragging
+  const width = live ?? b.width ?? 100;
+
+  const start = (e, side) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const box = ref.current.getBoundingClientRect(); // full column width, in screen px
+    const handle = e.currentTarget;
+    handle.setPointerCapture?.(e.pointerId);
+    const sx = e.clientX;
+    const startW = b.width ?? 100;
+    let w = startW;
+    const move = (ev) => {
+      const dx = (ev.clientX - sx) * (side === 'left' ? -1 : 1);
+      // Centred image: each side moves by dx, so the width changes by 2·dx.
+      w = Math.round(Math.min(100, Math.max(15, startW + ((dx * 2) / box.width) * 100)));
+      setLive(w);
+    };
+    const up = () => {
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', up);
+      handle.removeEventListener('pointercancel', up);
+      setLive(null);
+      if (w !== startW) onWidth(w);
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', up);
+    handle.addEventListener('pointercancel', up);
+  };
+
+  return (
+    <div className={`blk blk-image ${live != null ? 'is-resizing' : ''}`} ref={ref}>
+      {src ? (
+        <div className="img-frame" style={{ width: `${width}%` }}>
+          <img src={src} alt={b.alt || ''} draggable={false} />
+          <span className="img-handle is-left" onPointerDown={(e) => start(e, 'left')} onMouseDown={keep} title="Drag to resize" />
+          <span className="img-handle is-right" onPointerDown={(e) => start(e, 'right')} onMouseDown={keep} title="Drag to resize" />
+          {live != null && <span className="img-size">{live}%</span>}
+          {removeBtn}
+        </div>
+      ) : (
+        <div className="blk-img-missing">Image not found</div>
+      )}
+    </div>
+  );
 }
 
 function CopyButton({ text }) {
@@ -467,6 +521,7 @@ export function NoteView({ body, images, query, onBodyChange }) {
       images={images}
       query={query}
       onToggle={(i) => onBodyChange(fromBlocks(blocks.map((b, j) => (j === i ? { ...b, checked: !b.checked } : b))))}
+      onPatch={(i, patch) => onBodyChange(fromBlocks(blocks.map((b, j) => (j === i ? { ...b, ...patch } : b))))}
     />
   );
 }
@@ -816,6 +871,10 @@ export function BlockEditor({ note, api, focusReq, tint, onExitTop }) {
 
     toggle(i) {
       commit(set(blocks, i, { checked: !blocks[i].checked }));
+    },
+
+    patch(i, p) {
+      commit(set(blocks, i, p));
     },
 
     remove(i) {

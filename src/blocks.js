@@ -146,7 +146,11 @@ export function toBlocks(src) {
       else out.push(newBlock('quote', m[1]));
       prevQuote = true;
     } else if (/^(-{3,}|\*{3,})\s*$/.test(l)) out.push(newBlock('hr'));
-    else if ((m = /^!\[([^\]]*)\]\(([^)\s]+)\)\s*$/.exec(l))) out.push(newBlock('image', '', { alt: m[1], src: m[2] }));
+    else if ((m = /^!\[([^\]]*)\]\(([^)\s]+)\)\s*$/.exec(l))) {
+      // Optional width as a percentage: ![alt|60](src)
+      const wm = /^(.*?)\|(\d{1,3})$/.exec(m[1]);
+      out.push(newBlock('image', '', { alt: wm ? wm[1] : m[1], src: m[2], width: wm ? Math.min(100, Math.max(10, Number(wm[2]))) : 100 }));
+    }
     else if ((m = /^ {2}(.*)$/.exec(l)) && LISTS.has(last()?.type)) last().text += `\n${m[1]}`;
     else out.push(newBlock('text', l));
     i++;
@@ -186,9 +190,11 @@ export function fromBlocks(blocks) {
       case 'hr':
         lines.push('---');
         break;
-      case 'image':
-        lines.push(`![${b.alt || ''}](${b.src})`);
+      case 'image': {
+        const w = b.width && b.width < 100 ? `|${Math.round(b.width)}` : '';
+        lines.push(`![${b.alt || ''}${w}](${b.src})`);
         break;
+      }
       case 'table': {
         const row = (r) => `| ${r.map(escCell).join(' | ')} |`;
         lines.push([row(b.rows[0]), `| ${b.rows[0].map(() => '---').join(' | ')} |`, ...b.rows.slice(1).map(row)].join('\n'));
