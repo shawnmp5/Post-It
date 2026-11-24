@@ -108,7 +108,8 @@ export const Board = forwardRef(function Board(
     });
   }
   useEffect(() => () => roRef.current?.disconnect(), []);
-  const heightOf = useCallback((n) => n.h ?? heights.current.get(n.id) ?? EST_H, []);
+  // Measured height wins: a resized note can still grow taller than its stored size.
+  const heightOf = useCallback((n) => heights.current.get(n.id) ?? n.h ?? EST_H, []);
 
   useLayoutEffect(() => {
     const el = scrollRef.current;

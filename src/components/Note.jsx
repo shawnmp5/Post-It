@@ -113,7 +113,8 @@ export const Note = memo(function Note({
         '--rot': `${rotation}deg`,
         transform: `translate(${note.x}px, ${note.y}px) rotate(var(--rot))`,
         width: note.w,
-        height: fixed ? note.h : undefined,
+        // A resized note keeps at least that size but always grows to fit its content — nothing is ever cut off.
+        minHeight: fixed ? note.h : undefined,
         zIndex: dragging ? 100000 : note.z,
       }}
       onPointerDown={(e) => api.pointerDown(e, note.id)}

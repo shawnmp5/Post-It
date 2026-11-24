@@ -848,11 +848,10 @@ body.is-resizing-note * {
   inset: 0;
   border-radius: 1px 1px 2px 2px;
   pointer-events: none;
-  /* Layers, top to bottom: paper grain, sticky strip, light falling across
-     the sheet, a little shade where the bottom edge lifts, then the colour. */
+  /* Layers, top to bottom: paper grain, light falling across the sheet,
+     a little shade where the bottom edge lifts, then the colour. */
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .085 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.028) 0, rgba(0, 0, 0, 0.028) 24px, rgba(0, 0, 0, 0) 25px),
     linear-gradient(160deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0) 45%),
     linear-gradient(0deg, rgba(0, 0, 0, 0.055) 0%, rgba(0, 0, 0, 0) 16%),
     var(--note-bg);
@@ -1041,24 +1040,7 @@ body.is-resizing-note * {
   color: rgba(0, 0, 0, 0.32);
 }
 .note.is-fixed .note-body {
-  flex: 1 1 0;
-  min-height: 0;
-  overflow: auto;
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-}
-.note.is-fixed .note-body:hover {
-  scrollbar-color: rgba(0, 0, 0, 0.16) transparent;
-}
-.note.is-fixed .note-body::-webkit-scrollbar {
-  width: 6px;
-}
-.note.is-fixed .note-body::-webkit-scrollbar-thumb {
-  border-radius: 3px;
-  background: transparent;
-}
-.note.is-fixed .note-body:hover::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.16);
+  flex: 1 0 auto;
 }
 .note-input {
   display: block;
@@ -2727,6 +2709,10 @@ textarea.blk-cell {
 
 ::selection {
   background: rgba(0, 122, 255, 0.2);
+}
+/* No focus ring while typing inside a note — the caret is enough. */
+.note textarea:focus-visible {
+  outline: none;
 }
 :focus-visible {
   outline: 3px solid var(--focus);
