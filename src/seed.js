@@ -173,6 +173,6 @@ export function createSeedData() {
     notes,
     connections,
     activeTopicId: personal.id,
-    settings: { userName: '', tilt: true, showConnections: true, defaultColor: 'yellow' },
+    settings: { userName: '', tilt: true, showConnections: true, newNoteColor: 'random' },
   };
 }

@@ -18,6 +18,12 @@ export const COLORS = [
 ];
 export const COLOR_MAP = Object.fromEntries(COLORS.map((c) => [c.id, c]));
 
+/** A random note colour (the bright ones), avoiding `avoid` so consecutive notes differ. */
+export function randomColor(avoid) {
+  const pool = ['yellow', 'pink', 'blue', 'lavender', 'mint', 'orange'].filter((c) => c !== avoid);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 /** Note handwriting options. `scale` evens out how large each face looks. */
 export const FONTS = [
   // Clean — Apple's system faces where available, with close open-source stand-ins elsewhere.
@@ -99,7 +105,7 @@ export const DEFAULT_SETTINGS = {
   userName: '',
   tilt: true,
   showConnections: true,
-  defaultColor: 'yellow',
+  newNoteColor: 'random', // 'random' or a colour id
   sidebarWidth: null, // null = default width for the screen size
   noteFont: 'clean',
 };

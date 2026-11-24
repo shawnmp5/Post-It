@@ -7,6 +7,7 @@ import { fromBlocks, toBlocks } from '../blocks.js';
 import {
   clamp,
   makeNote,
+  randomColor,
   randomTilt,
   uid,
   NOTE_MAX_H,
@@ -542,7 +543,11 @@ export const Board = forwardRef(function Board(
       const note = makeNote(L.topic.id, {
         ...pos,
         w,
-        color: opts.color || L.settings.defaultColor || 'yellow',
+        color:
+          opts.color ||
+          (L.settings.newNoteColor && L.settings.newNoteColor !== 'random'
+            ? L.settings.newNoteColor
+            : randomColor([...L.visible].sort((a, b) => b.createdAt - a.createdAt)[0]?.color)),
         rotation: randomTilt(),
       });
       newIds.current.add(note.id);

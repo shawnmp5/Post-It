@@ -1367,13 +1367,6 @@ textarea.blk-cell {
 .blk-progress.is-complete .blk-progress-bar i {
   background: linear-gradient(90deg, #40a96b, #52c47f);
 }
-/* A light sweep across the bar when the list is finished */
-.blk-progress.is-party .blk-progress-bar i {
-  background:
-    linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.85) 50%, transparent 70%) -100% 0 / 200% 100% no-repeat,
-    linear-gradient(90deg, #40a96b, #52c47f);
-  animation: bar-shine 0.9s ease 0.15s;
-}
 .blk-progress.is-complete .blk-progress-bar {
   height: 3px;
   transition: height 0.2s ease;
@@ -1434,18 +1427,6 @@ textarea.blk-cell {
   100% {
     opacity: 0;
     transform: translate(var(--dx), calc(var(--dy) + 18px)) rotate(var(--r)) scale(1);
-  }
-}
-@keyframes bar-shine {
-  from {
-    background-position:
-      -100% 0,
-      0 0;
-  }
-  to {
-    background-position:
-      200% 0,
-      0 0;
   }
 }
 @keyframes done-pop {
@@ -2676,6 +2657,10 @@ body.is-dragging-image * {
   box-shadow: inset 0 0 0 1px var(--swatch-edge);
   transition: transform 0.12s var(--ease), box-shadow 0.12s;
   justify-self: center;
+}
+.swatch.is-random {
+  --swatch-edge: rgba(0, 0, 0, 0.1);
+  background: conic-gradient(#f6e7a3 0 25%, #f5d3d6 0 50%, #d2e3f1 0 75%, #d3eadb 0);
 }
 .swatch:hover {
   transform: translateY(-1px);

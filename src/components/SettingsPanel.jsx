@@ -83,15 +83,22 @@ export function SettingsPanel({ data, dispatch, toast, confirm, onDone }) {
       <div className="field">
         <span className="field-label">New note color</span>
         <div className="swatches">
+          <button
+            type="button"
+            className={`swatch is-random ${(settings.newNoteColor ?? 'random') === 'random' ? 'is-active' : ''}`}
+            title="Random"
+            aria-label="Random colour"
+            onClick={() => set({ newNoteColor: 'random' })}
+          />
           {COLORS.map((c) => (
             <button
               key={c.id}
               type="button"
-              className={`swatch ${settings.defaultColor === c.id ? 'is-active' : ''}`}
+              className={`swatch ${settings.newNoteColor === c.id ? 'is-active' : ''}`}
               style={{ '--swatch': c.bg, '--swatch-edge': c.edge }}
               title={c.name}
               aria-label={c.name}
-              onClick={() => set({ defaultColor: c.id })}
+              onClick={() => set({ newNoteColor: c.id })}
             />
           ))}
         </div>
