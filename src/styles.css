@@ -2660,7 +2660,17 @@ body.is-dragging-image * {
 }
 .swatch.is-random {
   --swatch-edge: rgba(0, 0, 0, 0.1);
-  background: conic-gradient(#f6e7a3 0 25%, #f5d3d6 0 50%, #d2e3f1 0 75%, #d3eadb 0);
+  /* one slice per palette colour */
+  background: conic-gradient(
+    #f6e7a3 0 12.5%,
+    #f5d3d6 0 25%,
+    #d2e3f1 0 37.5%,
+    #dfd8f2 0 50%,
+    #d3eadb 0 62.5%,
+    #f7d9bc 0 75%,
+    #ffffff 0 87.5%,
+    #e5e5e1 0
+  );
 }
 .swatch:hover {
   transform: translateY(-1px);
