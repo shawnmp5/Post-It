@@ -23,7 +23,7 @@ export default function App() {
   const { data, dispatch, canUndo, canRedo, getData } = useStore();
   const [focusNote, setFocusNote] = useState(null); // { id, token } — scroll the wall to this note
   const isMobile = useMediaQuery(MOBILE_QUERY);
-  const sidebarHidden = !isMobile && !!data.settings.sidebarHidden;
+  const sidebarHidden = false; // the sidebar is always there on desktop
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [toastState, setToastState] = useState(null);
   const [confirmState, setConfirmState] = useState(null);
@@ -75,11 +75,6 @@ export default function App() {
       const el = document.activeElement;
       const typing = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
       if (!(e.metaKey || e.ctrlKey)) return;
-      if (e.key === '\\') {
-        e.preventDefault();
-        dispatch({ type: 'settings', patch: { sidebarHidden: !getDataRef.current().settings.sidebarHidden } });
-        return;
-      }
       if (typing) return;
       const k = e.key.toLowerCase();
       if (k === 'z' && !e.shiftKey) {
@@ -168,8 +163,7 @@ export default function App() {
 
   return (
     <div className={`app ${isMobile ? 'is-mobile' : ''} ${sidebarHidden ? 'sidebar-hidden' : ''}`}>
-      {!sidebarHidden && <Sidebar
-        onHide={() => dispatch({ type: 'settings', patch: { sidebarHidden: true } })}
+      <Sidebar
         data={data}
         dispatch={dispatch}
         onSelectTopic={selectTopic}
@@ -178,7 +172,7 @@ export default function App() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         isMobile={isMobile}
-      />}
+      />
       {isMobile && (
         <div
           className={`drawer-backdrop ${drawerOpen ? 'is-open' : ''}`}
