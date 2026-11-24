@@ -16,6 +16,7 @@
   --text-3: #9a9a94;
   --ink: #1b1b1a;
   --danger: #b3261e;
+  --select: #3b82f6; /* selection frame + handles */
   --radius: 8px;
   --sidebar-w: 272px;
   /* Apple's San Francisco where available; Inter (its closest open match) everywhere else. */
@@ -641,9 +642,16 @@ body.is-dragging-note * {
   user-select: none !important;
   -webkit-user-select: none !important;
 }
+body.is-resize-nesw,
+body.is-resize-nesw * {
+  cursor: nesw-resize !important;
+}
+body.is-resize-nwse,
+body.is-resize-nwse * {
+  cursor: nwse-resize !important;
+}
 body.is-resizing-note,
 body.is-resizing-note * {
-  cursor: nwse-resize !important;
   user-select: none !important;
   -webkit-user-select: none !important;
 }
@@ -1021,32 +1029,79 @@ body.is-resizing-note * {
   box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.1);
 }
 
-.note-resize {
+/* Selection frame + corner handles (resize). */
+.note-frame {
   position: absolute !important;
-  z-index: 9; /* resizing still works under a corner sticker */
-  right: 0;
-  bottom: 0;
-  width: 18px;
-  height: 18px;
-  cursor: nwse-resize;
+  inset: -1px;
+  z-index: 9;
+  border: 1.5px solid var(--select);
+  border-radius: 2px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.note-handle {
+  position: absolute !important;
+  z-index: 10;
+  width: 10px;
+  height: 10px;
+  margin: -5px;
+  border-radius: 2.5px;
+  background: #fff;
+  box-shadow:
+    0 0 0 1.5px var(--select),
+    0 1px 3px rgba(0, 0, 0, 0.18);
   touch-action: none;
   opacity: 0;
-  transition: opacity 0.15s;
+  transform: scale(0.4);
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    transform 0.2s cubic-bezier(0.3, 1.6, 0.5, 1);
 }
-.note-resize::after {
+/* A bigger invisible grab area than the dot itself. */
+.note-handle::before {
   content: '';
   position: absolute;
-  right: 4px;
-  bottom: 4px;
-  width: 7px;
-  height: 7px;
-  border-right: 1.5px solid rgba(0, 0, 0, 0.3);
-  border-bottom: 1.5px solid rgba(0, 0, 0, 0.3);
+  inset: -8px;
 }
-.note:hover .note-resize,
-.note.is-selected .note-resize,
-.note.is-editing .note-resize {
+.note-handle.is-nw {
+  top: -1px;
+  left: -1px;
+  cursor: nwse-resize;
+}
+.note-handle.is-ne {
+  top: -1px;
+  right: -1px;
+  cursor: nesw-resize;
+}
+.note-handle.is-sw {
+  bottom: -1px;
+  left: -1px;
+  cursor: nesw-resize;
+}
+.note-handle.is-se {
+  bottom: -1px;
+  right: -1px;
+  cursor: nwse-resize;
+}
+.note.is-selected .note-frame,
+.note.is-editing .note-frame,
+.note.is-selected .note-handle,
+.note.is-editing .note-handle {
   opacity: 1;
+}
+.note.is-selected .note-handle,
+.note.is-editing .note-handle {
+  transform: scale(1);
+  pointer-events: auto;
+}
+.note-handle:hover {
+  transform: scale(1.25) !important;
+}
+.note.is-dragging .note-frame,
+.note.is-dragging .note-handle {
+  opacity: 0;
 }
 
 /* ---------- Note blocks (shared by the read view and the editor) ----------
@@ -2536,10 +2591,13 @@ textarea.blk-cell {
     opacity: 0.85 !important;
     transform: scale(0.85) !important;
   }
-  .note-resize {
-    width: 26px;
-    height: 26px;
-    opacity: 0.7;
+  .note-handle {
+    width: 12px;
+    height: 12px;
+    margin: -6px;
+  }
+  .note-handle::before {
+    inset: -12px;
   }
   .topic-more {
     display: inline-flex;

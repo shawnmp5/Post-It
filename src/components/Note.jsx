@@ -245,7 +245,11 @@ export const Note = memo(function Note({
         />
       ))}
 
-      <div className="note-resize" data-resize title="Drag to resize" aria-hidden="true" />
+      {/* Selection frame with a resize handle on each corner. */}
+      <div className="note-frame" aria-hidden="true" />
+      {['nw', 'ne', 'sw', 'se'].map((c) => (
+        <div key={c} className={`note-handle is-${c}`} data-resize={c} title="Drag to resize" aria-hidden="true" />
+      ))}
     </div>
   );
 });

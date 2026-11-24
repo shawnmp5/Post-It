@@ -249,7 +249,7 @@ export const Board = forwardRef(function Board(
   const endGesture = () => {
     cancelAnimationFrame(raf.current);
     gesture.current = null;
-    document.body.classList.remove('is-dragging-note', 'is-resizing-note', 'is-panning');
+    document.body.classList.remove('is-dragging-note', 'is-resizing-note', 'is-resize-nesw', 'is-resize-nwse', 'is-panning');
     setDraggingId(null);
     setPanning(false);
   };
@@ -297,7 +297,9 @@ export const Board = forwardRef(function Board(
     }
     e.stopPropagation();
     const target = e.target;
-    const isResize = !!target.closest('[data-resize]');
+    const resizeEl = target.closest('[data-resize]');
+    const isResize = !!resizeEl;
+    const corner = resizeEl?.dataset.resize || 'se';
     const isGrip = !!target.closest('[data-grip]');
     const fieldEl = target.closest('[data-field]');
     const wasEditing = L.editing?.id === id;
@@ -306,7 +308,7 @@ export const Board = forwardRef(function Board(
     setSelectedId(id);
     dispatch({ type: 'note/front', id });
 
-    // Notes move only by their tape and resize from the bottom-right corner; the body is for reading and editing.
+    // Notes move only by their tape and resize from their corner handles; the body is for reading and editing.
     const canMove = isGrip || isResize;
     if (canMove) {
       e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -315,6 +317,7 @@ export const Board = forwardRef(function Board(
     const p = toCanvas(e.clientX, e.clientY);
     gesture.current = {
       kind: isResize ? 'resize' : 'move',
+      corner,
       id,
       pointerId: e.pointerId,
       pointerType: e.pointerType,
@@ -398,14 +401,20 @@ export const Board = forwardRef(function Board(
           }
           raf.current = requestAnimationFrame(dragFrame);
         } else {
-          document.body.classList.add('is-resizing-note');
+          document.body.classList.add('is-resizing-note', g.corner === 'ne' || g.corner === 'sw' ? 'is-resize-nesw' : 'is-resize-nwse');
         }
       }
       if (g.kind === 'resize') {
+        // Each corner moves its own two edges; the opposite corner stays put.
         const z = L.zoom;
-        const w = Math.round(clamp(g.orig.w + dx / z, NOTE_MIN_W, NOTE_MAX_W));
-        const h = Math.round(clamp(g.orig.h + dy / z, NOTE_MIN_H, NOTE_MAX_H));
-        dispatch({ type: 'note/update', id: g.id, patch: { w, h }, touch: false });
+        const west = g.corner === 'nw' || g.corner === 'sw';
+        const north = g.corner === 'nw' || g.corner === 'ne';
+        const w = Math.round(clamp(g.orig.w + (west ? -dx : dx) / z, NOTE_MIN_W, NOTE_MAX_W));
+        const h = Math.round(clamp(g.orig.h + (north ? -dy : dy) / z, NOTE_MIN_H, NOTE_MAX_H));
+        const patch = { w, h };
+        if (west) patch.x = Math.max(0, Math.round(g.orig.x + g.orig.w - w));
+        if (north) patch.y = Math.max(0, Math.round(g.orig.y + g.orig.h - h));
+        dispatch({ type: 'note/update', id: g.id, patch, touch: false });
       }
     };
 
