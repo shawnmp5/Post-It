@@ -2,6 +2,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffec
 import { Note } from './Note.jsx';
 import { NoteMenu } from './NoteMenu.jsx';
 import { StickerPicker } from './Stickers.jsx';
+import { ReminderPicker, formatWhen } from './Reminders.jsx';
 import {
   clamp,
   makeNote,
@@ -71,6 +72,7 @@ export const Board = forwardRef(function Board(
   const [draggingId, setDraggingId] = useState(null);
   const [menu, setMenu] = useState(null); // { id, anchor }
   const [stickerFor, setStickerFor] = useState(null); // { id, anchor }
+  const [reminderFor, setReminderFor] = useState(null); // { id, anchor }
   const [connect, setConnect] = useState(null); // { from, x, y }
   const [flashId, setFlashId] = useState(null);
   const [viewport, setViewport] = useState({ w: 800, h: 600 });
@@ -629,12 +631,16 @@ export const Board = forwardRef(function Board(
       },
       pointerDown: (e, id) => notePointerDown(e, id),
       checkpoint: () => dispatch({ type: 'checkpoint' }),
-      toast: (msg) => toast(msg),
+      toast: (msg, opts) => toast(msg, opts),
       update: (id, patch) => dispatch({ type: 'note/update', id, patch }),
       startEdit,
       stopEditing: () => setEditing(null),
       fieldFocus: () => {},
       zoom: () => live.current.zoom,
+      openReminder: (id, anchor) => {
+        setSelectedId(id);
+        setReminderFor((m) => (m?.id === id ? null : { id, anchor }));
+      },
       openStickers: (id, anchor) => {
         setSelectedId(id);
         dispatch({ type: 'note/front', id });
@@ -748,6 +754,17 @@ export const Board = forwardRef(function Board(
   const menuNote = menu && byId[menu.id];
   const stickerNote = stickerFor && byId[stickerFor.id];
   const closeStickers = useCallback(() => setStickerFor(null), []);
+  const reminderNote = reminderFor && byId[reminderFor.id];
+  const closeReminder = useCallback(() => setReminderFor(null), []);
+  const setReminder = (id, ts) => {
+    try {
+      if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+    } catch {
+      /* notifications unavailable */
+    }
+    dispatch({ type: 'note/update', id, patch: { reminder: { at: ts, fired: false } }, touch: false, record: true });
+    toast(`Reminder set for ${formatWhen(ts)}`, { undo: true });
+  };
   const closeMenu = useCallback(() => setMenu(null), []);
   const connectFrom = connect && byId[connect.from];
 
@@ -855,6 +872,23 @@ export const Board = forwardRef(function Board(
         </div>
       )}
 
+      {reminderNote && (
+        <ReminderPicker
+          anchor={reminderFor.anchor}
+          reminder={reminderNote.reminder}
+          onClose={closeReminder}
+          onSet={(ts) => {
+            setReminder(reminderNote.id, ts);
+            setReminderFor(null);
+          }}
+          onClear={() => {
+            dispatch({ type: 'note/update', id: reminderNote.id, patch: { reminder: null }, touch: false, record: true });
+            setReminderFor(null);
+            toast('Reminder removed', { undo: true });
+          }}
+        />
+      )}
+
       {stickerNote && (
         <StickerPicker
           anchor={stickerFor.anchor}
@@ -876,6 +910,11 @@ export const Board = forwardRef(function Board(
           onDelete={() => {
             setMenu(null);
             deleteNote(menuNote.id);
+          }}
+          onReminder={() => {
+            const anchor = menu.anchor;
+            setMenu(null);
+            setReminderFor({ id: menuNote.id, anchor });
           }}
           onStickers={() => {
             const anchor = menu.anchor;

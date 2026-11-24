@@ -3,6 +3,7 @@ import { Board } from './Board.jsx';
 import { Popover, MenuItem, MenuSep, MenuLabel } from './Popover.jsx';
 import { COLORS, COLOR_MAP, ZOOM_MAX, ZOOM_MIN } from '../store.js';
 import { plainText } from '../blocks.js';
+import { formatWhen } from './Reminders.jsx';
 import {
   IconSearch,
   IconSliders,
@@ -24,7 +25,7 @@ import {
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 const MOD = isMac ? '⌘' : 'Ctrl';
 
-export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, onOpenDrawer, onCreateTopic }) {
+export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, onOpenDrawer, onCreateTopic, focusNote }) {
   const topic = data.topics.find((t) => t.id === data.activeTopicId) || null;
   const boardRef = useRef(null);
   const searchBtn = useRef(null);
@@ -42,6 +43,19 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
   );
   const active = topicNotes.filter((n) => !n.archived);
   const archived = topicNotes.filter((n) => n.archived).sort((a, b) => b.updatedAt - a.updatedAt);
+  const reminders = active.filter((n) => n.reminder).sort((a, b) => a.reminder.at - b.reminder.at);
+
+  // Jump to a note (e.g. from a reminder) once its topic's wall is showing.
+  const handledFocus = useRef(null);
+  useEffect(() => {
+    if (!focusNote || handledFocus.current === focusNote.token) return undefined;
+    const target = data.notes.find((n) => n.id === focusNote.id);
+    if (!target || target.topicId !== topic?.id) return undefined;
+    handledFocus.current = focusNote.token;
+    const t = setTimeout(() => boardRef.current?.scrollToNote(focusNote.id), 120);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusNote, topic?.id]);
 
   // Reset search when switching topics.
   useEffect(() => {
@@ -322,9 +336,24 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
             })}
           </div>
           <div className="results">
-            {!q && !colors.length && (
+            {!q && !colors.length && reminders.length > 0 && (
+              <>
+                <div className="results-label">Reminders</div>
+                {reminders.map((n) => (
+                  <ResultRow
+                    key={n.id}
+                    note={n}
+                    query=""
+                    meta={`${n.reminder.at <= Date.now() ? 'Due · ' : ''}${formatWhen(n.reminder.at)}`}
+                    due={n.reminder.at <= Date.now()}
+                    onClick={() => boardRef.current?.scrollToNote(n.id)}
+                  />
+                ))}
+              </>
+            )}
+            {!q && !colors.length && reminders.length === 0 && (
               <div className="results-empty">
-                Type to search titles and text in this topic, or pick a color.
+                Type to search titles and text in this topic, or pick a color. Notes with reminders show up here.
               </div>
             )}
             {(q || colors.length > 0) && results.live.length === 0 && results.archived.length === 0 && (
@@ -499,9 +528,9 @@ function Mark({ text, q }) {
   );
 }
 
-function ResultRow({ note, query, onClick, archived }) {
+function ResultRow({ note, query, onClick, archived, meta, due }) {
   const title = note.title || firstLine(note.body) || 'Untitled';
-  const snip = note.title ? snippet(note, query) : '';
+  const snip = meta ?? (note.title ? snippet(note, query) : '');
   return (
     <button type="button" className="result-row" onClick={onClick}>
       <span className="result-swatch" style={{ background: COLOR_MAP[note.color]?.bg }} />
@@ -510,7 +539,7 @@ function ResultRow({ note, query, onClick, archived }) {
           <Mark text={title} q={query} />
         </span>
         {snip && (
-          <span className="result-snippet">
+          <span className={`result-snippet ${due ? 'is-due' : ''}`}>
             <Mark text={snip} q={query} />
           </span>
         )}

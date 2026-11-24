@@ -31,6 +31,7 @@ npm run build    # production build in dist/
 - Click a note to edit it right where you clicked; click outside (or press Esc) to finish
 - Drag any corner to resize diagonally (no frame or handles, just the resize cursor). A resized note keeps at least that size and always grows to fit its content, so nothing is cut off; ⋯ menu → *Fit height to text* returns to auto height
 - 8 muted colors, slight tilt (adjustable per note, or turn off globally), duplicate, archive, delete
+- Reminders: ⋯ → Remind me… (this evening, tomorrow, this weekend, next week, or any date & time). A bell chip shows on the note; when it's due the chip turns red, you get an in-app alert with Open (and a system notification if allowed); ✓ marks it done. Upcoming reminders are listed in Search
 - Stickers: the smiley button on a note (or ⋯ → Add sticker…) slaps on a reaction — 👍 👎 ❤️ 😂 🔥 🎉 ⭐ ✅ 🚀 and more. Drag stickers anywhere on the note; hover and hit × to peel one off
 - Connect two related notes with a line (⋯ → *Connect to note…*); click a line to remove it
 - Search titles and text in the current topic, filter by color; matching notes are highlighted on the wall

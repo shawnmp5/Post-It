@@ -1,5 +1,6 @@
 import { COLORS, clamp } from '../store.js';
 import { Popover, MenuItem, MenuSep } from './Popover.jsx';
+import { BellIcon } from './Reminders.jsx';
 import {
   IconLink,
   IconSmile,
@@ -23,7 +24,7 @@ function ago(ts) {
   return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export function NoteMenu({ note, anchor, onClose, dispatch, toast, onDelete, onConnect, onDuplicate, onArchive, onStickers }) {
+export function NoteMenu({ note, anchor, onClose, dispatch, toast, onDelete, onConnect, onDuplicate, onArchive, onStickers, onReminder }) {
   const update = (patch, record = true) => dispatch({ type: 'note/update', id: note.id, patch, touch: false, record });
   const tilt = (delta) => update({ rotation: delta === 0 ? 0 : clamp(Math.round((note.rotation + delta) * 10) / 10, -8, 8) });
 
@@ -44,6 +45,9 @@ export function NoteMenu({ note, anchor, onClose, dispatch, toast, onDelete, onC
         ))}
       </div>
       <MenuSep />
+      <MenuItem icon={BellIcon} onClick={onReminder} hint={note.reminder ? '●' : undefined}>
+        {note.reminder ? 'Change reminder…' : 'Remind me…'}
+      </MenuItem>
       <MenuItem icon={IconSmile} onClick={onStickers}>
         Add sticker…
       </MenuItem>

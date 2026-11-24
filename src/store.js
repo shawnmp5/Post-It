@@ -88,6 +88,7 @@ export function makeNote(topicId, partial = {}) {
     archived: false,
     images: {},
     stickers: [],
+    reminder: null, // { at: timestamp, fired: boolean }
     createdAt: now,
     updatedAt: now,
     ...partial,
@@ -241,6 +242,7 @@ function dataReducer(d, a) {
         y: src.y + 28,
         rotation: a.rotation ?? src.rotation,
         z: maxZ(d.notes, src.topicId) + 1,
+        reminder: null,
         createdAt: now,
         updatedAt: now,
       };
@@ -338,6 +340,7 @@ function normalize(raw) {
             body,
             images,
             stickers: Array.isArray(n.stickers) ? n.stickers.filter((t) => t && t.id && t.emoji) : [],
+            reminder: n.reminder && Number.isFinite(n.reminder.at) ? { at: n.reminder.at, fired: !!n.reminder.fired } : null,
           };
         })
     : [];

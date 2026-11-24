@@ -1872,6 +1872,177 @@ textarea.blk-cell {
   color: var(--text-2);
 }
 
+/* ---------- Reminders ---------- */
+
+.reminder-chip {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.1);
+  font-family: var(--font);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.62);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.reminder-chip:hover {
+  background: rgba(255, 255, 255, 0.75);
+}
+.rc-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 4px 0 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.rc-bell {
+  display: inline-flex;
+  transform-origin: 50% 10%;
+}
+.rc-done {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.reminder-chip:hover .rc-done,
+.reminder-chip.is-due .rc-done {
+  opacity: 1;
+}
+.rc-done:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+.rc-done svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.reminder-chip.is-due {
+  background: rgba(255, 59, 48, 0.14);
+  box-shadow: inset 0 0 0 0.5px rgba(255, 59, 48, 0.35);
+  color: #c4271f;
+}
+.reminder-chip.is-due .rc-bell {
+  animation: bell-ring 1.8s ease-in-out infinite;
+}
+@keyframes bell-ring {
+  0%, 60%, 100% { transform: rotate(0); }
+  10% { transform: rotate(16deg); }
+  20% { transform: rotate(-14deg); }
+  30% { transform: rotate(10deg); }
+  40% { transform: rotate(-6deg); }
+  50% { transform: rotate(3deg); }
+}
+
+.reminder-picker {
+  width: 292px;
+  padding: 8px;
+}
+.rp-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.rp-bell {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: #ff9f0a;
+  color: #fff;
+}
+.rp-current {
+  margin: 0 6px 6px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.rp-current.is-due {
+  color: #c4271f;
+}
+.rp-list {
+  display: flex;
+  flex-direction: column;
+}
+.rp-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 7px;
+  font-size: 13.5px;
+  text-align: left;
+}
+.rp-item:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+.rp-when {
+  font-size: 12px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.rp-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 10px 6px 4px;
+  border-top: 0.5px solid rgba(0, 0, 0, 0.1);
+}
+.rp-label {
+  font-size: 12px;
+  color: var(--text-2);
+}
+.rp-row {
+  display: flex;
+  gap: 6px;
+}
+.rp-row .text-input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  font-size: 13px;
+}
+.rp-row .btn {
+  height: 32px;
+}
+.rp-row .btn:disabled {
+  opacity: 0.4;
+}
+.rp-clear {
+  width: 100%;
+  height: 32px;
+  margin-top: 6px;
+  border-radius: 7px;
+  font-size: 13px;
+  color: var(--danger);
+}
+.rp-clear:hover {
+  background: rgba(179, 38, 30, 0.08);
+}
+.result-snippet.is-due {
+  color: #c4271f;
+}
+
 /* ---------- Stickers ---------- */
 
 .sticker {

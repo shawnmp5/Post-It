@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useStore, uid } from './store.js';
+import { plainText } from './blocks.js';
 import { Sidebar } from './components/Sidebar.jsx';
 import { Workspace } from './components/Workspace.jsx';
 import { ConfirmDialog } from './components/ConfirmDialog.jsx';
@@ -19,7 +20,8 @@ function useMediaQuery(q) {
 }
 
 export default function App() {
-  const { data, dispatch, canUndo, canRedo } = useStore();
+  const { data, dispatch, canUndo, canRedo, getData } = useStore();
+  const [focusNote, setFocusNote] = useState(null); // { id, token } — scroll the wall to this note
   const isMobile = useMediaQuery(MOBILE_QUERY);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [toastState, setToastState] = useState(null);
@@ -28,8 +30,8 @@ export default function App() {
 
   const toast = useCallback((message, opts = {}) => {
     clearTimeout(toastTimer.current);
-    setToastState({ id: Math.random(), message, undo: !!opts.undo });
-    toastTimer.current = setTimeout(() => setToastState(null), opts.undo ? 6000 : 2600);
+    setToastState({ id: Math.random(), message, undo: !!opts.undo, action: opts.action || null });
+    toastTimer.current = setTimeout(() => setToastState(null), opts.duration ?? (opts.undo || opts.action ? 6000 : 2600));
   }, []);
   const dismissToast = useCallback(() => {
     clearTimeout(toastTimer.current);
@@ -97,6 +99,46 @@ export default function App() {
     return () => window.removeEventListener('postit:save-failed', onFail);
   }, [toast]);
 
+  // Reminders: check every few seconds (and when the tab comes back) for anything due.
+  const getDataRef = useRef(getData);
+  getDataRef.current = getData;
+  useEffect(() => {
+    const open = (n) => {
+      dispatch({ type: 'topic/select', id: n.topicId });
+      setDrawerOpen(false);
+      setFocusNote({ id: n.id, token: Math.random() });
+    };
+    const check = () => {
+      const d = getDataRef.current();
+      const now = Date.now();
+      for (const n of d.notes) {
+        if (!n.reminder || n.reminder.fired || n.reminder.at > now || n.archived) continue;
+        dispatch({ type: 'note/update', id: n.id, patch: { reminder: { ...n.reminder, fired: true } }, touch: false });
+        const title = n.title || plainText(n.body).split('\n').find((l) => l.trim()) || 'Untitled note';
+        toast(`Reminder: ${title}`, { action: { label: 'Open', onClick: () => open(n) }, duration: 12000 });
+        try {
+          if ('Notification' in window && Notification.permission === 'granted') {
+            const notice = new Notification('POST IT reminder', { body: title, tag: n.id });
+            notice.onclick = () => {
+              window.focus();
+              open(n);
+            };
+          }
+        } catch {
+          /* notifications unavailable */
+        }
+      }
+    };
+    check();
+    const t = setInterval(check, 10000);
+    const onVis = () => document.visibilityState === 'visible' && check();
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, [dispatch, toast]);
+
   const activeName = data.topics.find((t) => t.id === data.activeTopicId)?.name;
   useEffect(() => {
     document.title = activeName ? `${activeName} — POST IT` : 'POST IT';
@@ -130,11 +172,13 @@ export default function App() {
         isMobile={isMobile}
         onOpenDrawer={() => setDrawerOpen(true)}
         onCreateTopic={createTopic}
+        focusNote={focusNote}
       />
       {toastState && (
         <Toast
           key={toastState.id}
           message={toastState.message}
+          action={toastState.action}
           onUndo={
             toastState.undo
               ? () => {

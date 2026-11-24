@@ -3,6 +3,7 @@ import { COLOR_MAP } from '../store.js';
 import { IconMore } from './Icons.jsx';
 import { BlockEditor, NoteView, highlight } from './NoteBlocks.jsx';
 import { NoteSticker } from './Stickers.jsx';
+import { ReminderChip } from './Reminders.jsx';
 
 function autosize(el) {
   if (!el) return;
@@ -98,6 +99,7 @@ export const Note = memo(function Note({
     menuOpen && 'menu-open',
     connecting && 'is-connect-target',
     note.color === 'white' && 'is-white',
+    note.reminder && note.reminder.at <= Date.now() && 'is-reminder-due',
   ]
     .filter(Boolean)
     .join(' ');
@@ -219,6 +221,17 @@ export const Note = memo(function Note({
               )}
             </div>
           </>
+        )}
+        {note.reminder && (
+          <ReminderChip
+            reminder={note.reminder}
+            onOpen={(el) => api.openReminder(note.id, el)}
+            onDone={() => {
+              api.checkpoint();
+              api.update(note.id, { reminder: null });
+              api.toast?.('Reminder done', { undo: true });
+            }}
+          />
         )}
       </div>
 
