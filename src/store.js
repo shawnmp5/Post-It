@@ -110,6 +110,7 @@ export const DEFAULT_SETTINGS = {
   noteFont: 'clean',
   theme: 'light', // 'light' | 'dark' | 'system'
   clearUI: false, // transparent interface: no panels, no lines
+  wallpaper: 'none', // 'none' | 'rain'
 };
 
 /* ------------------------------------------------------------------ */

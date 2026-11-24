@@ -4623,3 +4623,36 @@ body,
     backdrop-filter: saturate(180%) blur(28px) !important;
   }
 }
+
+/* ==========================================================================
+   Wallpaper: rain on the window
+   ========================================================================== */
+
+.wallpaper {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  pointer-events: none;
+}
+/* With a wallpaper the app's own surfaces step aside so it shows through. */
+:root[data-wallpaper='rain'] body,
+:root[data-wallpaper='rain'] .app,
+:root[data-wallpaper='rain'] .workspace,
+:root[data-wallpaper='rain'] .board-scroll {
+  background: transparent !important;
+}
+:root[data-wallpaper='rain'] body {
+  background: #0b1019 !important;
+}
+:root[data-wallpaper='rain'] .ws-header {
+  background: none !important;
+}
+:root[data-wallpaper='rain'] .board-scroll {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+.wallpaper-seg {
+  margin-bottom: 6px;
+}

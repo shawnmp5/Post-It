@@ -22,6 +22,7 @@ npm run build    # production build in dist/
 - Drag topics to reorder them (long-press on touch screens); double-click to rename
 - Drag the sidebar's right edge to make it wider or narrower (double-click the edge to reset)
 - Clear interface (Settings): no panels or lines — just type and icons over the wall; applies live
+- Rain wallpaper (Settings → Wallpaper): rain falling behind a wet window; beads on the glass swell, slide, merge and wipe clear trails. A night sky in dark mode and an overcast afternoon in light mode. A still frame with reduced motion
 - Appearance: Light, graphite Dark, or Auto (follows the system) — in Settings, or View → Dark mode
 - Profile / settings at the bottom: your name, new note color (Random by default, or a fixed colour), note font (clean: System, Rounded, Serif, Mono; handwritten: Caveat, Kalam, Patrick Hand, Gochi Hand), tilt and connection toggles, export / import JSON, restore samples, clear all
 

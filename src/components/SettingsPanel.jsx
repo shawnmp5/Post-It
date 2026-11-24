@@ -127,6 +127,27 @@ export function SettingsPanel({ data, dispatch, toast, confirm, onDone }) {
       </div>
 
       <div className="field">
+        <span className="field-label">Wallpaper</span>
+        <div className="seg wide wallpaper-seg" role="radiogroup" aria-label="Wallpaper">
+          {[
+            ['none', 'None'],
+            ['rain', 'Rain'],
+          ].map(([id, label]) => {
+            const on = (settings.wallpaper === 'rain' ? 'rain' : 'none') === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                className={on ? 'seg-value' : ''}
+                onClick={() => set({ wallpaper: id })}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
         <Toggle checked={!!settings.clearUI} onChange={(v) => set({ clearUI: v })} label="Clear interface" />
       </div>
 

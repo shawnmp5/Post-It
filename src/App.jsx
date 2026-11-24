@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar.jsx';
 import { Workspace } from './components/Workspace.jsx';
 import { ConfirmDialog } from './components/ConfirmDialog.jsx';
 import { Toast } from './components/Toast.jsx';
+import { Wallpaper } from './components/Wallpaper.jsx';
 
 const MOBILE_QUERY = '(max-width: 767px)';
 
@@ -157,9 +158,12 @@ export default function App() {
   }, []);
   const clearUI = !!data.settings.clearUI;
   const dark = themePref === 'dark' || (themePref === 'system' && systemDark);
+  const wallpaper = data.settings.wallpaper === 'rain' ? 'rain' : 'none';
   useEffect(() => {
-    document.documentElement.dataset.clear = clearUI ? 'true' : 'false';
-  }, [clearUI]);
+    const root = document.documentElement;
+    root.dataset.clear = clearUI ? 'true' : 'false';
+    root.dataset.wallpaper = wallpaper;
+  }, [clearUI, wallpaper]);
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#1c1c1e' : '#f5f5f7');
@@ -172,6 +176,7 @@ export default function App() {
 
   return (
     <div className={`app ${isMobile ? 'is-mobile' : ''} ${sidebarHidden ? 'sidebar-hidden' : ''}`}>
+      <Wallpaper kind={wallpaper} dark={dark} />
       {!sidebarHidden && <Sidebar
         onHide={() => dispatch({ type: 'settings', patch: { sidebarHidden: true } })}
         data={data}
