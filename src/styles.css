@@ -889,7 +889,7 @@ body.is-resizing-note * {
   position: absolute !important;
   top: -15px;
   left: 50%;
-  z-index: 3;
+  z-index: 8; /* above the button bar so it can always be grabbed */
   padding: 5px 8px;
   cursor: grab;
   touch-action: none;
@@ -917,12 +917,15 @@ body.is-resizing-note * {
 
 .note-bar {
   flex: none;
+  z-index: 7; /* buttons stay above stickers */
   height: 30px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 1px;
   padding: 6px 4px 0 10px;
 }
+.note-react,
 .note-more {
   width: 26px;
   height: 22px;
@@ -938,9 +941,13 @@ body.is-resizing-note * {
 .note:hover .note-more,
 .note.is-selected .note-more,
 .note.is-editing .note-more,
-.note.menu-open .note-more {
+.note.menu-open .note-more,
+.note:hover .note-react,
+.note.is-selected .note-react,
+.note.is-editing .note-react {
   opacity: 1;
 }
+.note-react:hover,
 .note-more:hover,
 .note.menu-open .note-more {
   background: rgba(0, 0, 0, 0.07);
@@ -1016,6 +1023,7 @@ body.is-resizing-note * {
 
 .note-resize {
   position: absolute !important;
+  z-index: 9; /* resizing still works under a corner sticker */
   right: 0;
   bottom: 0;
   width: 18px;
@@ -1655,6 +1663,186 @@ textarea.blk-cell {
   font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
   font-size: 10.5px;
   color: var(--text-2);
+}
+
+/* ---------- Stickers ---------- */
+
+.sticker {
+  position: absolute !important;
+  z-index: 6;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(var(--r));
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.sticker-face {
+  display: block;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  font-size: 27px;
+  line-height: 1;
+  /* White die-cut edge + a soft drop, like a real vinyl sticker. */
+  filter: drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff)
+    drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.22));
+  transition:
+    transform 0.22s cubic-bezier(0.3, 1.5, 0.5, 1),
+    filter 0.2s ease;
+}
+.sticker:hover .sticker-face {
+  transform: scale(1.1) rotate(5deg);
+}
+.sticker.is-dragging {
+  z-index: 9;
+  cursor: grabbing;
+}
+.sticker.is-dragging .sticker-face {
+  transform: scale(1.25) rotate(-4deg);
+  filter: drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff)
+    drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 10px 8px rgba(0, 0, 0, 0.25));
+}
+.sticker.is-fresh .sticker-face {
+  animation: sticker-slap 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+.sticker-burst {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+}
+.sticker.is-fresh .sticker-burst {
+  animation: sticker-burst 0.55s ease-out 0.16s both;
+}
+.sticker.is-peeling .sticker-face {
+  animation: sticker-peel 0.23s ease-in forwards;
+}
+.sticker.is-peeling .sticker-x {
+  opacity: 0 !important;
+}
+.sticker-x {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 17px;
+  height: 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #1b1b1a;
+  box-shadow: 0 0 0 1.5px #fff;
+  opacity: 0;
+  transform: scale(0.5);
+  transition:
+    opacity 0.15s ease,
+    transform 0.2s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.sticker:hover .sticker-x {
+  opacity: 1;
+  transform: scale(1);
+}
+.sticker.is-dragging .sticker-x {
+  opacity: 0;
+}
+.sticker-x svg {
+  width: 8px;
+  height: 8px;
+  stroke: #fff;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+@keyframes sticker-slap {
+  0% {
+    opacity: 0;
+    transform: scale(2.4) rotate(-28deg) translateY(-10px);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(0.84) rotate(6deg);
+  }
+  68% {
+    transform: scale(1.1) rotate(-2deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+@keyframes sticker-burst {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.6);
+    box-shadow:
+      0 0 0 2px rgba(255, 255, 255, 0.95),
+      0 0 0 5px rgba(0, 0, 0, 0.06);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.1);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0),
+      0 0 0 3px rgba(0, 0, 0, 0);
+  }
+}
+@keyframes sticker-peel {
+  to {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.4) rotate(45deg);
+  }
+}
+
+/* Picker */
+.sticker-picker {
+  width: 272px;
+  padding: 8px;
+}
+.sp-head {
+  padding: 2px 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+.sp-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 2px;
+}
+.sp-item {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  font-size: 23px;
+  line-height: 1;
+  transition: background 0.12s ease;
+  animation: sp-in 0.34s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+  animation-delay: calc(var(--i) * 11ms);
+}
+.sp-item span {
+  display: inline-block;
+  transition: transform 0.22s cubic-bezier(0.3, 1.7, 0.5, 1);
+}
+.sp-item:hover {
+  background: #f4f4f1;
+}
+.sp-item:hover span {
+  transform: scale(1.3) rotate(-8deg);
+}
+.sp-item:active span {
+  transform: scale(0.9);
+}
+@keyframes sp-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.7);
+  }
 }
 
 /* ==========================================================================
@@ -2340,8 +2528,13 @@ textarea.blk-cell {
    ========================================================================== */
 
 @media (hover: none) {
-  .note-more {
+  .note-more,
+  .note-react {
     opacity: 1;
+  }
+  .sticker-x {
+    opacity: 0.85 !important;
+    transform: scale(0.85) !important;
   }
   .note-resize {
     width: 26px;

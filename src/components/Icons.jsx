@@ -132,6 +132,15 @@ export const IconGrip = make(
   </>,
 );
 
+export const IconSmile = make(
+  <>
+    <circle cx="8" cy="8" r="5.75" />
+    <path d="M5.6 9.6c.6.8 1.4 1.2 2.4 1.2s1.8-.4 2.4-1.2" />
+    <circle cx="6" cy="6.6" r=".5" fill="currentColor" />
+    <circle cx="10" cy="6.6" r=".5" fill="currentColor" />
+  </>,
+);
+
 export function Logo({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">

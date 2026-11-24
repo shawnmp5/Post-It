@@ -2,6 +2,7 @@ import { COLORS, clamp } from '../store.js';
 import { Popover, MenuItem, MenuSep } from './Popover.jsx';
 import {
   IconLink,
+  IconSmile,
   IconCopy,
   IconArchive,
   IconTrash,
@@ -22,7 +23,7 @@ function ago(ts) {
   return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export function NoteMenu({ note, anchor, onClose, dispatch, toast, onDelete, onConnect, onDuplicate, onArchive }) {
+export function NoteMenu({ note, anchor, onClose, dispatch, toast, onDelete, onConnect, onDuplicate, onArchive, onStickers }) {
   const update = (patch, record = true) => dispatch({ type: 'note/update', id: note.id, patch, touch: false, record });
   const tilt = (delta) => update({ rotation: delta === 0 ? 0 : clamp(Math.round((note.rotation + delta) * 10) / 10, -8, 8) });
 
@@ -43,6 +44,9 @@ export function NoteMenu({ note, anchor, onClose, dispatch, toast, onDelete, onC
         ))}
       </div>
       <MenuSep />
+      <MenuItem icon={IconSmile} onClick={onStickers}>
+        Add sticker…
+      </MenuItem>
       <MenuItem icon={IconLink} onClick={onConnect}>
         Connect to note…
       </MenuItem>

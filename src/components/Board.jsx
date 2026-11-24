@@ -1,6 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Note } from './Note.jsx';
 import { NoteMenu } from './NoteMenu.jsx';
+import { StickerPicker } from './Stickers.jsx';
 import {
   clamp,
   makeNote,
@@ -69,6 +70,7 @@ export const Board = forwardRef(function Board(
   const [selectedId, setSelectedId] = useState(null);
   const [draggingId, setDraggingId] = useState(null);
   const [menu, setMenu] = useState(null); // { id, anchor }
+  const [stickerFor, setStickerFor] = useState(null); // { id, anchor }
   const [connect, setConnect] = useState(null); // { from, x, y }
   const [flashId, setFlashId] = useState(null);
   const [viewport, setViewport] = useState({ w: 800, h: 600 });
@@ -622,6 +624,12 @@ export const Board = forwardRef(function Board(
       startEdit,
       stopEditing: () => setEditing(null),
       fieldFocus: () => {},
+      zoom: () => live.current.zoom,
+      openStickers: (id, anchor) => {
+        setSelectedId(id);
+        dispatch({ type: 'note/front', id });
+        setStickerFor((m) => (m?.id === id ? null : { id, anchor }));
+      },
       openMenu: (id, anchor) => {
         setSelectedId(id);
         dispatch({ type: 'note/front', id });
@@ -691,7 +699,45 @@ export const Board = forwardRef(function Board(
         })
     : [];
 
+  /** Find a free spot around the note's edge for a new sticker (centre, in note coordinates). */
+  const addSticker = (id, emoji) => {
+    const n = live.current.byId[id];
+    if (!n) return;
+    const w = n.w;
+    const h = heightOf(n);
+    const existing = n.stickers || [];
+    // Corners and edges first — stickers poke out over the paper like real ones.
+    const spots = [
+      [w - 6, h - 8],
+      [w + 4, h * 0.45],
+      [12, h - 6],
+      [w * 0.55, h + 2],
+      [w + 6, 20],
+      [-4, h * 0.5],
+      [w - 46, h - 4],
+      [w * 0.3, h + 2],
+      [w + 4, h * 0.72],
+      [-4, h * 0.78],
+    ];
+    const free = spots.find(([x, y]) => existing.every((t) => Math.hypot(t.x - x, t.y - y) > 34)) || [
+      w * (0.2 + Math.random() * 0.7),
+      h * (0.3 + Math.random() * 0.6),
+    ];
+    const jitter = () => Math.round(Math.random() * 8 - 4);
+    const sticker = {
+      id: uid('s'),
+      emoji,
+      x: Math.round(free[0]) + jitter(),
+      y: Math.round(free[1]) + jitter(),
+      rot: Math.round(Math.random() * 36 - 18),
+      addedAt: Date.now(),
+    };
+    dispatch({ type: 'note/update', id, patch: { stickers: [...existing, sticker] }, record: true });
+  };
+
   const menuNote = menu && byId[menu.id];
+  const stickerNote = stickerFor && byId[stickerFor.id];
+  const closeStickers = useCallback(() => setStickerFor(null), []);
   const closeMenu = useCallback(() => setMenu(null), []);
   const connectFrom = connect && byId[connect.from];
 
@@ -799,6 +845,17 @@ export const Board = forwardRef(function Board(
         </div>
       )}
 
+      {stickerNote && (
+        <StickerPicker
+          anchor={stickerFor.anchor}
+          onClose={closeStickers}
+          onPick={(emoji) => {
+            addSticker(stickerNote.id, emoji);
+            setStickerFor(null);
+          }}
+        />
+      )}
+
       {menuNote && (
         <NoteMenu
           note={menuNote}
@@ -809,6 +866,11 @@ export const Board = forwardRef(function Board(
           onDelete={() => {
             setMenu(null);
             deleteNote(menuNote.id);
+          }}
+          onStickers={() => {
+            const anchor = menu.anchor;
+            setMenu(null);
+            setStickerFor({ id: menuNote.id, anchor });
           }}
           onConnect={() => {
             setMenu(null);

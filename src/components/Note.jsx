@@ -2,6 +2,7 @@ import { memo, useEffect, useLayoutEffect, useRef } from 'react';
 import { COLOR_MAP } from '../store.js';
 import { IconMore } from './Icons.jsx';
 import { BlockEditor, NoteView, highlight } from './NoteBlocks.jsx';
+import { NoteSticker } from './Stickers.jsx';
 
 function autosize(el) {
   if (!el) return;
@@ -134,6 +135,25 @@ export const Note = memo(function Note({
       <div className="note-bar">
         <button
           type="button"
+          className="note-react"
+          aria-label="Add a sticker"
+          title="Add a sticker"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            api.openStickers(note.id, e.currentTarget);
+          }}
+        >
+          <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" aria-hidden="true">
+            <path d="M14 8.6V8A6 6 0 1 0 8.6 14" />
+            <path d="M14 8.6 8.6 14c0-3 2.4-5.4 5.4-5.4Z" strokeLinejoin="round" />
+            <path d="M5.6 9.8c.6.7 1.4 1 2.4 1" />
+            <circle cx="5.9" cy="6.4" r=".5" fill="currentColor" />
+            <circle cx="10.1" cy="6.4" r=".5" fill="currentColor" />
+          </svg>
+        </button>
+        <button
+          type="button"
           className="note-more"
           aria-label="Note options"
           onPointerDown={(e) => e.stopPropagation()}
@@ -200,6 +220,30 @@ export const Note = memo(function Note({
           </>
         )}
       </div>
+
+      {(note.stickers || []).map((s) => (
+        <NoteSticker
+          key={s.id}
+          s={s}
+          noteRotation={rotation}
+          getZoom={api.zoom}
+          fresh={Date.now() - (s.addedAt || 0) < 1500}
+          onMove={(id, x, y) => {
+            const w = note.w;
+            const h = ref.current?.offsetHeight || 160;
+            api.checkpoint();
+            api.update(note.id, {
+              stickers: note.stickers.map((t) =>
+                t.id === id ? { ...t, x: Math.round(Math.min(w + 10, Math.max(-10, x))), y: Math.round(Math.min(h + 10, Math.max(-10, y))) } : t,
+              ),
+            });
+          }}
+          onRemove={(id) => {
+            api.checkpoint();
+            api.update(note.id, { stickers: note.stickers.filter((t) => t.id !== id) });
+          }}
+        />
+      ))}
 
       <div className="note-resize" data-resize title="Drag to resize" aria-hidden="true" />
     </div>

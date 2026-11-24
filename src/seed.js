@@ -47,6 +47,10 @@ function wall(topicId, specs, seed = 7) {
       rotation: opt.rotation ?? Math.round((r() * 4 - 2) * 10) / 10,
       z: i + 1,
       archived: !!opt.archived,
+      stickers: (opt.stickers || []).map(([emoji, at], k) => {
+        const spot = { tr: [w - 10, 8], br: [w - 10, estH - 12], bl: [16, estH - 10], r: [w + 2, estH * 0.5] }[at];
+        return { id: `s_seed${i}_${k}`, emoji, x: Math.round(spot[0]), y: Math.round(spot[1]), rot: Math.round(r() * 30 - 15) };
+      }),
       createdAt: Date.now() - (specs.length - i) * 3600_000,
       updatedAt: Date.now() - (specs.length - i) * 1800_000,
     };
@@ -70,7 +74,7 @@ export function createSeedData() {
       personal.id,
       [
         ['Welcome to POST IT', '- Click a note to write in it\n- Drag the tape to move it\n- Type \\ for lists, checklists, tables and more\n- Press N for a new note\n\nThe ⋯ menu has colors, tilt and connections.', 'yellow', {w: 250 }],
-        ['Call grandma', 'Sunday after lunch. Ask about the garden and the lemon cake recipe.', 'pink'],
+        ['Call grandma', 'Sunday after lunch. Ask about the garden and the lemon cake recipe.', 'pink', { stickers: [['❤️', 'br']] }],
         ['Dentist', 'Thursday 2:30 pm\nBring insurance card', 'blue', {}],
         ['Morning routine', '- [x] Glass of water first\n- [ ] Stretch 10 min\n- [ ] No phone until 9', 'mint'],
         ['', 'You don’t have to have it all figured out to move forward.', 'white', { w: 200 }],
@@ -147,12 +151,12 @@ export function createSeedData() {
     ...wall(
       business.id,
       [
-        ['Neighborhood tool library', 'Rent drills, ladders, and saws by the day. Members pay monthly. Start with one garage.', 'yellow', { id: ideaA, w: 250, col: 0 }],
+        ['Neighborhood tool library', 'Rent drills, ladders, and saws by the day. Members pay monthly. Start with one garage.', 'yellow', { id: ideaA, w: 250, col: 0, stickers: [['🔥', 'tr'], ['👍', 'br']] }],
         ['Pricing thoughts', '| Plan | Price |\n| --- | --- |\n| Basic | $9 / mo |\n| Delivery | $19 / mo |\n| Trial | 1 week free |', 'mint', { id: ideaB, col: 1 }],
         ['Questions to validate', 'Would people actually share tools?\nInsurance?\nWho handles repairs?', 'pink', { id: ideaC, col: 0, w: 240 }],
         ['Plant subscription', 'Monthly houseplant + care card. Partner with local nurseries.', 'blue', { id: ideaD, col: 3 }],
         ['Name ideas', '- Borrowed\n- Shed Club\n- Lendly', 'lavender', { col: 1 }],
-        ['Next step', 'Talk to 10 neighbors this week.', 'orange', { col: 2 }],
+        ['Next step', 'Talk to 10 neighbors this week.', 'orange', { col: 2, stickers: [['🚀', 'tr']] }],
       ],
       29,
     ),

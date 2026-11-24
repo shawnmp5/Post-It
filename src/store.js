@@ -87,6 +87,7 @@ export function makeNote(topicId, partial = {}) {
     z: 1,
     archived: false,
     images: {},
+    stickers: [],
     createdAt: now,
     updatedAt: now,
     ...partial,
@@ -330,7 +331,14 @@ function normalize(raw) {
           const refs = imageRefs(body);
           const images = {};
           for (const id of refs) if (n.images?.[id]) images[id] = n.images[id];
-          return { ...makeNote(n.topicId), ...n, title: String(n.title ?? ''), body, images };
+          return {
+            ...makeNote(n.topicId),
+            ...n,
+            title: String(n.title ?? ''),
+            body,
+            images,
+            stickers: Array.isArray(n.stickers) ? n.stickers.filter((t) => t && t.id && t.emoji) : [],
+          };
         })
     : [];
   const noteIds = new Set(notes.map((n) => n.id));
