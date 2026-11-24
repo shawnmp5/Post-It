@@ -259,7 +259,10 @@ export const Note = memo(function Note({
         />
       ))}
 
-      {/* Invisible corner grab zones: drag any corner to resize diagonally. */}
+      {/* Invisible resize zones: edges resize horizontally or vertically, corners diagonally. */}
+      {['n', 'e', 's', 'w'].map((c) => (
+        <div key={c} className={`note-edge is-${c}`} data-resize={c} aria-hidden="true" />
+      ))}
       {['nw', 'ne', 'sw', 'se'].map((c) => (
         <div key={c} className={`note-handle is-${c}`} data-resize={c} title="Drag to resize" aria-hidden="true" />
       ))}

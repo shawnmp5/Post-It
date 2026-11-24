@@ -649,6 +649,14 @@ body.is-resize-nwse,
 body.is-resize-nwse * {
   cursor: nwse-resize !important;
 }
+body.is-resize-ns,
+body.is-resize-ns * {
+  cursor: ns-resize !important;
+}
+body.is-resize-ew,
+body.is-resize-ew * {
+  cursor: ew-resize !important;
+}
 body.is-resizing-note,
 body.is-resizing-note * {
   user-select: none !important;
@@ -1098,6 +1106,39 @@ body.is-resizing-note * {
   bottom: 0;
   right: 0;
   cursor: nwse-resize;
+}
+
+/* Invisible edge zones: drag an edge to resize in that direction only. */
+.note-edge {
+  position: absolute !important;
+  z-index: 9; /* under stickers and the tape, over the paper */
+  touch-action: none;
+}
+.note-edge.is-n,
+.note-edge.is-s {
+  left: 11px;
+  right: 11px;
+  height: 10px;
+  cursor: ns-resize;
+}
+.note-edge.is-n {
+  top: -5px;
+}
+.note-edge.is-s {
+  bottom: -5px;
+}
+.note-edge.is-e,
+.note-edge.is-w {
+  top: 11px;
+  bottom: 11px;
+  width: 10px;
+  cursor: ew-resize;
+}
+.note-edge.is-e {
+  right: -5px;
+}
+.note-edge.is-w {
+  left: -5px;
 }
 
 /* ---------- Note blocks (shared by the read view and the editor) ----------

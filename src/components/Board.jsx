@@ -3,6 +3,7 @@ import { Note } from './Note.jsx';
 import { NoteMenu } from './NoteMenu.jsx';
 import { StickerPicker } from './Stickers.jsx';
 import { ReminderPicker, formatWhen } from './Reminders.jsx';
+import { fromBlocks, toBlocks } from '../blocks.js';
 import {
   clamp,
   makeNote,
@@ -52,6 +53,21 @@ function caretOffsetAt(el, x, y) {
     total += walker.currentNode.length;
   }
   return base;
+}
+
+/** Snapshot of a note's pictures at the start of a vertical resize. */
+function measurePictures(noteEl, note) {
+  const imgs = [...noteEl.querySelectorAll('.blk-image img')];
+  if (!imgs.length) return null;
+  const blocks = toBlocks(note.body);
+  const widths = blocks.filter((b) => b.type === 'image').map((b) => b.width ?? 100);
+  if (widths.length !== imgs.length) return null;
+  return {
+    blocks,
+    widths,
+    natural: noteEl.offsetHeight, // height with pictures at their current size
+    imgHeight: imgs.reduce((sum, im) => sum + im.offsetHeight, 0),
+  };
 }
 
 const isTyping = () => {
@@ -252,7 +268,7 @@ export const Board = forwardRef(function Board(
   const endGesture = () => {
     cancelAnimationFrame(raf.current);
     gesture.current = null;
-    document.body.classList.remove('is-dragging-note', 'is-resizing-note', 'is-resize-nesw', 'is-resize-nwse', 'is-panning');
+    document.body.classList.remove('is-dragging-note', 'is-resizing-note', 'is-resize-nesw', 'is-resize-nwse', 'is-resize-ns', 'is-resize-ew', 'is-panning');
     setDraggingId(null);
     setPanning(false);
   };
@@ -330,7 +346,10 @@ export const Board = forwardRef(function Board(
       cy: e.clientY,
       grabX: p.x - note.x,
       grabY: p.y - note.y,
-      orig: { x: note.x, y: note.y, w: note.w, h: note.h ?? heightOf(note) },
+      // Start from what's on screen (a note can be taller than its stored size).
+      orig: { x: note.x, y: note.y, w: note.w, h: heightOf(note) },
+      // For vertical resizes: pictures shrink so the note can get shorter without cutting anything off.
+      pics: isResize && /[ns]/.test(corner) ? measurePictures(e.currentTarget, note) : null,
       moved: false,
       canMove,
       isGrip,
@@ -404,19 +423,39 @@ export const Board = forwardRef(function Board(
           }
           raf.current = requestAnimationFrame(dragFrame);
         } else {
-          document.body.classList.add('is-resizing-note', g.corner === 'ne' || g.corner === 'sw' ? 'is-resize-nesw' : 'is-resize-nwse');
+          const c = g.corner;
+          const cur = c === 'n' || c === 's' ? 'is-resize-ns' : c === 'e' || c === 'w' ? 'is-resize-ew' : c === 'ne' || c === 'sw' ? 'is-resize-nesw' : 'is-resize-nwse';
+          document.body.classList.add('is-resizing-note', cur);
         }
       }
       if (g.kind === 'resize') {
-        // Diagonal resize from a corner; the opposite corner stays put.
+        // Edges resize one direction (horizontal or vertical), corners resize diagonally.
+        // The opposite edge / corner stays put.
         const z = L.zoom;
-        const west = g.corner.includes('w');
-        const north = g.corner.includes('n');
-        const w = Math.round(clamp(g.orig.w + (west ? -dx : dx) / z, NOTE_MIN_W, NOTE_MAX_W));
-        const h = Math.round(clamp(g.orig.h + (north ? -dy : dy) / z, NOTE_MIN_H, NOTE_MAX_H));
-        const patch = { w, h };
+        const c = g.corner;
+        const west = c.includes('w');
+        const east = c.includes('e');
+        const north = c.includes('n');
+        const south = c.includes('s');
+        const w = west || east ? Math.round(clamp(g.orig.w + (west ? -dx : dx) / z, NOTE_MIN_W, NOTE_MAX_W)) : g.orig.w;
+        const h = north || south ? Math.round(clamp(g.orig.h + (north ? -dy : dy) / z, NOTE_MIN_H, NOTE_MAX_H)) : g.orig.h;
+        // Width-only resizes leave an auto-height note following its text.
+        const patch = north || south ? { w, h } : { w };
         if (west) patch.x = Math.max(0, Math.round(g.orig.x + g.orig.w - w));
         if (north) patch.y = Math.max(0, Math.round(g.orig.y + g.orig.h - h));
+        const pics = g.pics;
+        if (pics && (north || south)) {
+          // Shorter than the content? Scale the pictures down (keeping their shape) to make room.
+          const short = Math.max(0, pics.natural - h);
+          const scale = clamp((pics.imgHeight - short) / pics.imgHeight, 0.15, 1);
+          let k = 0;
+          const blocks = pics.blocks.map((b) => (b.type === 'image' ? { ...b, width: Math.max(15, Math.round(pics.widths[k++] * scale)) } : b));
+          const body = fromBlocks(blocks);
+          if (body !== g.lastBody) {
+            g.lastBody = body;
+            patch.body = body;
+          }
+        }
         dispatch({ type: 'note/update', id: g.id, patch, touch: false });
       }
     };
