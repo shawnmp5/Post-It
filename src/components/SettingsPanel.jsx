@@ -1,0 +1,149 @@
+import { useRef } from 'react';
+import { COLORS, emptyData, freshSampleData, normalize } from '../store.js';
+import { IconDownload, IconUpload, IconRestore, IconTrash } from './Icons.jsx';
+
+export function SettingsPanel({ data, dispatch, toast, confirm, onDone }) {
+  const { settings } = data;
+  const fileRef = useRef(null);
+  const set = (patch) => dispatch({ type: 'settings', patch });
+
+  const exportData = () => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `post-it-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('Exported your workspace');
+  };
+
+  const importData = async (file) => {
+    try {
+      const parsed = JSON.parse(await file.text());
+      if (!Array.isArray(parsed?.topics) || !Array.isArray(parsed?.notes)) throw new Error('bad file');
+      const ok = await confirm({
+        title: 'Replace your workspace?',
+        message: `This replaces everything with ${parsed.topics.length} topics and ${parsed.notes.length} notes from “${file.name}”.`,
+        confirmLabel: 'Import',
+      });
+      if (!ok) return;
+      dispatch({ type: 'checkpoint' });
+      dispatch({ type: 'replace', data: normalize(parsed), keepHistory: true });
+      onDone();
+      toast('Workspace imported', { undo: true });
+    } catch {
+      toast('That file isn’t a POST IT export');
+    }
+  };
+
+  const loadSamples = async () => {
+    const ok = await confirm({
+      title: 'Restore sample topics?',
+      message: 'Your current topics and notes will be replaced with the sample wall.',
+      confirmLabel: 'Restore samples',
+    });
+    if (!ok) return;
+    dispatch({ type: 'checkpoint' });
+    dispatch({ type: 'replace', data: { ...freshSampleData(), settings }, keepHistory: true });
+    onDone();
+    toast('Sample topics restored', { undo: true });
+  };
+
+  const clearAll = async () => {
+    const ok = await confirm({
+      title: 'Start with an empty wall?',
+      message: 'All topics and notes will be removed from this device.',
+      confirmLabel: 'Clear everything',
+      danger: true,
+    });
+    if (!ok) return;
+    dispatch({ type: 'checkpoint' });
+    dispatch({ type: 'replace', data: emptyData(settings), keepHistory: true });
+    onDone();
+    toast('Workspace cleared', { undo: true });
+  };
+
+  return (
+    <div className="settings">
+      <label className="field">
+        <span className="field-label">Your name</span>
+        <input
+          className="text-input"
+          value={settings.userName}
+          placeholder="You"
+          maxLength={40}
+          onChange={(e) => set({ userName: e.target.value })}
+        />
+      </label>
+
+      <div className="field">
+        <span className="field-label">New note color</span>
+        <div className="swatches">
+          {COLORS.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className={`swatch ${settings.defaultColor === c.id ? 'is-active' : ''}`}
+              style={{ '--swatch': c.bg, '--swatch-edge': c.edge }}
+              title={c.name}
+              aria-label={c.name}
+              onClick={() => set({ defaultColor: c.id })}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="field">
+        <Toggle checked={settings.tilt} onChange={(v) => set({ tilt: v })} label="Tilted notes" />
+        <Toggle
+          checked={settings.showConnections}
+          onChange={(v) => set({ showConnections: v })}
+          label="Show connections"
+        />
+      </div>
+
+      <div className="settings-actions">
+        <button type="button" className="text-btn" onClick={exportData}>
+          <IconDownload /> Export
+        </button>
+        <button type="button" className="text-btn" onClick={() => fileRef.current?.click()}>
+          <IconUpload /> Import
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          hidden
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = '';
+            if (f) importData(f);
+          }}
+        />
+      </div>
+      <div className="settings-actions">
+        <button type="button" className="text-btn" onClick={loadSamples}>
+          <IconRestore /> Samples
+        </button>
+        <button type="button" className="text-btn is-danger" onClick={clearAll}>
+          <IconTrash /> Clear all
+        </button>
+      </div>
+      <p className="settings-foot">Everything saves automatically to this browser.</p>
+    </div>
+  );
+}
+
+export function Toggle({ checked, onChange, label }) {
+  return (
+    <label className="toggle">
+      <span>{label}</span>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <span className="toggle-track" aria-hidden="true" />
+    </label>
+  );
+}
