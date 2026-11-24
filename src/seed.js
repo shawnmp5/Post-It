@@ -46,7 +46,6 @@ function wall(topicId, specs, seed = 7) {
       h: opt.h ?? null,
       rotation: opt.rotation ?? Math.round((r() * 4 - 2) * 10) / 10,
       z: i + 1,
-      pinned: !!opt.pinned,
       archived: !!opt.archived,
       createdAt: Date.now() - (specs.length - i) * 3600_000,
       updatedAt: Date.now() - (specs.length - i) * 1800_000,
@@ -70,9 +69,9 @@ export function createSeedData() {
     ...wall(
       personal.id,
       [
-        ['Welcome to POST IT', 'Click a note to edit it.\nDrag the tape to move it.\nDrag the corner to resize.\nPress N for a new note.\n\nThe ⋯ menu has colors, pins, tilt, connections and more.', 'yellow', { pinned: true, w: 250 }],
+        ['Welcome to POST IT', 'Click a note to edit it.\nDrag the tape to move it.\nDrag the corner to resize.\nPress N for a new note.\n\nThe ⋯ menu has colors, tilt, connections and more.', 'yellow', {w: 250 }],
         ['Call grandma', 'Sunday after lunch. Ask about the garden and the lemon cake recipe.', 'pink'],
-        ['Dentist', 'Thursday 2:30 pm\nBring insurance card', 'blue', { pinned: true }],
+        ['Dentist', 'Thursday 2:30 pm\nBring insurance card', 'blue', {}],
         ['Morning routine', 'Glass of water first\nStretch 10 min\nNo phone until 9', 'mint'],
         ['', 'You don’t have to have it all figured out to move forward.', 'white', { w: 200 }],
         ['Weekend', 'Farmers market\nFix the bike light\nLong walk somewhere new', 'orange'],
@@ -84,7 +83,7 @@ export function createSeedData() {
     ...wall(
       school.id,
       [
-        ['Biology exam', 'Chapters 4–7\nCell respiration diagrams\nPractice test on Friday', 'blue', { pinned: true }],
+        ['Biology exam', 'Chapters 4–7\nCell respiration diagrams\nPractice test on Friday', 'blue', {}],
         ['Essay outline', '1. Hook — the river as a character\n2. Three turning points\n3. What changes, what doesn’t', 'yellow', { w: 250 }],
         ['Study group', 'Tue + Thu, library 3rd floor.\nBring flashcards.', 'mint'],
         ['Formulas', 'v = d / t\nF = m · a\nP = W / t', 'white'],
@@ -105,7 +104,7 @@ export function createSeedData() {
     ...wall(
       projects.id,
       [
-        ['Kitchen shelf', 'Oak board 90 cm\nTwo steel brackets\nWall anchors (6 mm)\nSand + oil finish', 'orange', { pinned: true }],
+        ['Kitchen shelf', 'Oak board 90 cm\nTwo steel brackets\nWall anchors (6 mm)\nSand + oil finish', 'orange', {}],
         ['Portfolio site', 'Pick 6 best pieces\nWrite short case studies\nOne page, fast, no fluff', 'blue'],
         ['Balcony garden', 'Basil, mint, cherry tomatoes. Self-watering pots?', 'mint'],
       ],
@@ -123,7 +122,7 @@ export function createSeedData() {
     ...wall(
       goals.id,
       [
-        ['This year', 'Run a half marathon\nRead 20 books\nCook something new every week', 'mint', { pinned: true, w: 240 }],
+        ['This year', 'Run a half marathon\nRead 20 books\nCook something new every week', 'mint', {w: 240 }],
         ['Learn', 'Spanish — 15 min a day\nBasic woodworking', 'blue'],
         ['Save', 'Emergency fund: 3 months of expenses', 'yellow'],
       ],
@@ -153,7 +152,7 @@ export function createSeedData() {
         ['Questions to validate', 'Would people actually share tools?\nInsurance?\nWho handles repairs?', 'pink', { id: ideaC, col: 0, w: 240 }],
         ['Plant subscription', 'Monthly houseplant + care card. Partner with local nurseries.', 'blue', { id: ideaD, col: 3 }],
         ['Name ideas', 'Borrowed\nShed Club\nLendly', 'lavender', { col: 1 }],
-        ['Next step', 'Talk to 10 neighbors this week.', 'orange', { col: 2, pinned: true }],
+        ['Next step', 'Talk to 10 neighbors this week.', 'orange', { col: 2 }],
       ],
       29,
     ),

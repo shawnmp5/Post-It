@@ -128,7 +128,6 @@ export const Note = memo(function Note({
     flash && 'is-flash',
     isNew && 'is-new',
     menuOpen && 'menu-open',
-    note.pinned && 'is-pinned',
     connecting && 'is-connect-target',
     note.color === 'white' && 'is-white',
   ]
@@ -164,7 +163,6 @@ export const Note = memo(function Note({
         style={{ transform: `translateX(calc(-50% + ${tape.dx}px)) rotate(${tape.rot}deg)` }}
       >
         <span className="note-tape-strip" style={{ width: tape.w }} />
-        {note.pinned && <span className="note-pinhead" aria-label="Pinned" />}
       </div>
       <div className="note-bar">
         <button

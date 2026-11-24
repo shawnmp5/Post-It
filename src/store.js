@@ -48,7 +48,6 @@ export function makeNote(topicId, partial = {}) {
     h: null, // null = height follows content
     rotation: randomTilt(),
     z: 1,
-    pinned: false,
     archived: false,
     createdAt: now,
     updatedAt: now,
@@ -201,7 +200,6 @@ function dataReducer(d, a) {
         y: src.y + 28,
         rotation: a.rotation ?? src.rotation,
         z: maxZ(d.notes, src.topicId) + 1,
-        pinned: false,
         createdAt: now,
         updatedAt: now,
       };
@@ -286,7 +284,7 @@ function normalize(raw) {
   const notes = Array.isArray(raw?.notes)
     ? raw.notes
         .filter((n) => n && n.id && topicIds.has(n.topicId))
-        .map((n) => ({ ...makeNote(n.topicId), ...n, title: String(n.title ?? ''), body: String(n.body ?? '') }))
+        .map(({ pinned, ...n }) => ({ ...makeNote(n.topicId), ...n, title: String(n.title ?? ''), body: String(n.body ?? '') }))
     : [];
   const noteIds = new Set(notes.map((n) => n.id));
   const connections = Array.isArray(raw?.connections)

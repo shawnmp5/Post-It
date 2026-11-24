@@ -524,7 +524,7 @@ export const Board = forwardRef(function Board(
     const avail = el.clientWidth / L.zoom - left * 2;
     const cols = Math.max(1, Math.floor((avail + gap) / (colW + gap)));
     const colH = new Array(cols).fill(36);
-    const ordered = [...L.visible].sort((a, b) => b.pinned - a.pinned || a.y - b.y || a.x - b.x);
+    const ordered = [...L.visible].sort((a, b) => a.y - b.y || a.x - b.x);
     const patches = {};
     for (const n of ordered) {
       let c = 0;

@@ -1,7 +1,6 @@
 import { COLORS, clamp } from '../store.js';
 import { Popover, MenuItem, MenuSep } from './Popover.jsx';
 import {
-  IconPin,
   IconLink,
   IconCopy,
   IconArchive,
@@ -44,16 +43,6 @@ export function NoteMenu({ note, anchor, onClose, dispatch, toast, onDelete, onC
         ))}
       </div>
       <MenuSep />
-      <MenuItem
-        icon={IconPin}
-        onClick={() => {
-          update({ pinned: !note.pinned });
-          toast(note.pinned ? 'Unpinned' : 'Pinned — find it fast in Search');
-          onClose();
-        }}
-      >
-        {note.pinned ? 'Unpin' : 'Pin'}
-      </MenuItem>
       <MenuItem icon={IconLink} onClick={onConnect}>
         Connect to note…
       </MenuItem>

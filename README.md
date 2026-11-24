@@ -24,10 +24,9 @@ npm run build    # production build in dist/
 - Freeform placement — grab a note by its tape and drop it anywhere, no grid snapping; the wall grows downward as you go
 - Click a note to edit it right where you clicked; click outside (or press Esc) to finish
 - Drag the bottom-right corner to resize; ⋯ menu → *Fit height to text* returns to auto height
-- 8 muted colors, slight tilt (adjustable per note, or turn off globally), pins, duplicate, archive, delete
+- 8 muted colors, slight tilt (adjustable per note, or turn off globally), duplicate, archive, delete
 - Connect two related notes with a line (⋯ → *Connect to note…*); click a line to remove it
 - Search titles and text in the current topic, filter by color; matching notes are highlighted on the wall
-- Pinned notes are listed in Search for quick access
 - Archive keeps notes off the wall without deleting them (View → *Archived notes*)
 - Zoom (buttons, `+` / `-` / `0`, or Ctrl/⌘ + scroll), *Zoom to fit*, and *Tidy up* to neatly re-arrange
 - Undo / redo for every note and topic action
@@ -47,7 +46,7 @@ npm run build    # production build in dist/
 
 ## Persistence
 
-Everything — topics, note text, colors, positions, sizes, rotations, pins, archive, connections, per-topic zoom and scroll position, and settings — is saved automatically to `localStorage` (key `postit:v1`) and synced between open tabs. The sample topics shown on first launch are ordinary data and can be edited or deleted.
+Everything — topics, note text, colors, positions, sizes, rotations, archive, connections, per-topic zoom and scroll position, and settings — is saved automatically to `localStorage` (key `postit:v1`) and synced between open tabs. The sample topics shown on first launch are ordinary data and can be edited or deleted.
 
 ## Code map
 

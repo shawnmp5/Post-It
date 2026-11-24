@@ -56,12 +56,6 @@ export const IconRedo = make(
     <path d="M13.5 6.5h-7a4 4 0 0 0 0 8h2" />
   </>,
 );
-export const IconPin = make(
-  <>
-    <path d="M6 2.5h4M6.75 2.5v3.5L4.5 8.75h7L9.25 6V2.5" />
-    <path d="M8 8.75v4.75" />
-  </>,
-);
 export const IconArchive = make(
   <>
     <rect x="2" y="3" width="12" height="3" rx="0.5" />

@@ -11,7 +11,6 @@ import {
   IconRedo,
   IconMinus,
   IconClose,
-  IconPin,
   IconArchive,
   IconTidy,
   IconFit,
@@ -62,10 +61,9 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
       (!colors.length || colors.includes(n.color));
     const list = topicNotes.filter(ok);
     const score = (n) => (n.title.toLowerCase().includes(q) ? 0 : 1);
-    list.sort((a, b) => b.pinned - a.pinned || (q ? score(a) - score(b) : 0) || b.updatedAt - a.updatedAt);
+    list.sort((a, b) => (q ? score(a) - score(b) : 0) || b.updatedAt - a.updatedAt);
     return { live: list.filter((n) => !n.archived), archived: list.filter((n) => n.archived) };
   }, [topicNotes, q, colors]);
-  const pinned = active.filter((n) => n.pinned);
 
   const addNote = useCallback(() => boardRef.current?.addNote(), []);
 
@@ -167,7 +165,6 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
             <span className="ws-meta">
               {' '}
               · {active.length} note{active.length === 1 ? '' : 's'}
-              {pinned.length > 0 && <> · {pinned.length} pinned</>}
             </span>
           </p>
         </div>
@@ -324,16 +321,15 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
             })}
           </div>
           <div className="results">
-            {!q && !colors.length && pinned.length > 0 && <div className="results-label">Pinned</div>}
-            {!q && !colors.length && pinned.length === 0 && (
+            {!q && !colors.length && (
               <div className="results-empty">
-                Type to search titles and text in this topic. Pinned notes show up here.
+                Type to search titles and text in this topic, or pick a color.
               </div>
             )}
             {(q || colors.length > 0) && results.live.length === 0 && results.archived.length === 0 && (
               <div className="results-empty">No notes match.</div>
             )}
-            {(q || colors.length ? results.live : pinned).map((n) => (
+            {(q || colors.length ? results.live : []).map((n) => (
               <ResultRow key={n.id} note={n} query={q} onClick={() => boardRef.current?.scrollToNote(n.id)} />
             ))}
             {(q || colors.length > 0) && results.archived.length > 0 && (
@@ -518,7 +514,6 @@ function ResultRow({ note, query, onClick, archived }) {
           </span>
         )}
       </span>
-      {note.pinned && !archived && <IconPin className="result-pin" />}
       {archived && <span className="result-tag">Restore</span>}
     </button>
   );
