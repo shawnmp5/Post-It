@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { uid } from '../store.js';
 import { SlashMenu } from './SlashMenu.jsx';
+import { Popover, MenuItem, MenuSep } from './Popover.jsx';
+import { IconArrowDown, IconArrowLeft, IconArrowRight, IconArrowUp, IconMinus, IconTrash } from './Icons.jsx';
 import {
   LISTS,
   TEXTUAL,
@@ -258,11 +260,22 @@ function Block({ b, i, n, start, sole, mode, images, query, sizeKey, ed, onToggl
         </div>
       );
     case 'code':
-      return <div className="blk blk-code">{field('is-mono')}</div>;
+      return (
+        <div className="blk blk-code">
+          {field('is-mono')}
+          <CopyButton text={b.text} />
+        </div>
+      );
     case 'hr':
       return (
-        <div className="blk blk-hr">
-          <hr />
+        <div className="blk blk-hr" role="separator">
+          <span className="hr-line" />
+          <span className="hr-dots" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+          <span className="hr-line is-r" />
           {remove('Remove divider')}
         </div>
       );
@@ -275,62 +288,170 @@ function Block({ b, i, n, start, sole, mode, images, query, sizeKey, ed, onToggl
         </div>
       );
     }
-    case 'table': {
-      const cols = b.rows[0].length;
-      return (
-        <div className="blk blk-table">
-          <div className="blk-table-scroll">
-            <table>
-              <tbody>
-                {b.rows.map((row, r) => (
-                  <tr key={r}>
-                    {row.map((cell, c) => {
-                      const Tag = r === 0 ? 'th' : 'td';
-                      return (
-                        <Tag key={c}>
-                          {edit ? (
-                            <AutoTextarea
-                              className="blk-cell"
-                              value={cell}
-                              sizeKey={`${sizeKey}-${cols}`}
-                              placeholder={r === 0 ? 'Column' : ''}
-                              inputRef={ed.ref(`${b.id}:${r}:${c}`)}
-                              onChange={(e) => ed.cell(i, r, c, e.target.value)}
-                              onKeyDown={(e) => ed.cellKey(e, i, r, c)}
-                              onFocus={() => ed.cellFocus(b.id, r, c)}
-                            />
-                          ) : (
-                            <div className="blk-cell" data-offset={start + r * cols + c} data-exact="">
-                              {cell ? highlight(cell, query) : <br />}
-                            </div>
-                          )}
-                        </Tag>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {edit && (
-            <div className="blk-table-tools" onPointerDown={stop} onMouseDown={keep}>
-              <button type="button" title="Add row" onClick={() => ed.table(i, 'row+')}>+ Row</button>
-              <button type="button" title="Add column" onClick={() => ed.table(i, 'col+')}>+ Col</button>
-              <button type="button" title="Remove row" onClick={() => ed.table(i, 'row-')} disabled={b.rows.length <= 1}>− Row</button>
-              <button type="button" title="Remove column" onClick={() => ed.table(i, 'col-')} disabled={cols <= 1}>− Col</button>
-              <button type="button" title="Delete table" aria-label="Delete table" className="is-danger" onClick={() => ed.table(i, 'delete')}>
-                <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M2.75 4.25h10.5M6.25 4.25V2.75h3.5v1.5M4 4.25l.6 8.6a.5.5 0 0 0 .5.4h5.8a.5.5 0 0 0 .5-.4l.6-8.6" />
-                </svg>
-              </button>
-            </div>
-          )}
-        </div>
-      );
-    }
+    case 'table':
+      return <TableBlock b={b} i={i} start={start} edit={edit} query={query} sizeKey={sizeKey} ed={ed} />;
     default:
       return <div className={`blk blk-text ${sole ? 'is-sole' : ''}`}>{field()}</div>;
   }
+}
+
+function CopyButton({ text }) {
+  const [copied, setCopied] = useState(false);
+  if (!text) return null;
+  return (
+    <button
+      type="button"
+      className={`blk-copy ${copied ? 'is-copied' : ''}`}
+      onPointerDown={stop}
+      onMouseDown={keep}
+      onClick={(e) => {
+        e.stopPropagation();
+        navigator.clipboard
+          ?.writeText(text)
+          .then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1400);
+          })
+          .catch(() => {});
+      }}
+    >
+      {copied ? 'Copied' : 'Copy'}
+    </button>
+  );
+}
+
+const Dots = ({ vertical }) =>
+  vertical ? (
+    <svg viewBox="0 0 4 14" width="4" height="14" aria-hidden="true">
+      <circle cx="2" cy="2" r="1.3" />
+      <circle cx="2" cy="7" r="1.3" />
+      <circle cx="2" cy="12" r="1.3" />
+    </svg>
+  ) : (
+    <svg viewBox="0 0 14 4" width="14" height="4" aria-hidden="true">
+      <circle cx="2" cy="2" r="1.3" />
+      <circle cx="7" cy="2" r="1.3" />
+      <circle cx="12" cy="2" r="1.3" />
+    </svg>
+  );
+
+/** Table: rounded, see-through frame. While editing, hovering a cell shows row/column handles and + strips. */
+function TableBlock({ b, i, start, edit, query, sizeKey, ed }) {
+  const cols = b.rows[0].length;
+  const [hover, setHover] = useState(null); // { r, c }
+  const [menu, setMenu] = useState(null); // { kind, r, c, anchor }
+  const closeMenu = useCallback(() => setMenu(null), []);
+  const act = (op) => {
+    ed.table(i, op, { r: menu.r, c: menu.c });
+    setMenu(null);
+  };
+  const pill = (kind, r, c) => (
+    <button
+      type="button"
+      className={`tbl-pill is-${kind}`}
+      aria-label={kind === 'col' ? 'Column options' : 'Row options'}
+      onPointerDown={stop}
+      onMouseDown={keep}
+      onClick={(e) => {
+        e.stopPropagation();
+        setMenu({ kind, r, c, anchor: e.currentTarget });
+      }}
+    >
+      <Dots vertical={kind === 'row'} />
+    </button>
+  );
+
+  return (
+    <div className={`blk blk-table ${edit ? 'is-edit' : ''}`} onMouseLeave={() => !menu && setHover(null)}>
+      <table>
+        <tbody>
+          {b.rows.map((row, r) => (
+            <tr key={r}>
+              {row.map((cell, c) => {
+                const Tag = r === 0 ? 'th' : 'td';
+                return (
+                  <Tag key={c} onMouseEnter={edit ? () => setHover({ r, c }) : undefined}>
+                    {edit && r === 0 && (hover?.c === c || (menu?.kind === 'col' && menu.c === c)) && pill('col', r, c)}
+                    {edit && c === 0 && r > 0 && (hover?.r === r || (menu?.kind === 'row' && menu.r === r)) && pill('row', r, c)}
+                    {edit ? (
+                      <AutoTextarea
+                        className="blk-cell"
+                        value={cell}
+                        sizeKey={`${sizeKey}-${cols}`}
+                        placeholder={r === 0 ? 'Column' : ''}
+                        inputRef={ed.ref(`${b.id}:${r}:${c}`)}
+                        onChange={(e) => ed.cell(i, r, c, e.target.value)}
+                        onKeyDown={(e) => ed.cellKey(e, i, r, c)}
+                        onFocus={() => {
+                          ed.cellFocus(b.id, r, c);
+                          setHover({ r, c });
+                        }}
+                      />
+                    ) : (
+                      <div className="blk-cell" data-offset={start + r * cols + c} data-exact="">
+                        {cell ? highlight(cell, query) : <br />}
+                      </div>
+                    )}
+                  </Tag>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {edit && (
+        <>
+          <button
+            type="button"
+            className="tbl-add is-col"
+            title="Add column"
+            aria-label="Add column"
+            onPointerDown={stop}
+            onMouseDown={keep}
+            onClick={() => ed.table(i, 'col-end')}
+          >
+            +
+          </button>
+          <button
+            type="button"
+            className="tbl-add is-row"
+            title="Add row"
+            aria-label="Add row"
+            onPointerDown={stop}
+            onMouseDown={keep}
+            onClick={() => ed.table(i, 'row-end')}
+          >
+            +
+          </button>
+        </>
+      )}
+      {menu && (
+        <Popover anchor={menu.anchor} onClose={closeMenu} className="menu tbl-menu">
+          {menu.kind === 'col' ? (
+            <>
+              <MenuItem icon={IconArrowLeft} onClick={() => act('col-left')}>Insert column left</MenuItem>
+              <MenuItem icon={IconArrowRight} onClick={() => act('col-right')}>Insert column right</MenuItem>
+              <MenuItem icon={IconMinus} danger disabled={cols <= 1} onClick={() => act('col-del')}>
+                Delete column
+              </MenuItem>
+            </>
+          ) : (
+            <>
+              <MenuItem icon={IconArrowUp} onClick={() => act('row-above')}>Insert row above</MenuItem>
+              <MenuItem icon={IconArrowDown} onClick={() => act('row-below')}>Insert row below</MenuItem>
+              <MenuItem icon={IconMinus} danger disabled={b.rows.length <= 1} onClick={() => act('row-del')}>
+                Delete row
+              </MenuItem>
+            </>
+          )}
+          <MenuSep />
+          <MenuItem icon={IconTrash} danger onClick={() => act('delete')}>
+            Delete table
+          </MenuItem>
+        </Popover>
+      )}
+    </div>
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -743,22 +864,26 @@ export function BlockEditor({ note, api, focusReq, tint, onExitTop }) {
         }
       }
     },
-    table(i, op) {
+    table(i, op, where) {
       const b = blocks[i];
       const R = b.rows.length;
       const C = b.rows[0].length;
-      const at = cellAt.current?.id === b.id ? cellAt.current : { r: R - 1, c: C - 1 };
+      const at = where ?? (cellAt.current?.id === b.id ? cellAt.current : { r: R - 1, c: C - 1 });
       const key = (rr, cc) => `${b.id}:${rr}:${cc}`;
-      if (op === 'row+') {
-        const rows = b.rows.slice(0, at.r + 1).concat([Array(C).fill('')], b.rows.slice(at.r + 1));
-        commit(set(blocks, i, { rows }), { key: key(at.r + 1, at.c), offset: 0 });
-      } else if (op === 'col+') {
-        const rows = b.rows.map((row) => [...row.slice(0, at.c + 1), '', ...row.slice(at.c + 1)]);
-        commit(set(blocks, i, { rows }), { key: key(at.r, at.c + 1), offset: 0 });
-      } else if (op === 'row-' && R > 1) {
+      const blankRow = () => Array(C).fill('');
+      const insRow = (k) => commit(set(blocks, i, { rows: [...b.rows.slice(0, k), blankRow(), ...b.rows.slice(k)] }), { key: key(k, at.c), offset: 0 });
+      const insCol = (k) =>
+        commit(set(blocks, i, { rows: b.rows.map((row) => [...row.slice(0, k), '', ...row.slice(k)]) }), { key: key(at.r, k), offset: 0 });
+      if (op === 'row-above') insRow(at.r);
+      else if (op === 'row-below' || op === 'row+') insRow(at.r + 1);
+      else if (op === 'row-end') insRow(R);
+      else if (op === 'col-left') insCol(at.c);
+      else if (op === 'col-right' || op === 'col+') insCol(at.c + 1);
+      else if (op === 'col-end') insCol(C);
+      else if ((op === 'row-del' || op === 'row-') && R > 1) {
         const rows = b.rows.filter((_, ri) => ri !== at.r);
         commit(set(blocks, i, { rows }), { key: key(Math.min(at.r, rows.length - 1), at.c), offset: 'end' });
-      } else if (op === 'col-' && C > 1) {
+      } else if ((op === 'col-del' || op === 'col-') && C > 1) {
         const rows = b.rows.map((row) => row.filter((_, ci) => ci !== at.c));
         commit(set(blocks, i, { rows }), { key: key(at.r, Math.min(at.c, C - 2)), offset: 'end' });
       } else if (op === 'delete') {

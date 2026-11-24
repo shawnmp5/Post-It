@@ -141,6 +141,11 @@ export const IconSmile = make(
   </>,
 );
 
+export const IconArrowLeft = make(<path d="M12.5 8h-9M7 4.5 3.5 8 7 11.5" />);
+export const IconArrowRight = make(<path d="M3.5 8h9M9 4.5 12.5 8 9 11.5" />);
+export const IconArrowUp = make(<path d="M8 12.5v-9M4.5 7 8 3.5 11.5 7" />);
+export const IconArrowDown = make(<path d="M8 3.5v9M4.5 9 8 12.5 11.5 9" />);
+
 export function Logo({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">

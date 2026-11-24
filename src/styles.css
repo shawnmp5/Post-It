@@ -822,7 +822,7 @@ body.is-resizing-note * {
 .note {
   --note-ink: #23231f;
   font-family: var(--note-font, var(--font));
-  --shadow: 0 1px 1px rgba(0, 0, 0, 0.07), 0 8px 14px -6px rgba(0, 0, 0, 0.16);
+  --shadow: 0 1px 1px rgba(0, 0, 0, 0.08), 0 3px 6px -2px rgba(0, 0, 0, 0.1);
   position: absolute;
   top: 0;
   left: 0;
@@ -846,28 +846,75 @@ body.is-resizing-note * {
 .note-paper {
   position: absolute;
   inset: 0;
-  background: var(--note-bg);
-  box-shadow: var(--shadow);
-  transition: box-shadow 0.2s ease;
-  border-radius: 1px;
+  border-radius: 1px 1px 2px 2px;
   pointer-events: none;
+  /* Layers, top to bottom: paper grain, sticky strip, light falling across
+     the sheet, a little shade where the bottom edge lifts, then the colour. */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .085 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.028) 0, rgba(0, 0, 0, 0.028) 24px, rgba(0, 0, 0, 0) 25px),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0) 45%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.055) 0%, rgba(0, 0, 0, 0) 16%),
+    var(--note-bg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04),
+    var(--shadow);
+  transition: box-shadow 0.2s ease;
+}
+/* Curled-up bottom corners cast a deeper shadow than the middle of the sheet. */
+.note-paper::before,
+.note-paper::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  bottom: 9px;
+  width: 46%;
+  height: 22px;
+  border-radius: 40%;
+  box-shadow: 0 13px 11px rgba(0, 0, 0, var(--curl, 0.2));
+  transition: box-shadow 0.2s ease;
+}
+.note-paper::before {
+  left: 7px;
+  transform: rotate(-3.2deg);
+}
+.note-paper::after {
+  right: 7px;
+  transform: rotate(3.2deg);
+}
+.note:hover {
+  --curl: 0.26;
+}
+.note.is-selected,
+.note.is-editing {
+  --curl: 0.3;
+}
+.note.is-dragging {
+  --curl: 0.34;
+}
+.note.is-dimmed {
+  --curl: 0.08;
 }
 .note.is-white .note-paper {
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.07), var(--shadow);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.07),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04),
+    var(--shadow);
 }
 .note > :not(.note-paper) {
   position: relative;
 }
 .note:hover {
-  --shadow: 0 1px 1px rgba(0, 0, 0, 0.08), 0 12px 20px -8px rgba(0, 0, 0, 0.2);
+  --shadow: 0 1px 1px rgba(0, 0, 0, 0.08), 0 6px 12px -4px rgba(0, 0, 0, 0.14);
 }
 .note.is-selected,
 .note.is-editing,
 .note.is-matched {
-  --shadow: 0 1px 1px rgba(0, 0, 0, 0.09), 0 16px 24px -10px rgba(0, 0, 0, 0.24);
+  --shadow: 0 1px 1px rgba(0, 0, 0, 0.09), 0 8px 16px -6px rgba(0, 0, 0, 0.18);
 }
 .note.is-dragging {
-  --shadow: 0 2px 3px rgba(0, 0, 0, 0.08), 0 28px 36px -14px rgba(0, 0, 0, 0.3);
+  --shadow: 0 2px 3px rgba(0, 0, 0, 0.08), 0 24px 34px -14px rgba(0, 0, 0, 0.28);
   will-change: transform; /* only while dragging */
   scale: 1.03;
   cursor: grabbing;
@@ -1315,31 +1362,77 @@ textarea.blk-cell {
   background: rgba(0, 0, 0, 0.22);
 }
 
-/* Code */
+/* Code: rounded, see-through panel */
 .blk-code {
-  margin: 4px 0;
-  padding: 7px 10px;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.045);
+  margin: 6px 0;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.055);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
 }
 .blk-code .is-mono {
   font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-  font-size: 11.5px;
-  line-height: 1.55;
-  min-height: 1.55em;
-  color: rgba(0, 0, 0, 0.75);
+  font-size: 12px;
+  line-height: 1.6;
+  min-height: 1.6em;
+  color: rgba(0, 0, 0, 0.78);
+}
+.blk-copy {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.65);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  font-family: var(--font);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease;
+}
+.blk-code:hover .blk-copy,
+.blk-copy.is-copied {
+  opacity: 1;
+}
+.blk-copy:hover {
+  background: rgba(255, 255, 255, 0.9);
+  color: rgba(0, 0, 0, 0.8);
+}
+.blk-copy.is-copied {
+  color: #3f7d57;
 }
 
-/* Divider */
+/* Divider: a section break — two fading rules around three dots */
 .blk-hr {
   align-items: center;
-  padding: 10px 0;
+  gap: 9px;
+  padding: 12px 0;
 }
-.blk-hr hr {
+.hr-line {
   flex: 1;
-  margin: 0;
-  border: 0;
-  border-top: 1px solid var(--ink-line);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.2));
+}
+.hr-line.is-r {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.2), transparent);
+}
+.hr-dots {
+  display: flex;
+  gap: 5px;
+}
+.hr-dots i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.32);
+}
+.hr-dots i:nth-child(2) {
+  transform: scale(1.25);
 }
 
 /* Image */
@@ -1403,45 +1496,59 @@ textarea.blk-cell {
   stroke: var(--danger);
 }
 
-/* Table: hairline rows, no grid. */
+/* Table: rounded, see-through frame with a fine grid. */
 .blk-table {
   flex-direction: column;
   align-items: stretch;
-  margin: 5px 0;
-}
-.blk-table-scroll {
-  overflow-x: auto;
+  margin: 8px 0 10px;
 }
 .blk-table table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   table-layout: fixed;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.28);
   font-size: 0.93em;
   line-height: 1.4;
 }
 .blk-table th,
 .blk-table td {
-  padding: 5px 10px 5px 0;
+  position: relative;
+  padding: 6px 8px;
   border: 0;
-  border-bottom: 1px solid var(--ink-line);
+  border-right: 1px solid rgba(0, 0, 0, 0.09);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.09);
   text-align: left;
   vertical-align: top;
-  transition: box-shadow 0.15s;
+  transition: background 0.15s ease;
 }
-.blk-table th {
-  padding-top: 0;
-  border-bottom-color: rgba(0, 0, 0, 0.26);
-  font-size: 0.86em;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: rgba(0, 0, 0, 0.55);
+.blk-table tr > :last-child {
+  border-right: 0;
 }
-.blk-table tr:last-child td {
+.blk-table tr:last-child > * {
   border-bottom: 0;
 }
-.blk-table th:focus-within,
-.blk-table td:focus-within {
-  box-shadow: inset 0 -1.5px 0 var(--note-ink);
+.blk-table tr:first-child > :first-child {
+  border-top-left-radius: 9px;
+}
+.blk-table tr:first-child > :last-child {
+  border-top-right-radius: 9px;
+}
+.blk-table tr:last-child > :first-child {
+  border-bottom-left-radius: 9px;
+}
+.blk-table tr:last-child > :last-child {
+  border-bottom-right-radius: 9px;
+}
+.blk-table th {
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.72);
+}
+.blk-table.is-edit th:focus-within,
+.blk-table.is-edit td:focus-within {
+  background: rgba(255, 255, 255, 0.5);
 }
 .blk-cell {
   display: block;
@@ -1458,38 +1565,95 @@ textarea.blk-cell {
   color: inherit;
   line-height: inherit;
   white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: auto;
 }
-.blk-table-tools {
-  display: none;
-  align-self: flex-start;
-  gap: 2px;
-  margin: 6px 0 0 -6px;
-  font-family: var(--font);
-  animation: fade-in 0.15s ease;
-}
-.blk-table:focus-within .blk-table-tools {
-  display: flex;
-}
-.blk-table-tools button {
-  height: 22px;
-  padding: 0 6px;
+
+/* Row / column handles */
+.tbl-pill {
+  position: absolute;
+  z-index: 3;
   display: inline-flex;
   align-items: center;
-  border-radius: 5px;
-  font-size: 11px;
-  color: rgba(0, 0, 0, 0.45);
+  justify-content: center;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.1),
+    0 2px 5px rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.6);
+  animation: pill-in 0.18s cubic-bezier(0.3, 1.5, 0.5, 1);
   transition: background 0.12s, color 0.12s;
 }
-.blk-table-tools button:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.06);
+.tbl-pill svg {
+  fill: currentColor;
+}
+.tbl-pill.is-col {
+  top: -8px;
+  left: 50%;
+  width: 24px;
+  height: 14px;
+  margin-left: -12px;
+}
+.tbl-pill.is-row {
+  left: -8px;
+  top: 50%;
+  width: 14px;
+  height: 24px;
+  margin-top: -12px;
+}
+.tbl-pill:hover {
+  background: var(--ink);
+  color: #fff;
+}
+@keyframes pill-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+/* + strips to add a column (right) or a row (bottom) */
+.tbl-add {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.045);
+  color: rgba(0, 0, 0, 0.45);
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background 0.12s ease,
+    color 0.12s ease;
+}
+.tbl-add.is-col {
+  top: 0;
+  bottom: 0;
+  right: -15px;
+  width: 11px;
+}
+.tbl-add.is-row {
+  left: 0;
+  right: 0;
+  bottom: -15px;
+  height: 11px;
+}
+.blk-table.is-edit:hover .tbl-add {
+  opacity: 1;
+}
+.tbl-add:hover {
+  background: rgba(0, 0, 0, 0.1);
   color: rgba(0, 0, 0, 0.8);
 }
-.blk-table-tools button:disabled {
-  opacity: 0.35;
-}
-.blk-table-tools .is-danger:hover:not(:disabled) {
-  color: var(--danger);
+.tbl-menu {
+  width: 196px;
 }
 
 /* ---------- Block menu (opened with \ in a note) ---------- */
