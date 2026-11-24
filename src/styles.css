@@ -1422,10 +1422,68 @@ textarea.blk-cell {
   justify-content: center;
   margin: 6px 0;
 }
+.blk-image.is-left {
+  justify-content: flex-start;
+}
+.blk-image.is-right {
+  justify-content: flex-end;
+}
 .img-frame {
   position: relative;
   max-width: 100%;
-  transition: width 0.12s ease;
+  cursor: grab;
+  touch-action: none;
+  transition:
+    width 0.12s ease,
+    opacity 0.15s ease;
+}
+.blk-image.is-moving .img-frame {
+  opacity: 0.3;
+}
+body.is-dragging-image,
+body.is-dragging-image * {
+  cursor: grabbing !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+/* Floating copy that follows the pointer while moving an image */
+.img-ghost {
+  position: fixed;
+  z-index: 3000;
+  height: auto;
+  border-radius: 6px;
+  opacity: 0.92;
+  transform: rotate(-2deg) scale(1.03);
+  box-shadow: 0 18px 34px -12px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+/* Where it will land: a line between blocks, the highlighted third shows the alignment */
+.img-drop-line {
+  position: fixed;
+  z-index: 2999;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 1px;
+  background: rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+}
+.img-drop-line i {
+  position: absolute;
+  top: -1px;
+  width: 33.3%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ink);
+  transition: left 0.15s var(--ease);
+}
+.img-drop-line i.is-left {
+  left: 0;
+}
+.img-drop-line i.is-center {
+  left: 33.3%;
+}
+.img-drop-line i.is-right {
+  left: 66.6%;
 }
 .blk-image.is-resizing .img-frame {
   transition: none;

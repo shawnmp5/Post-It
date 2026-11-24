@@ -147,9 +147,11 @@ export function toBlocks(src) {
       prevQuote = true;
     } else if (/^(-{3,}|\*{3,})\s*$/.test(l)) out.push(newBlock('hr'));
     else if ((m = /^!\[([^\]]*)\]\(([^)\s]+)\)\s*$/.exec(l))) {
-      // Optional width as a percentage: ![alt|60](src)
-      const wm = /^(.*?)\|(\d{1,3})$/.exec(m[1]);
-      out.push(newBlock('image', '', { alt: wm ? wm[1] : m[1], src: m[2], width: wm ? Math.min(100, Math.max(10, Number(wm[2]))) : 100 }));
+      // Optional size and alignment after the alt text: ![alt|60|left](src)
+      const [alt, ...opts] = m[1].split('|');
+      const num = opts.find((o) => /^\d{1,3}$/.test(o));
+      const align = opts.find((o) => o === 'left' || o === 'right' || o === 'center') || 'center';
+      out.push(newBlock('image', '', { alt, src: m[2], width: num ? Math.min(100, Math.max(10, Number(num))) : 100, align }));
     }
     else if ((m = /^ {2}(.*)$/.exec(l)) && LISTS.has(last()?.type)) last().text += `\n${m[1]}`;
     else out.push(newBlock('text', l));
@@ -192,7 +194,8 @@ export function fromBlocks(blocks) {
         break;
       case 'image': {
         const w = b.width && b.width < 100 ? `|${Math.round(b.width)}` : '';
-        lines.push(`![${b.alt || ''}${w}](${b.src})`);
+        const al = b.align && b.align !== 'center' ? `|${b.align}` : '';
+        lines.push(`![${b.alt || ''}${w}${al}](${b.src})`);
         break;
       }
       case 'table': {
@@ -205,6 +208,14 @@ export function fromBlocks(blocks) {
     }
   }
   return lines.join('\n');
+}
+
+/** Move block i to insertion index k (0…length), optionally patching it. */
+export function moveBlock(blocks, i, k, patch = {}) {
+  const item = { ...blocks[i], ...patch };
+  const rest = blocks.filter((_, j) => j !== i);
+  const at = k > i ? k - 1 : k;
+  return [...rest.slice(0, at), item, ...rest.slice(at)];
 }
 
 /** Size of a block in "caret positions" — used to map a click on the formatted view to a spot in the editor. */

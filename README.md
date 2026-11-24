@@ -26,7 +26,7 @@ npm run build    # production build in dist/
 - Notes are a little block editor: type `\` for the block menu (Text, Heading 1–3, Bullets, Numbers, Checklist, Quote, Table, Image, Code, Divider, Today's date), or type the shortcuts `#`, `-`, `1.`, `[]`, `>`, ` ``` `, `---` at the start of a line
 - Checklists: click a box (even without opening the note) to cross the item out; a progress bar tracks each list
 - Tables: Tab / Enter move between cells (and add rows at the end); the toolbar under a focused table adds or removes rows and columns
-- Images resize like notes: drag any corner (no handles, just the diagonal cursor); works on the wall too
+- Images: drag one to move it between lines and drop it left, centre or right; drag a corner to resize it like a note. Works on the wall too
 - Enter continues a list, Enter on an empty item ends it, Backspace at the start turns a block back into text; paste an image to add it
 - Click a note to edit it right where you clicked; click outside (or press Esc) to finish
 - Drag any corner to resize diagonally (no frame or handles, just the resize cursor). A resized note keeps at least that size and always grows to fit its content, so nothing is cut off; ⋯ menu → *Fit height to text* returns to auto height

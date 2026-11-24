@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { uid } from '../store.js';
 import { SlashMenu } from './SlashMenu.jsx';
 import { Popover, MenuItem, MenuSep } from './Popover.jsx';
@@ -12,6 +13,7 @@ import {
   imageFileToDataURL,
   locate,
   menuLayout,
+  moveBlock,
   moveInMenu,
   newBlock,
   positions,
@@ -121,7 +123,7 @@ const CheckMark = () => (
 /* Rendering — shared by the read view and the editor so they line up  */
 /* ------------------------------------------------------------------ */
 
-function BlockList({ blocks, mode, images, query, sizeKey, ed, onToggle, onPatch }) {
+function BlockList({ blocks, mode, images, query, sizeKey, ed, onToggle, onPatch, onMoveBlock }) {
   const pos = positions(blocks);
   const out = [];
   let n = 0;
@@ -142,6 +144,7 @@ function BlockList({ blocks, mode, images, query, sizeKey, ed, onToggle, onPatch
         ed={ed}
         onToggle={onToggle}
         onPatch={onPatch}
+        onMoveBlock={onMoveBlock}
       />,
     );
     // A small progress meter under each checklist.
@@ -182,7 +185,7 @@ const PLACEHOLDER = {
   code: 'Code',
 };
 
-function Block({ b, i, n, start, sole, mode, images, query, sizeKey, ed, onToggle, onPatch }) {
+function Block({ b, i, n, start, sole, mode, images, query, sizeKey, ed, onToggle, onPatch, onMoveBlock }) {
   const edit = mode === 'edit';
 
   const field = (extraCls = '') =>
@@ -285,9 +288,11 @@ function Block({ b, i, n, start, sole, mode, images, query, sizeKey, ed, onToggl
       return (
         <ImageBlock
           b={b}
+          index={i}
           src={src}
           removeBtn={remove('Remove image')}
           onWidth={(w) => (edit ? ed.patch(i, { width: w }) : onPatch?.(i, { width: w }))}
+          onMove={(k, align) => (edit ? ed.move(i, k, { align }) : onMoveBlock?.(i, k, { align }))}
         />
       );
     }
@@ -299,25 +304,28 @@ function Block({ b, i, n, start, sole, mode, images, query, sizeKey, ed, onToggl
 }
 
 /**
- * Image that resizes like a note: invisible corner grab zones, diagonal cursor,
- * no visible handles. The image stays centred and keeps its proportions, so the
- * dragged corner follows the pointer.
+ * Image: drag it to move it (up/down between lines, and left/centre/right),
+ * or drag a corner to resize it like a note. No visible handles.
  */
-function ImageBlock({ b, src, removeBtn, onWidth }) {
+function ImageBlock({ b, src, removeBtn, onWidth, onMove, index }) {
   const ref = useRef(null);
   const imgRef = useRef(null);
-  const [live, setLive] = useState(null); // width % while dragging
+  const [live, setLive] = useState(null); // width % while resizing
+  const [drag, setDrag] = useState(null); // ghost + drop guide while moving
   const width = live ?? b.width ?? 100;
+  const align = b.align || 'center';
 
-  const start = (e, corner) => {
+  const resize = (e, corner) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.stopPropagation();
     e.preventDefault();
-    const col = ref.current.getBoundingClientRect(); // full column width, screen px
+    const col = ref.current.getBoundingClientRect();
     const img = imgRef.current.getBoundingClientRect();
     const ratio = img.width / Math.max(1, img.height);
     const sx = corner.includes('e') ? 1 : -1;
     const sy = corner.includes('s') ? 1 : -1;
+    // A centred image grows on both sides; a left/right-aligned one only on the free side.
+    const sides = align === 'center' ? 2 : 1;
     const handle = e.currentTarget;
     handle.setPointerCapture?.(e.pointerId);
     document.body.classList.add('is-resizing-note', corner === 'ne' || corner === 'sw' ? 'is-resize-nesw' : 'is-resize-nwse');
@@ -326,10 +334,9 @@ function ImageBlock({ b, src, removeBtn, onWidth }) {
     const startW = b.width ?? 100;
     let w = startW;
     const move = (ev) => {
-      // Project the pointer movement onto the corner's diagonal (in horizontal px).
       const grow = (sx * (ev.clientX - x0) + sy * (ev.clientY - y0) * ratio) / 2;
-      // Centred: each side moves by `grow`, so the width changes by twice that.
-      w = Math.round(Math.min(100, Math.max(15, startW + ((grow * 2) / col.width) * 100)));
+      // `grow` is already positive when dragging a corner outward.
+      w = Math.round(Math.min(100, Math.max(15, startW + ((grow * sides) / col.width) * 100)));
       setLive(w);
     };
     const up = () => {
@@ -345,19 +352,89 @@ function ImageBlock({ b, src, removeBtn, onWidth }) {
     handle.addEventListener('pointercancel', up);
   };
 
+  const startMove = (e) => {
+    if (e.target.closest('.img-corner, .blk-remove')) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const frame = e.currentTarget;
+    frame.setPointerCapture?.(e.pointerId);
+    const body = ref.current.parentElement; // the note body: its .blk children are the blocks, in order
+    const blocksEls = [...body.children].filter((c) => c.classList.contains('blk'));
+    const r0 = imgRef.current.getBoundingClientRect();
+    const offX = e.clientX - r0.left;
+    const offY = e.clientY - r0.top;
+    const x0 = e.clientX;
+    const y0 = e.clientY;
+    let moved = false;
+    let target = null;
+    const move = (ev) => {
+      if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return;
+      if (!moved) {
+        moved = true;
+        document.body.classList.add('is-dragging-image');
+      }
+      const br = body.getBoundingClientRect();
+      let k = blocksEls.length;
+      for (let j = 0; j < blocksEls.length; j++) {
+        const r = blocksEls[j].getBoundingClientRect();
+        if (ev.clientY < r.top + r.height / 2) {
+          k = j;
+          break;
+        }
+      }
+      const lineY =
+        k < blocksEls.length ? blocksEls[k].getBoundingClientRect().top - 3 : blocksEls[blocksEls.length - 1].getBoundingClientRect().bottom + 3;
+      const rel = (ev.clientX - br.left) / br.width;
+      const al = rel < 0.33 ? 'left' : rel > 0.67 ? 'right' : 'center';
+      target = { k, align: al };
+      setDrag({
+        x: ev.clientX - offX,
+        y: ev.clientY - offY,
+        w: r0.width,
+        line: { top: lineY, left: br.left, width: br.width },
+        align: al,
+      });
+    };
+    const up = () => {
+      frame.removeEventListener('pointermove', move);
+      frame.removeEventListener('pointerup', up);
+      frame.removeEventListener('pointercancel', up);
+      document.body.classList.remove('is-dragging-image');
+      setDrag(null);
+      if (moved && target) {
+        const samePlace = target.k === index || target.k === index + 1;
+        if (!samePlace || target.align !== align) onMove(samePlace ? index : target.k, target.align);
+      }
+    };
+    frame.addEventListener('pointermove', move);
+    frame.addEventListener('pointerup', up);
+    frame.addEventListener('pointercancel', up);
+  };
+
   return (
-    <div className={`blk blk-image ${live != null ? 'is-resizing' : ''}`} ref={ref}>
+    <div className={`blk blk-image is-${align} ${live != null ? 'is-resizing' : ''} ${drag ? 'is-moving' : ''}`} ref={ref}>
       {src ? (
-        <div className="img-frame" style={{ width: `${width}%` }}>
+        <div className="img-frame" style={{ width: `${width}%` }} onPointerDown={startMove} onMouseDown={keep}>
           <img ref={imgRef} src={src} alt={b.alt || ''} draggable={false} />
           {['nw', 'ne', 'sw', 'se'].map((c) => (
-            <span key={c} className={`img-corner is-${c}`} onPointerDown={(e) => start(e, c)} onMouseDown={keep} aria-hidden="true" />
+            <span key={c} className={`img-corner is-${c}`} onPointerDown={(e) => resize(e, c)} onMouseDown={keep} aria-hidden="true" />
           ))}
           {removeBtn}
         </div>
       ) : (
         <div className="blk-img-missing">Image not found</div>
       )}
+      {drag &&
+        createPortal(
+          <>
+            <div className="img-drop-line" style={{ top: drag.line.top, left: drag.line.left, width: drag.line.width }}>
+              <i className={`is-${drag.align}`} />
+            </div>
+            <img className="img-ghost" src={src} alt="" style={{ left: drag.x, top: drag.y, width: drag.w }} />
+          </>,
+          document.body,
+        )}
     </div>
   );
 }
@@ -535,6 +612,7 @@ export function NoteView({ body, images, query, onBodyChange }) {
       query={query}
       onToggle={(i) => onBodyChange(fromBlocks(blocks.map((b, j) => (j === i ? { ...b, checked: !b.checked } : b))))}
       onPatch={(i, patch) => onBodyChange(fromBlocks(blocks.map((b, j) => (j === i ? { ...b, ...patch } : b))))}
+      onMoveBlock={(i, k, patch) => onBodyChange(fromBlocks(moveBlock(blocks, i, k, patch)))}
     />
   );
 }
@@ -888,6 +966,10 @@ export function BlockEditor({ note, api, focusReq, tint, onExitTop }) {
 
     patch(i, p) {
       commit(set(blocks, i, p));
+    },
+
+    move(i, k, p) {
+      commit(moveBlock(blocks, i, k, p));
     },
 
     remove(i) {
