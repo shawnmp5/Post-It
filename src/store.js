@@ -18,6 +18,16 @@ export const COLORS = [
 ];
 export const COLOR_MAP = Object.fromEntries(COLORS.map((c) => [c.id, c]));
 
+/** Note handwriting options. `scale` evens out how large each face looks. */
+export const FONTS = [
+  { id: 'caveat', name: 'Caveat', family: "'Caveat', cursive", scale: 1.32, titleWeight: 700 },
+  { id: 'kalam', name: 'Kalam', family: "'Kalam', cursive", scale: 1.02, titleWeight: 700 },
+  { id: 'patrick', name: 'Patrick Hand', family: "'Patrick Hand', cursive", scale: 1.16, titleWeight: 400 },
+  { id: 'gochi', name: 'Gochi Hand', family: "'Gochi Hand', cursive", scale: 1.14, titleWeight: 400 },
+  { id: 'clean', name: 'Clean', family: 'var(--font)', scale: 1, titleWeight: 600 },
+];
+export const FONT_MAP = Object.fromEntries(FONTS.map((f) => [f.id, f]));
+
 export const NOTE_DEFAULT_W = 220;
 export const NOTE_MIN_W = 150;
 export const NOTE_MAX_W = 560;
@@ -63,6 +73,7 @@ export const DEFAULT_SETTINGS = {
   showConnections: true,
   defaultColor: 'yellow',
   sidebarWidth: null, // null = default width for the screen size
+  noteFont: 'clean',
 };
 
 /* ------------------------------------------------------------------ */

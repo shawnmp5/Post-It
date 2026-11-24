@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { COLORS, emptyData, freshSampleData, normalize } from '../store.js';
+import { COLORS, FONTS, emptyData, freshSampleData, normalize } from '../store.js';
 import { IconDownload, IconUpload, IconRestore, IconTrash } from './Icons.jsx';
 
 export function SettingsPanel({ data, dispatch, toast, confirm, onDone }) {
@@ -93,6 +93,30 @@ export function SettingsPanel({ data, dispatch, toast, confirm, onDone }) {
               aria-label={c.name}
               onClick={() => set({ defaultColor: c.id })}
             />
+          ))}
+        </div>
+      </div>
+
+      <div className="field">
+        <span className="field-label">Note font</span>
+        <div className="font-grid" role="radiogroup" aria-label="Note font">
+          {FONTS.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              role="radio"
+              aria-checked={(settings.noteFont || 'clean') === f.id}
+              className={`font-tile ${(settings.noteFont || 'clean') === f.id ? 'is-active' : ''}`}
+              onClick={() => set({ noteFont: f.id })}
+            >
+              <span
+                className="font-sample"
+                style={{ fontFamily: f.family, fontSize: `${15 * f.scale}px`, fontWeight: f.titleWeight }}
+              >
+                Buy milk
+              </span>
+              <span className="font-name">{f.name}</span>
+            </button>
           ))}
         </div>
       </div>

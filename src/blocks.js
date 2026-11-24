@@ -3,7 +3,7 @@
  *   # / ## / ###  headings      - item   bullets      1. item  numbered
  *   - [ ] / - [x] checklist     > quote               --- divider
  *   ```code```    code block    | a | b | tables      ![](img:id) images
- * Typing the trigger key (\) in a note opens a menu that inserts these.
+ * In the editor each line is a block; typing the trigger key (\) opens the block menu.
  */
 
 export const TRIGGER = '\\';
@@ -84,128 +84,47 @@ const lineBounds = (v, pos) => {
 export const todayString = () =>
   new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' });
 
-/**
- * Apply a command to `value`, where the trigger + query occupy [from, to).
- * Returns { value, selStart, selEnd }. `extra` carries data such as an image id.
- */
-export function applyCommand(value, from, to, id, extra = {}) {
-  let v = value.slice(0, from) + value.slice(to);
-  const caret = from;
-  const { start, end } = lineBounds(v, caret);
-  const line = v.slice(start, end);
-  const content = line.replace(PREFIX_RE, '');
-  const replaceLine = (text, selFromLineStart, selLen = 0) => {
-    const out = v.slice(0, start) + text + v.slice(end);
-    const s = start + (selFromLineStart ?? text.length);
-    return { value: out, selStart: s, selEnd: s + selLen };
-  };
+/* ------------------------------------------------------------------ */
+/* Block model. The note body is stored as text (see top of file) and   */
+/* edited as a list of blocks.                                          */
+/* ------------------------------------------------------------------ */
 
-  switch (id) {
-    case 'text':
-      return replaceLine(content);
-    case 'h1':
-    case 'h2':
-    case 'h3': {
-      const p = `${'#'.repeat(Number(id[1]))} `;
-      return replaceLine(p + content);
-    }
-    case 'bullet':
-      return replaceLine(`- ${content}`);
-    case 'number': {
-      const prev = v.slice(lineBounds(v, Math.max(0, start - 1)).start, Math.max(0, start - 1));
-      const m = start > 0 && /^(\d+)\. /.exec(prev);
-      return replaceLine(`${m ? Number(m[1]) + 1 : 1}. ${content}`);
-    }
-    case 'check':
-      return replaceLine(`- [ ] ${content}`);
-    case 'quote':
-      return replaceLine(`> ${content}`);
-    case 'code':
-      return content
-        ? replaceLine(`\`\`\`\n${content}\n\`\`\``, 4 + content.length)
-        : replaceLine('```\n\n```', 4);
-    case 'divider':
-      return replaceLine(`---\n${content}`, 4 + content.length);
-    case 'table': {
-      const lead = content ? `${content}\n` : '';
-      const t = `${lead}| Column 1 | Column 2 |\n| --- | --- |\n|  |  |`;
-      return replaceLine(t, lead.length + 2, 8);
-    }
-    case 'image': {
-      const img = `![](img:${extra.imageId})`;
-      return content ? replaceLine(`${line}\n${img}`) : replaceLine(img);
-    }
-    case 'date': {
-      const d = todayString();
-      v = v.slice(0, caret) + d + v.slice(caret);
-      return { value: v, selStart: caret + d.length, selEnd: caret + d.length };
-    }
-    default:
-      return { value: v, selStart: caret, selEnd: caret };
-  }
-}
+export const TEXTUAL = new Set(['text', 'h1', 'h2', 'h3', 'bullet', 'number', 'check', 'quote', 'code']);
+export const LISTS = new Set(['bullet', 'number', 'check']);
 
-/**
- * Enter inside a list / quote continues it; Enter on an empty item ends it.
- * Returns null when Enter should behave normally.
- */
-export function continueList(value, selStart, selEnd) {
-  const { start } = lineBounds(value, selStart);
-  const before = value.slice(start, selStart);
-  let m;
-  let next = null;
-  let empty = false;
-  if ((m = /^- \[[ xX]\] ?(.*)$/.exec(before))) {
-    next = '- [ ] ';
-    empty = !m[1].trim();
-  } else if ((m = /^([-*]) (.*)$/.exec(before))) {
-    next = `${m[1]} `;
-    empty = !m[2].trim();
-  } else if ((m = /^(\d+)\. (.*)$/.exec(before))) {
-    next = `${Number(m[1]) + 1}. `;
-    empty = !m[2].trim();
-  } else if ((m = /^> ?(.*)$/.exec(before))) {
-    next = '> ';
-    empty = !m[1].trim();
-  }
-  if (next == null) return null;
-  if (empty) {
-    const out = value.slice(0, start) + value.slice(selStart);
-    return { value: out, selStart: start, selEnd: start };
-  }
-  const ins = `\n${next}`;
-  const out = value.slice(0, selStart) + ins + value.slice(selEnd);
-  const s = selStart + ins.length;
-  return { value: out, selStart: s, selEnd: s };
-}
+let seq = 0;
+export const newBlock = (type = 'text', text = '', extra = {}) => ({
+  id: `b${Date.now().toString(36)}${(seq++).toString(36)}`,
+  type,
+  text,
+  ...(type === 'check' ? { checked: false } : {}),
+  ...extra,
+});
 
 const splitRow = (l) =>
   l
     .trim()
     .replace(/^\|/, '')
-    .replace(/\|$/, '')
-    .split('|')
-    .map((c) => c.trim());
+    .replace(/(?<!\\)\|$/, '')
+    .split(/(?<!\\)\|/)
+    .map((c) => c.trim().replace(/\\\|/g, '|'));
+const escCell = (c) => c.replace(/\n/g, ' ').replace(/\|/g, '\\|');
 
-/** Parse a body into display blocks; each block keeps the source offset of its text. */
-export function parseBody(src) {
-  const lines = src.split('\n');
-  const offs = [];
-  let off = 0;
-  for (const l of lines) {
-    offs.push(off);
-    off += l.length + 1;
-  }
+export function toBlocks(src) {
+  const lines = String(src ?? '').split('\n');
   const out = [];
+  const last = () => out[out.length - 1];
   let i = 0;
+  let prevQuote = false; // consecutive "> " lines form one quote block
   while (i < lines.length) {
     const l = lines[i];
-    const o = offs[i];
     let m;
+    const wasQuote = prevQuote;
+    prevQuote = false;
     if (/^```/.test(l)) {
       let j = i + 1;
       while (j < lines.length && !/^```\s*$/.test(lines[j])) j++;
-      out.push({ type: 'code', text: lines.slice(i + 1, j).join('\n'), offset: offs[i + 1] ?? o + l.length });
+      out.push(newBlock('code', lines.slice(i + 1, j).join('\n')));
       i = j + 1;
       continue;
     }
@@ -213,27 +132,114 @@ export function parseBody(src) {
       const rows = [splitRow(l)];
       let j = i + 2;
       while (j < lines.length && /^\s*\|/.test(lines[j])) rows.push(splitRow(lines[j++]));
-      out.push({ type: 'table', header: rows[0], rows: rows.slice(1), offset: o + 2 });
+      const cols = Math.max(...rows.map((r) => r.length));
+      out.push(newBlock('table', '', { rows: rows.map((r) => Array.from({ length: cols }, (_, k) => r[k] ?? '')) }));
       i = j;
       continue;
     }
-    if ((m = /^(#{1,3}) (.*)$/.exec(l))) out.push({ type: `h${m[1].length}`, text: m[2], offset: o + m[1].length + 1 });
-    else if ((m = /^- \[([ xX])\] ?(.*)$/.exec(l)))
-      out.push({ type: 'check', checked: m[1] !== ' ', text: m[2], offset: o + l.length - m[2].length, mark: o + 3 });
-    else if ((m = /^[-*] (.*)$/.exec(l))) out.push({ type: 'bullet', text: m[1], offset: o + 2 });
-    else if ((m = /^(\d+)\. (.*)$/.exec(l))) out.push({ type: 'number', n: Number(m[1]), text: m[2], offset: o + m[1].length + 2 });
-    else if ((m = /^> ?(.*)$/.exec(l))) out.push({ type: 'quote', text: m[1], offset: o + l.length - m[1].length });
-    else if (/^(-{3,}|\*{3,})\s*$/.test(l)) out.push({ type: 'hr', offset: o });
-    else if ((m = /^!\[([^\]]*)\]\(([^)\s]+)\)\s*$/.exec(l))) out.push({ type: 'image', alt: m[1], src: m[2], offset: o });
-    else out.push({ type: 'p', text: l, offset: o });
+    if ((m = /^(#{1,3}) (.*)$/.exec(l))) out.push(newBlock(`h${m[1].length}`, m[2]));
+    else if ((m = /^[-*] \[([ xX])\] ?(.*)$/.exec(l))) out.push(newBlock('check', m[2], { checked: m[1] !== ' ' }));
+    else if ((m = /^[-*] (.*)$/.exec(l))) out.push(newBlock('bullet', m[1]));
+    else if ((m = /^\d+[.)] (.*)$/.exec(l))) out.push(newBlock('number', m[1]));
+    else if ((m = /^> ?(.*)$/.exec(l))) {
+      if (wasQuote) last().text += `\n${m[1]}`;
+      else out.push(newBlock('quote', m[1]));
+      prevQuote = true;
+    } else if (/^(-{3,}|\*{3,})\s*$/.test(l)) out.push(newBlock('hr'));
+    else if ((m = /^!\[([^\]]*)\]\(([^)\s]+)\)\s*$/.exec(l))) out.push(newBlock('image', '', { alt: m[1], src: m[2] }));
+    else if ((m = /^ {2}(.*)$/.exec(l)) && LISTS.has(last()?.type)) last().text += `\n${m[1]}`;
+    else out.push(newBlock('text', l));
     i++;
+  }
+  if (!out.length) out.push(newBlock());
+  return out;
+}
+
+export function fromBlocks(blocks) {
+  const lines = [];
+  let n = 0;
+  for (const b of blocks) {
+    n = b.type === 'number' ? n + 1 : 0;
+    const t = b.text ?? '';
+    const cont = t.replace(/\n/g, '\n  ');
+    switch (b.type) {
+      case 'h1':
+      case 'h2':
+      case 'h3':
+        lines.push(`${'#'.repeat(Number(b.type[1]))} ${t.replace(/\n/g, ' ')}`);
+        break;
+      case 'bullet':
+        lines.push(`- ${cont}`);
+        break;
+      case 'number':
+        lines.push(`${n}. ${cont}`);
+        break;
+      case 'check':
+        lines.push(`- [${b.checked ? 'x' : ' '}] ${cont}`);
+        break;
+      case 'quote':
+        lines.push(t.split('\n').map((x) => `> ${x}`).join('\n'));
+        break;
+      case 'code':
+        lines.push(`\`\`\`\n${t}\n\`\`\``);
+        break;
+      case 'hr':
+        lines.push('---');
+        break;
+      case 'image':
+        lines.push(`![${b.alt || ''}](${b.src})`);
+        break;
+      case 'table': {
+        const row = (r) => `| ${r.map(escCell).join(' | ')} |`;
+        lines.push([row(b.rows[0]), `| ${b.rows[0].map(() => '---').join(' | ')} |`, ...b.rows.slice(1).map(row)].join('\n'));
+        break;
+      }
+      default:
+        lines.push(t);
+    }
+  }
+  return lines.join('\n');
+}
+
+/** Size of a block in "caret positions" — used to map a click on the formatted view to a spot in the editor. */
+const blockLen = (b) => (TEXTUAL.has(b.type) ? b.text.length : b.type === 'table' ? b.rows.flat().length : 0);
+
+export function positions(blocks) {
+  const out = [];
+  let acc = 0;
+  for (const b of blocks) {
+    out.push(acc);
+    acc += blockLen(b) + 1;
   }
   return out;
 }
 
-/** Toggle the checklist box whose "x" / " " sits at `mark`. */
-export const toggleCheck = (body, mark) =>
-  body.slice(0, mark) + (body[mark] === ' ' ? 'x' : ' ') + body.slice(mark + 1);
+/** Where to put the caret for a position (null = end of the note). */
+export function locate(blocks, pos) {
+  const focusable = (b) => TEXTUAL.has(b.type) || b.type === 'table';
+  const endOf = (b) =>
+    b.type === 'table'
+      ? { key: `${b.id}:${b.rows.length - 1}:${b.rows[0].length - 1}`, offset: 'end' }
+      : { key: b.id, offset: 'end' };
+  if (pos == null) {
+    for (let i = blocks.length - 1; i >= 0; i--) if (focusable(blocks[i])) return endOf(blocks[i]);
+    return null;
+  }
+  const starts = positions(blocks);
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    if (pos > starts[i] + blockLen(b)) continue;
+    if (TEXTUAL.has(b.type)) return { key: b.id, offset: pos - starts[i] };
+    if (b.type === 'table') {
+      const cols = b.rows[0].length;
+      const k = Math.max(0, pos - starts[i]);
+      return { key: `${b.id}:${Math.min(b.rows.length - 1, Math.floor(k / cols))}:${k % cols}`, offset: 'end' };
+    }
+    for (let j = i + 1; j < blocks.length; j++) if (focusable(blocks[j])) return { key: blocks[j].id ?? '', offset: 0 };
+    for (let j = i - 1; j >= 0; j--) if (focusable(blocks[j])) return endOf(blocks[j]);
+  }
+  return locate(blocks, null);
+}
 
 /** Image ids referenced by a body. */
 export const imageRefs = (body) => [...body.matchAll(/!\[[^\]]*\]\(img:([\w-]+)\)/g)].map((m) => m[1]);

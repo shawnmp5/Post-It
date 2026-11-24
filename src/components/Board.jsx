@@ -10,6 +10,7 @@ import {
   NOTE_MAX_W,
   NOTE_MIN_H,
   NOTE_MIN_W,
+  FONT_MAP,
   ZOOM_MAX,
   ZOOM_MIN,
 } from '../store.js';
@@ -41,7 +42,7 @@ function caretOffsetAt(el, x, y) {
   const host = (node.nodeType === Node.TEXT_NODE ? node.parentElement : node).closest('[data-offset]');
   if (!host || !el.contains(host)) return null;
   const base = Number(host.dataset.offset);
-  if (node.nodeType !== Node.TEXT_NODE) return base;
+  if (node.nodeType !== Node.TEXT_NODE || host.dataset.exact != null) return base;
   const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT);
   let total = 0;
   while (walker.nextNode()) {
@@ -700,7 +701,15 @@ export const Board = forwardRef(function Board(
       <div ref={sizerRef} className="board-sizer" style={{ width: boardW * zoom, height: boardH * zoom }}>
         <div
           className="board"
-          style={{ width: boardW, height: boardH, transform: `scale(${zoom})`, '--zoom': zoom }}
+          style={{
+            width: boardW,
+            height: boardH,
+            transform: `scale(${zoom})`,
+            '--zoom': zoom,
+            '--note-font': (FONT_MAP[settings.noteFont] || FONT_MAP.clean).family,
+            '--note-scale': (FONT_MAP[settings.noteFont] || FONT_MAP.clean).scale,
+            '--note-title-weight': (FONT_MAP[settings.noteFont] || FONT_MAP.clean).titleWeight,
+          }}
           onPointerDown={boardPointerDown}
           onDoubleClick={(e) => {
             if (e.target !== e.currentTarget) return;

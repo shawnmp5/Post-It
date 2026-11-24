@@ -69,13 +69,13 @@ export function createSeedData() {
     ...wall(
       personal.id,
       [
-        ['Welcome to POST IT', 'Click a note to edit it.\nDrag the tape to move it.\nDrag the corner to resize.\nPress N for a new note.\n\nThe ⋯ menu has colors, tilt, connections and more.', 'yellow', {w: 250 }],
+        ['Welcome to POST IT', '- Click a note to write in it\n- Drag the tape to move it\n- Type \\ for lists, checklists, tables and more\n- Press N for a new note\n\nThe ⋯ menu has colors, tilt and connections.', 'yellow', {w: 250 }],
         ['Call grandma', 'Sunday after lunch. Ask about the garden and the lemon cake recipe.', 'pink'],
         ['Dentist', 'Thursday 2:30 pm\nBring insurance card', 'blue', {}],
-        ['Morning routine', 'Glass of water first\nStretch 10 min\nNo phone until 9', 'mint'],
+        ['Morning routine', '- [x] Glass of water first\n- [ ] Stretch 10 min\n- [ ] No phone until 9', 'mint'],
         ['', 'You don’t have to have it all figured out to move forward.', 'white', { w: 200 }],
-        ['Weekend', 'Farmers market\nFix the bike light\nLong walk somewhere new', 'orange'],
-        ['Books to read', 'The Overstory\nPiranesi\nFour Thousand Weeks', 'lavender'],
+        ['Weekend', '- Farmers market\n- Fix the bike light\n- Long walk somewhere new', 'orange'],
+        ['Books to read', '- The Overstory\n- Piranesi\n- Four Thousand Weeks', 'lavender'],
         ['Passwords', 'Move everything into the password manager. Turn on 2FA for email.', 'gray', { w: 200 }],
       ],
       11,
@@ -113,8 +113,8 @@ export function createSeedData() {
     ...wall(
       shopping.id,
       [
-        ['Groceries', 'Oat milk\nEggs\nSpinach\nLemons\nSourdough\nCoffee beans', 'yellow', { w: 200 }],
-        ['Hardware store', 'Picture hooks\nAA batteries\nWood glue', 'gray'],
+        ['Groceries', '- [ ] Oat milk\n- [x] Eggs\n- [ ] Spinach\n- [x] Lemons\n- [ ] Sourdough\n- [ ] Coffee beans', 'yellow', { w: 200 }],
+        ['Hardware store', '- [ ] Picture hooks\n- [ ] AA batteries\n- [ ] Wood glue', 'gray'],
         ['Gifts', 'Mom — ceramic mug\nSam — climbing chalk bag', 'pink'],
       ],
       9,
@@ -131,7 +131,7 @@ export function createSeedData() {
     ...wall(
       movies.id,
       [
-        ['Watch next', 'Past Lives\nThe Bear S3\nPerfect Days', 'lavender'],
+        ['Watch next', '- [ ] Past Lives\n- [ ] The Bear S3\n- [x] Perfect Days', 'lavender'],
         ['Rewatch', 'Spirited Away\nArrival', 'pink'],
         ['Recommended by Alex', 'Severance — “just trust me on the first two episodes”', 'white', { w: 230 }],
       ],
@@ -148,10 +148,10 @@ export function createSeedData() {
       business.id,
       [
         ['Neighborhood tool library', 'Rent drills, ladders, and saws by the day. Members pay monthly. Start with one garage.', 'yellow', { id: ideaA, w: 250, col: 0 }],
-        ['Pricing thoughts', '$9 / month basic\n$19 / month with delivery\nFirst week free', 'mint', { id: ideaB, col: 1 }],
+        ['Pricing thoughts', '| Plan | Price |\n| --- | --- |\n| Basic | $9 / mo |\n| Delivery | $19 / mo |\n| Trial | 1 week free |', 'mint', { id: ideaB, col: 1 }],
         ['Questions to validate', 'Would people actually share tools?\nInsurance?\nWho handles repairs?', 'pink', { id: ideaC, col: 0, w: 240 }],
         ['Plant subscription', 'Monthly houseplant + care card. Partner with local nurseries.', 'blue', { id: ideaD, col: 3 }],
-        ['Name ideas', 'Borrowed\nShed Club\nLendly', 'lavender', { col: 1 }],
+        ['Name ideas', '- Borrowed\n- Shed Club\n- Lendly', 'lavender', { col: 1 }],
         ['Next step', 'Talk to 10 neighbors this week.', 'orange', { col: 2 }],
       ],
       29,
