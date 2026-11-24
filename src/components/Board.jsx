@@ -69,6 +69,7 @@ export const Board = forwardRef(function Board(
   const [editing, setEditing] = useState(null); // { id, field, caret, token }
   const [selectedId, setSelectedId] = useState(null);
   const [draggingId, setDraggingId] = useState(null);
+  const [cornerId, setCornerId] = useState(null); // note being resized from a corner (shows its frame)
   const [menu, setMenu] = useState(null); // { id, anchor }
   const [stickerFor, setStickerFor] = useState(null); // { id, anchor }
   const [connect, setConnect] = useState(null); // { from, x, y }
@@ -249,8 +250,9 @@ export const Board = forwardRef(function Board(
   const endGesture = () => {
     cancelAnimationFrame(raf.current);
     gesture.current = null;
-    document.body.classList.remove('is-dragging-note', 'is-resizing-note', 'is-resize-nesw', 'is-resize-nwse', 'is-panning');
+    document.body.classList.remove('is-dragging-note', 'is-resizing-note', 'is-resize-nesw', 'is-resize-nwse', 'is-resize-ns', 'is-resize-ew', 'is-panning');
     setDraggingId(null);
+    setCornerId(null);
     setPanning(false);
   };
 
@@ -310,6 +312,7 @@ export const Board = forwardRef(function Board(
 
     // Notes move only by their tape and resize from their corner handles; the body is for reading and editing.
     const canMove = isGrip || isResize;
+    if (isResize && corner.length === 2) setCornerId(id);
     if (canMove) {
       e.currentTarget.setPointerCapture?.(e.pointerId);
       if (e.pointerType === 'touch') e.preventDefault();
@@ -401,17 +404,22 @@ export const Board = forwardRef(function Board(
           }
           raf.current = requestAnimationFrame(dragFrame);
         } else {
-          document.body.classList.add('is-resizing-note', g.corner === 'ne' || g.corner === 'sw' ? 'is-resize-nesw' : 'is-resize-nwse');
+          const c = g.corner;
+          const cur = c === 'n' || c === 's' ? 'is-resize-ns' : c === 'e' || c === 'w' ? 'is-resize-ew' : c === 'ne' || c === 'sw' ? 'is-resize-nesw' : 'is-resize-nwse';
+          document.body.classList.add('is-resizing-note', cur);
         }
       }
       if (g.kind === 'resize') {
-        // Each corner moves its own two edges; the opposite corner stays put.
+        // Free transform: each handle moves only its own edge(s); the opposite side stays put.
         const z = L.zoom;
-        const west = g.corner === 'nw' || g.corner === 'sw';
-        const north = g.corner === 'nw' || g.corner === 'ne';
-        const w = Math.round(clamp(g.orig.w + (west ? -dx : dx) / z, NOTE_MIN_W, NOTE_MAX_W));
-        const h = Math.round(clamp(g.orig.h + (north ? -dy : dy) / z, NOTE_MIN_H, NOTE_MAX_H));
-        const patch = { w, h };
+        const c = g.corner;
+        const west = c.includes('w');
+        const east = c.includes('e');
+        const north = c.includes('n');
+        const south = c.includes('s');
+        const w = west || east ? Math.round(clamp(g.orig.w + (west ? -dx : dx) / z, NOTE_MIN_W, NOTE_MAX_W)) : g.orig.w;
+        const h = north || south ? Math.round(clamp(g.orig.h + (north ? -dy : dy) / z, NOTE_MIN_H, NOTE_MAX_H)) : g.orig.h;
+        const patch = north || south ? { w, h } : { w };
         if (west) patch.x = Math.max(0, Math.round(g.orig.x + g.orig.w - w));
         if (north) patch.y = Math.max(0, Math.round(g.orig.y + g.orig.h - h));
         dispatch({ type: 'note/update', id: g.id, patch, touch: false });
@@ -810,6 +818,7 @@ export const Board = forwardRef(function Board(
               editToken={editing?.id === n.id ? editing.token : null}
               selected={selectedId === n.id}
               dragging={draggingId === n.id}
+              resizing={cornerId === n.id}
               dimmed={!!matches && !matches.has(n.id)}
               matched={!!matches && matches.has(n.id)}
               flash={flashId === n.id}

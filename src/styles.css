@@ -650,6 +650,14 @@ body.is-resize-nwse,
 body.is-resize-nwse * {
   cursor: nwse-resize !important;
 }
+body.is-resize-ns,
+body.is-resize-ns * {
+  cursor: ns-resize !important;
+}
+body.is-resize-ew,
+body.is-resize-ew * {
+  cursor: ew-resize !important;
+}
 body.is-resizing-note,
 body.is-resizing-note * {
   user-select: none !important;
@@ -897,7 +905,7 @@ body.is-resizing-note * {
   position: absolute !important;
   top: -15px;
   left: 50%;
-  z-index: 8; /* above the button bar so it can always be grabbed */
+  z-index: 11; /* above the button bar and the top resize edge */
   padding: 5px 8px;
   cursor: grab;
   touch-action: none;
@@ -1029,7 +1037,8 @@ body.is-resizing-note * {
   box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.1);
 }
 
-/* Selection frame + corner handles (resize). */
+/* Resize: invisible grab zones on every edge and corner. The blue frame and
+   corner handles only appear when you go for a corner (hover or drag). */
 .note-frame {
   position: absolute !important;
   inset: -1px;
@@ -1040,30 +1049,29 @@ body.is-resizing-note * {
   opacity: 0;
   transition: opacity 0.15s ease;
 }
+/* Each corner is a fixed 24px grab zone; the white square is drawn inside it. */
 .note-handle {
   position: absolute !important;
-  z-index: 10;
-  width: 10px;
-  height: 10px;
-  margin: -5px;
+  z-index: 12;
+  width: 24px;
+  height: 24px;
+  margin: -12px;
+  touch-action: none;
+}
+.note-handle::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
   border-radius: 2.5px;
   background: #fff;
   box-shadow:
     0 0 0 1.5px var(--select),
     0 1px 3px rgba(0, 0, 0, 0.18);
-  touch-action: none;
   opacity: 0;
   transform: scale(0.4);
-  pointer-events: none;
   transition:
     opacity 0.15s ease,
     transform 0.2s cubic-bezier(0.3, 1.6, 0.5, 1);
-}
-/* A bigger invisible grab area than the dot itself. */
-.note-handle::before {
-  content: '';
-  position: absolute;
-  inset: -8px;
 }
 .note-handle.is-nw {
   top: -1px;
@@ -1085,23 +1093,53 @@ body.is-resizing-note * {
   right: -1px;
   cursor: nwse-resize;
 }
-.note.is-selected .note-frame,
-.note.is-editing .note-frame,
-.note.is-selected .note-handle,
-.note.is-editing .note-handle {
+.note:has(.note-handle:hover) .note-frame,
+.note.is-resizing .note-frame {
   opacity: 1;
 }
-.note.is-selected .note-handle,
-.note.is-editing .note-handle {
+.note:has(.note-handle:hover) .note-handle::after,
+.note.is-resizing .note-handle::after {
+  opacity: 1;
   transform: scale(1);
-  pointer-events: auto;
 }
-.note-handle:hover {
+.note-handle:hover::after {
   transform: scale(1.25) !important;
 }
 .note.is-dragging .note-frame,
-.note.is-dragging .note-handle {
+.note.is-dragging .note-handle::after {
   opacity: 0;
+}
+
+.note-edge {
+  position: absolute !important;
+  z-index: 9;
+  touch-action: none;
+}
+.note-edge.is-n,
+.note-edge.is-s {
+  left: 12px;
+  right: 12px;
+  height: 10px;
+  cursor: ns-resize;
+}
+.note-edge.is-n {
+  top: -5px;
+}
+.note-edge.is-s {
+  bottom: -5px;
+}
+.note-edge.is-e,
+.note-edge.is-w {
+  top: 12px;
+  bottom: 12px;
+  width: 10px;
+  cursor: ew-resize;
+}
+.note-edge.is-e {
+  right: -5px;
+}
+.note-edge.is-w {
+  left: -5px;
 }
 
 /* ---------- Note blocks (shared by the read view and the editor) ----------
@@ -1724,7 +1762,7 @@ textarea.blk-cell {
 
 .sticker {
   position: absolute !important;
-  z-index: 6;
+  z-index: 10; /* above the edge resize strips, below the corners */
   width: 40px;
   height: 40px;
   margin: -20px 0 0 -20px;
@@ -1753,7 +1791,7 @@ textarea.blk-cell {
   transform: scale(1.1) rotate(5deg);
 }
 .sticker.is-dragging {
-  z-index: 9;
+  z-index: 11;
   cursor: grabbing;
 }
 .sticker.is-dragging .sticker-face {
@@ -2592,12 +2630,12 @@ textarea.blk-cell {
     transform: scale(0.85) !important;
   }
   .note-handle {
-    width: 12px;
-    height: 12px;
-    margin: -6px;
+    width: 32px;
+    height: 32px;
+    margin: -16px;
   }
-  .note-handle::before {
-    inset: -12px;
+  .note-handle::after {
+    inset: 10px;
   }
   .topic-more {
     display: inline-flex;

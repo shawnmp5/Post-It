@@ -28,7 +28,7 @@ npm run build    # production build in dist/
 - Tables: Tab / Enter move between cells (and add rows at the end); the toolbar under a focused table adds or removes rows and columns
 - Enter continues a list, Enter on an empty item ends it, Backspace at the start turns a block back into text; paste an image to add it
 - Click a note to edit it right where you clicked; click outside (or press Esc) to finish
-- Select a note to show its frame, then drag any of the four corner handles to resize; ⋯ menu → *Fit height to text* returns to auto height
+- Free transform: drag any edge or corner to resize in that direction (hovering a corner reveals the frame and handles); ⋯ menu → *Fit height to text* returns to auto height
 - 8 muted colors, slight tilt (adjustable per note, or turn off globally), duplicate, archive, delete
 - Stickers: the smiley button on a note (or ⋯ → Add sticker…) slaps on a reaction — 👍 👎 ❤️ 😂 🔥 🎉 ⭐ ✅ 🚀 and more. Drag stickers anywhere on the note; hover and hit × to peel one off
 - Connect two related notes with a line (⋯ → *Connect to note…*); click a line to remove it
