@@ -7,14 +7,14 @@ const HISTORY_LIMIT = 120;
 
 /** Muted sticky-note palette. `ink` is the accent used for the swatch ring. */
 export const COLORS = [
-  { id: 'yellow', name: 'Yellow', bg: '#FCE67E', edge: '#EDCE52' },
-  { id: 'pink', name: 'Pink', bg: '#FBB8CA', edge: '#ED97B0' },
-  { id: 'blue', name: 'Blue', bg: '#ACD6F8', edge: '#85BBEA' },
-  { id: 'lavender', name: 'Lavender', bg: '#CFBDF8', edge: '#B29CEC' },
-  { id: 'mint', name: 'Mint', bg: '#A9E6C4', edge: '#81D1A6' },
-  { id: 'orange', name: 'Orange', bg: '#FBC38C', edge: '#EEA862' },
+  { id: 'yellow', name: 'Yellow', bg: '#FFE45E', edge: '#F0C928' },
+  { id: 'pink', name: 'Pink', bg: '#FF9DBE', edge: '#F276A2' },
+  { id: 'blue', name: 'Blue', bg: '#86C8FF', edge: '#56A9F0' },
+  { id: 'lavender', name: 'Lavender', bg: '#BFA2FF', edge: '#9E7BF2' },
+  { id: 'mint', name: 'Mint', bg: '#7FE3AE', edge: '#4ECB8A' },
+  { id: 'orange', name: 'Orange', bg: '#FFAD5C', edge: '#F28E2E' },
   { id: 'white', name: 'White', bg: '#FFFFFF', edge: '#E4E4E0' },
-  { id: 'gray', name: 'Gray', bg: '#DFDFDA', edge: '#C6C6C1' },
+  { id: 'gray', name: 'Gray', bg: '#D9D9D4', edge: '#BDBDB7' },
 ];
 export const COLOR_MAP = Object.fromEntries(COLORS.map((c) => [c.id, c]));
 
