@@ -298,32 +298,45 @@ function Block({ b, i, n, start, sole, mode, images, query, sizeKey, ed, onToggl
   }
 }
 
-/** Image with side handles: drag either one to resize (the image stays centred). */
+/**
+ * Image that resizes like a note: invisible corner grab zones, diagonal cursor,
+ * no visible handles. The image stays centred and keeps its proportions, so the
+ * dragged corner follows the pointer.
+ */
 function ImageBlock({ b, src, removeBtn, onWidth }) {
   const ref = useRef(null);
+  const imgRef = useRef(null);
   const [live, setLive] = useState(null); // width % while dragging
   const width = live ?? b.width ?? 100;
 
-  const start = (e, side) => {
+  const start = (e, corner) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.stopPropagation();
     e.preventDefault();
-    const box = ref.current.getBoundingClientRect(); // full column width, in screen px
+    const col = ref.current.getBoundingClientRect(); // full column width, screen px
+    const img = imgRef.current.getBoundingClientRect();
+    const ratio = img.width / Math.max(1, img.height);
+    const sx = corner.includes('e') ? 1 : -1;
+    const sy = corner.includes('s') ? 1 : -1;
     const handle = e.currentTarget;
     handle.setPointerCapture?.(e.pointerId);
-    const sx = e.clientX;
+    document.body.classList.add('is-resizing-note', corner === 'ne' || corner === 'sw' ? 'is-resize-nesw' : 'is-resize-nwse');
+    const x0 = e.clientX;
+    const y0 = e.clientY;
     const startW = b.width ?? 100;
     let w = startW;
     const move = (ev) => {
-      const dx = (ev.clientX - sx) * (side === 'left' ? -1 : 1);
-      // Centred image: each side moves by dx, so the width changes by 2·dx.
-      w = Math.round(Math.min(100, Math.max(15, startW + ((dx * 2) / box.width) * 100)));
+      // Project the pointer movement onto the corner's diagonal (in horizontal px).
+      const grow = (sx * (ev.clientX - x0) + sy * (ev.clientY - y0) * ratio) / 2;
+      // Centred: each side moves by `grow`, so the width changes by twice that.
+      w = Math.round(Math.min(100, Math.max(15, startW + ((grow * 2) / col.width) * 100)));
       setLive(w);
     };
     const up = () => {
       handle.removeEventListener('pointermove', move);
       handle.removeEventListener('pointerup', up);
       handle.removeEventListener('pointercancel', up);
+      document.body.classList.remove('is-resizing-note', 'is-resize-nesw', 'is-resize-nwse');
       setLive(null);
       if (w !== startW) onWidth(w);
     };
@@ -336,10 +349,10 @@ function ImageBlock({ b, src, removeBtn, onWidth }) {
     <div className={`blk blk-image ${live != null ? 'is-resizing' : ''}`} ref={ref}>
       {src ? (
         <div className="img-frame" style={{ width: `${width}%` }}>
-          <img src={src} alt={b.alt || ''} draggable={false} />
-          <span className="img-handle is-left" onPointerDown={(e) => start(e, 'left')} onMouseDown={keep} title="Drag to resize" />
-          <span className="img-handle is-right" onPointerDown={(e) => start(e, 'right')} onMouseDown={keep} title="Drag to resize" />
-          {live != null && <span className="img-size">{live}%</span>}
+          <img ref={imgRef} src={src} alt={b.alt || ''} draggable={false} />
+          {['nw', 'ne', 'sw', 'se'].map((c) => (
+            <span key={c} className={`img-corner is-${c}`} onPointerDown={(e) => start(e, c)} onMouseDown={keep} aria-hidden="true" />
+          ))}
           {removeBtn}
         </div>
       ) : (
