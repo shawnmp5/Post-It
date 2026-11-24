@@ -110,7 +110,7 @@ export const Note = memo(function Note({
         '--note-bg': color.bg,
         '--note-edge': color.edge,
         '--rot': `${rotation}deg`,
-        transform: `translate3d(${note.x}px, ${note.y}px, 0) rotate(var(--rot))`,
+        transform: `translate(${note.x}px, ${note.y}px) rotate(var(--rot))`,
         width: note.w,
         height: fixed ? note.h : undefined,
         zIndex: dragging ? 100000 : note.z,

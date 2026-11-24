@@ -815,23 +815,20 @@ body.is-resizing-note * {
 .note {
   --note-ink: #23231f;
   font-family: var(--note-font, var(--font));
-  --shadow: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.07)) drop-shadow(0 7px 9px rgba(0, 0, 0, 0.1));
+  --shadow: 0 1px 1px rgba(0, 0, 0, 0.07), 0 8px 14px -6px rgba(0, 0, 0, 0.16);
   position: absolute;
   top: 0;
   left: 0;
   display: flex;
   flex-direction: column;
   color: var(--note-ink);
-  filter: var(--shadow);
   cursor: text;
   touch-action: auto;
   transition:
     transform 0.26s var(--ease),
-    filter 0.2s ease,
     opacity 0.2s ease,
     scale 0.18s var(--ease),
     width 0.2s var(--ease);
-  will-change: transform;
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
@@ -843,35 +840,38 @@ body.is-resizing-note * {
   position: absolute;
   inset: 0;
   background: var(--note-bg);
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s ease;
   border-radius: 1px;
   pointer-events: none;
 }
 .note.is-white .note-paper {
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.07), var(--shadow);
 }
 .note > :not(.note-paper) {
   position: relative;
 }
 .note:hover {
-  --shadow: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.08)) drop-shadow(0 11px 12px rgba(0, 0, 0, 0.13));
+  --shadow: 0 1px 1px rgba(0, 0, 0, 0.08), 0 12px 20px -8px rgba(0, 0, 0, 0.2);
 }
 .note.is-selected,
 .note.is-editing,
 .note.is-matched {
-  --shadow: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.09)) drop-shadow(0 14px 14px rgba(0, 0, 0, 0.16));
+  --shadow: 0 1px 1px rgba(0, 0, 0, 0.09), 0 16px 24px -10px rgba(0, 0, 0, 0.24);
 }
 .note.is-dragging {
-  --shadow: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.08)) drop-shadow(0 24px 20px rgba(0, 0, 0, 0.2));
+  --shadow: 0 2px 3px rgba(0, 0, 0, 0.08), 0 28px 36px -14px rgba(0, 0, 0, 0.3);
+  will-change: transform; /* only while dragging */
   scale: 1.03;
   cursor: grabbing;
-  transition: filter 0.2s ease, scale 0.18s var(--ease);
+  transition: scale 0.18s var(--ease);
 }
 .note.is-editing {
   cursor: default;
 }
 .note.is-dimmed {
   opacity: 0.22;
-  filter: saturate(0.4) var(--shadow);
+  filter: saturate(0.4);
 }
 .note.is-flash {
   animation: note-flash 1.2s ease;
@@ -880,7 +880,7 @@ body.is-resizing-note * {
   animation: note-in 0.32s var(--ease);
 }
 .board-wrap.is-connecting .note.is-connect-target:hover {
-  --shadow: drop-shadow(0 0 1px rgba(0, 0, 0, 0.7)) drop-shadow(0 14px 14px rgba(0, 0, 0, 0.18));
+  --shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.6), 0 16px 24px -10px rgba(0, 0, 0, 0.24);
 }
 
 /* A strip of translucent tape holding the note to the wall — and the handle for moving it.
@@ -899,8 +899,6 @@ body.is-resizing-note * {
   display: block;
   height: 23px;
   background: rgba(238, 238, 232, 0.78);
-  -webkit-backdrop-filter: blur(1px);
-  backdrop-filter: blur(1px);
   box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.5);
   clip-path: polygon(
     0 0, 100% 0, 98% 20%, 100% 40%, 98% 60%, 100% 80%, 98% 100%,
