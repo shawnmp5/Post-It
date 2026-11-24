@@ -2124,6 +2124,10 @@ body.is-dragging-image * {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.note-trash:hover {
+  color: var(--danger) !important;
+  background: rgba(179, 38, 30, 0.1) !important;
+}
 .note-remind.has-reminder {
   color: #e08600;
 }

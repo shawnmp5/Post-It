@@ -1,6 +1,6 @@
 import { memo, useEffect, useLayoutEffect, useRef } from 'react';
 import { COLOR_MAP } from '../store.js';
-import { IconMore } from './Icons.jsx';
+import { IconMore, IconTrash } from './Icons.jsx';
 import { BlockEditor, NoteView, highlight } from './NoteBlocks.jsx';
 import { NoteSticker } from './Stickers.jsx';
 import { BellIcon, ReminderChip } from './Reminders.jsx';
@@ -167,6 +167,19 @@ export const Note = memo(function Note({
             <circle cx="5.9" cy="6.4" r=".5" fill="currentColor" />
             <circle cx="10.1" cy="6.4" r=".5" fill="currentColor" />
           </svg>
+        </button>
+        <button
+          type="button"
+          className="note-react note-trash"
+          aria-label="Delete note"
+          title="Delete note"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            api.deleteNote(note.id);
+          }}
+        >
+          <IconTrash width="14" height="14" />
         </button>
         <button
           type="button"

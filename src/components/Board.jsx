@@ -685,6 +685,7 @@ export const Board = forwardRef(function Board(
         setSelectedId(id);
         setReminderFor((m) => (m?.id === id ? null : { id, anchor }));
       },
+      deleteNote: (id) => deleteNote(id),
       openStickers: (id, anchor) => {
         setSelectedId(id);
         dispatch({ type: 'note/front', id });
