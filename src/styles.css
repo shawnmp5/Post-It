@@ -4637,6 +4637,11 @@ body,
   display: block;
   pointer-events: none;
 }
+.wallpaper canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
 /* With a wallpaper the app's own surfaces step aside so it shows through. */
 :root[data-wallpaper='rain'] body,
 :root[data-wallpaper='rain'] .app,
@@ -4713,4 +4718,59 @@ body,
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* Scroll the wall (and long lists) on the graphics card even when they're see-through,
+   so notes aren't repainted on every scroll step. */
+.board-scroll,
+.topic-list {
+  will-change: scroll-position;
+}
+
+/* Over the moving rain, live blur would be redone on every frame (and every scroll step),
+   so the always-visible panels use a slightly more solid tint instead. Pop-up menus keep
+   their blur; they're only open for a moment. */
+:root[data-wallpaper='rain']:not([data-clear='true']) .sidebar,
+:root[data-wallpaper='rain']:not([data-clear='true']) .menu-btn,
+:root[data-wallpaper='rain']:not([data-clear='true']) .ws-actions,
+:root[data-wallpaper='rain']:not([data-clear='true']) .ws-actions .tb-group,
+:root[data-wallpaper='rain']:not([data-clear='true']) .floating-controls.dock {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+:root[data-wallpaper='rain']:not([data-clear='true'])[data-theme='light'] .sidebar {
+  background: rgba(246, 247, 249, 0.9);
+}
+:root[data-wallpaper='rain']:not([data-clear='true'])[data-theme='light'] .menu-btn,
+:root[data-wallpaper='rain']:not([data-clear='true'])[data-theme='light'] .ws-actions,
+:root[data-wallpaper='rain']:not([data-clear='true'])[data-theme='light'] .floating-controls.dock {
+  background: rgba(250, 250, 252, 0.9);
+}
+:root[data-wallpaper='rain']:not([data-clear='true'])[data-theme='dark'] .sidebar {
+  background: rgba(36, 37, 40, 0.9);
+}
+:root[data-wallpaper='rain']:not([data-clear='true'])[data-theme='dark'] .menu-btn,
+:root[data-wallpaper='rain']:not([data-clear='true'])[data-theme='dark'] .ws-actions,
+:root[data-wallpaper='rain']:not([data-clear='true'])[data-theme='dark'] .floating-controls.dock {
+  background: rgba(44, 44, 46, 0.9);
+}
+
+/* No hover effects mid-scroll: Board turns this sheet on for a moment while scrolling.
+   It sticks to the top-left of the wall's viewport and covers it; wheel and touch
+   scrolling still reach the wall because the sheet lives inside it. */
+.scroll-shield {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  z-index: 50;
+}
+.scroll-shield.is-on::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
 }

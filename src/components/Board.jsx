@@ -174,7 +174,16 @@ export const Board = forwardRef(function Board(
   }, []);
 
   const scrollSaveTimer = useRef(null);
+  const scrollingTimer = useRef(null);
+  const shieldRef = useRef(null);
   const onScroll = () => {
+    // While scrolling, notes passing under the pointer shouldn't light up their hover
+    // states: that repaints the wall on every step. An invisible sheet covers them for
+    // the moment (only that one element is restyled, and there's no re-render).
+    const sh = shieldRef.current;
+    if (sh && !sh.classList.contains('is-on')) sh.classList.add('is-on');
+    clearTimeout(scrollingTimer.current);
+    scrollingTimer.current = setTimeout(() => shieldRef.current?.classList.remove('is-on'), 220);
     clearTimeout(scrollSaveTimer.current);
     scrollSaveTimer.current = setTimeout(() => {
       const el = scrollRef.current;
@@ -186,7 +195,13 @@ export const Board = forwardRef(function Board(
       });
     }, 220);
   };
-  useEffect(() => () => clearTimeout(scrollSaveTimer.current), []);
+  useEffect(
+    () => () => {
+      clearTimeout(scrollSaveTimer.current);
+      clearTimeout(scrollingTimer.current);
+    },
+    [],
+  );
 
   /* ---------------- coordinates ---------------- */
 
@@ -817,6 +832,7 @@ export const Board = forwardRef(function Board(
   return (
     <div className={`board-wrap ${panning ? 'is-panning' : ''} ${connect ? 'is-connecting' : ''}`}>
     <div ref={scrollRef} className="board-scroll" onScroll={onScroll}>
+      <div ref={shieldRef} className="scroll-shield" aria-hidden="true" />
       <div ref={sizerRef} className="board-sizer" style={{ width: boardW * zoom, height: boardH * zoom }}>
         <div
           className="board"
