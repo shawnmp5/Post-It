@@ -445,7 +445,7 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
           <Avatar username={handle} />
           <span className="profile-text">
             <span className="profile-name">@{handle}</span>
-            <span className={`profile-sub ${account?.mode === 'server' && /^Synced/.test(syncLabel(account)) ? 'is-synced' : ''}`}>
+            <span className="profile-sub">
               <SyncLabel account={account} />
             </span>
           </span>

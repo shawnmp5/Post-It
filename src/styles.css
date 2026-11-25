@@ -6035,8 +6035,7 @@ button.ios-row:active {
   background: var(--window-dim) !important;
 }
 
-/* "Synced …" reads green; anything else (Syncing…, Offline, Sync off) stays grey. */
-.profile-sub.is-synced,
+/* In the Account window "Synced …" reads green; anything else stays grey. */
 .ios-value.is-synced {
   color: var(--sys-green);
 }
