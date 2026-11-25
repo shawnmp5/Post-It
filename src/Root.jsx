@@ -16,6 +16,7 @@ export default function Root() {
   const [phase, setPhase] = useState({ name: 'loading' });
   const [accountOpen, setAccountOpen] = useState(false);
   const [syncState, setSyncState] = useState({ status: 'saved', lastSynced: 0 });
+  const [, setSyncTick] = useState(0); // re-render when sync is switched on/off
   const syncRef = useRef(null);
   const remote = useRef(new Set());
 
@@ -118,7 +119,7 @@ export default function Root() {
       <App
         key={phase.user.id}
         wall={wall}
-        account={{ username: phase.user.username, mode: phase.mode }}
+        account={{ username: phase.user.username, mode: phase.mode, sync: syncState.status }}
         onOpenAccount={() => setAccountOpen(true)}
       />
       {accountOpen && (
@@ -127,6 +128,12 @@ export default function Root() {
           keyBox={phase.keyBox}
           mode={phase.mode}
           sync={syncState}
+          syncOn={phase.sync.enabled}
+          onSyncChange={async (on) => {
+            await phase.sync.setEnabled(on);
+            setSyncTick((n) => n + 1);
+          }}
+          onSyncNow={() => phase.sync.syncNow()}
           onClose={() => setAccountOpen(false)}
           onUser={(user, keyBox) => setPhase((p) => ({ ...p, user, keyBox: keyBox || p.keyBox }))}
           onSignOut={doSignOut}

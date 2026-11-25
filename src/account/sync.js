@@ -10,6 +10,16 @@ import { encryptJSON, decryptJSON } from './crypto.js';
 import { getWall, putWall, mode } from './client.js';
 
 const cacheKey = (uid) => `postit:wall:${uid}`;
+const offKey = (uid) => `postit:sync-off:${uid}`;
+
+// Sync can be turned off per device (Account → Sync across devices). It's on by default.
+export function isSyncOn(uid) {
+  try {
+    return localStorage.getItem(offKey(uid)) !== '1';
+  } catch {
+    return true;
+  }
+}
 const LEGACY_KEY = 'postit:v1'; // the old, unencrypted single-user wall
 const ADOPTED_KEY = 'postit:v1:adopted';
 
@@ -60,7 +70,7 @@ export async function openWall(user, key, makeStarter) {
     }
   }
   let remote = null;
-  if (mode === 'server') {
+  if (mode === 'server' && isSyncOn(user.id)) {
     try {
       remote = await getWall();
     } catch {
@@ -82,12 +92,14 @@ export async function openWall(user, key, makeStarter) {
 
 export function createSync(user, key, initialMeta, { onRemote, adoptedLegacy }) {
   const meta = { ...initialMeta };
-  let box = null;
+  let box = readCache(user.id)?.box || null; // this device's latest encrypted copy
   let seq = 0;
   let pushTimer = 0;
   let inflight = false;
   let again = false;
-  let status = mode === 'server' ? 'saved' : 'local';
+  let enabled = isSyncOn(user.id);
+  const live = () => mode === 'server' && enabled;
+  let status = mode !== 'server' ? 'local' : enabled ? 'saved' : 'off';
   let lastSynced = meta.dirty ? 0 : Date.now();
   const listeners = new Set();
   const setStatus = (s) => {
@@ -112,13 +124,13 @@ export function createSync(user, key, initialMeta, { onRemote, adoptedLegacy }) 
   }
 
   function schedulePush(ms) {
-    if (mode !== 'server') return;
+    if (!live()) return;
     clearTimeout(pushTimer);
     pushTimer = setTimeout(push, ms);
   }
 
   async function push() {
-    if (mode !== 'server' || !meta.dirty || !box) return;
+    if (!live() || !meta.dirty || !box) return;
     if (inflight) {
       again = true;
       return;
@@ -173,7 +185,7 @@ export function createSync(user, key, initialMeta, { onRemote, adoptedLegacy }) 
   }
 
   async function pull() {
-    if (mode !== 'server' || meta.dirty || inflight) return;
+    if (!live() || meta.dirty || inflight) return;
     try {
       const remote = await getWall();
       if (remote.blob && remote.rev !== meta.rev) await adopt(remote);
@@ -215,6 +227,52 @@ export function createSync(user, key, initialMeta, { onRemote, adoptedLegacy }) 
       return () => listeners.delete(fn);
     },
     flush: push,
+    get enabled() {
+      return enabled;
+    },
+    // Turn syncing on or off for this device. Turning it on catches up: the newer of this
+    // device's notes and the account's wins.
+    async setEnabled(on) {
+      try {
+        if (on) localStorage.removeItem(offKey(user.id));
+        else localStorage.setItem(offKey(user.id), '1');
+      } catch {
+        /* ignore */
+      }
+      enabled = !!on;
+      if (!enabled) {
+        clearTimeout(pushTimer);
+        setStatus('off');
+        return;
+      }
+      setStatus('saving');
+      try {
+        const remote = await getWall();
+        if (remote.blob && remote.rev !== meta.rev && (!meta.dirty || remote.updatedAt > meta.updatedAt)) {
+          await adopt(remote);
+        } else {
+          meta.rev = remote.rev || 0;
+          if (!box) {
+            setStatus('saved');
+            return;
+          }
+          meta.dirty = true;
+          await push();
+        }
+      } catch (e) {
+        setStatus(e.status === 401 ? 'signed-out' : 'offline');
+      }
+    },
+    // Save now, or fetch the latest if there's nothing to save.
+    async syncNow() {
+      if (!live()) return;
+      if (meta.dirty) await push();
+      else {
+        setStatus('saving');
+        await pull();
+        if (status === 'saving') setStatus('saved');
+      }
+    },
     destroy() {
       clearTimeout(pushTimer);
       clearInterval(poll);

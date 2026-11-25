@@ -10,17 +10,18 @@ const TITLES = { main: 'Account', username: 'Username', password: 'Change passwo
 
 function syncText({ status, lastSynced }, mode) {
   if (mode !== 'server') return 'Saved, encrypted, in this browser';
-  if (status === 'saving') return 'Saving…';
+  if (status === 'off') return 'Saved on this device only';
+  if (status === 'saving') return 'Syncing…';
   if (status === 'offline') return 'Offline: saved on this device for now';
   if (status === 'too-big') return 'Too big to save to your account';
   if (status === 'full') return 'This browser’s storage is full';
   if (status === 'signed-out') return 'Signed out: sign in again to save';
-  if (!lastSynced) return 'Saved';
+  if (!lastSynced) return 'Synced';
   const s = Math.round((Date.now() - lastSynced) / 1000);
-  return s < 10 ? 'Saved just now' : s < 3600 ? `Saved ${Math.max(1, Math.round(s / 60))} min ago` : 'Saved';
+  return s < 10 ? 'Synced just now' : s < 3600 ? `Synced ${Math.max(1, Math.round(s / 60))} min ago` : 'Synced';
 }
 
-export function AccountSheet({ user, keyBox, mode, sync, onClose, onUser, onSignOut, onDeleted }) {
+export function AccountSheet({ user, keyBox, mode, sync, syncOn, onSyncChange, onSyncNow, onClose, onUser, onSignOut, onDeleted }) {
   const [page, setPage] = useState('main');
   const [dir, setDir] = useState('in');
   const [, tick] = useState(0);
@@ -60,7 +61,7 @@ export function AccountSheet({ user, keyBox, mode, sync, onClose, onUser, onSign
           </button>
         </header>
         <div className={`sheet-page is-${dir}`} key={page}>
-          {page === 'main' && <Main user={user} mode={mode} sync={sync} go={go} onSignOut={onSignOut} />}
+          {page === 'main' && <Main user={user} mode={mode} sync={sync} syncOn={syncOn} onSyncChange={onSyncChange} onSyncNow={onSyncNow} go={go} onSignOut={onSignOut} />}
           {page === 'username' && <EditUsername user={user} onSaved={(u) => (onUser(u), go('main'))} />}
           {page === 'password' && <EditPassword user={user} keyBox={keyBox} onSaved={(u, kb) => (onUser(u, kb), go('main'))} />}
           {page === 'delete' && <DeleteAccount user={user} keyBox={keyBox} onDeleted={onDeleted} />}
@@ -71,7 +72,7 @@ export function AccountSheet({ user, keyBox, mode, sync, onClose, onUser, onSign
   );
 }
 
-function Main({ user, mode, sync, go, onSignOut }) {
+function Main({ user, mode, sync, syncOn, onSyncChange, onSyncNow, go, onSignOut }) {
   const since = new Date(user.createdAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
   return (
     <>
@@ -103,14 +104,40 @@ function Main({ user, mode, sync, go, onSignOut }) {
           </span>
           <span className="ios-value">On</span>
         </div>
-        <div className="ios-row is-static">
-          <span className="ios-label">Notes</span>
-          <span className="ios-value">{syncText(sync, mode)}</span>
-        </div>
       </div>
       <p className="ios-footnote">
         Your notes are encrypted on your device with a key only your password can unlock. Nobody else, including POST IT, can
         read them.
+      </p>
+
+      <h3 className="ios-group-title">Sync</h3>
+      <div className="ios-group">
+        <label className={`ios-row is-toggle ${mode !== 'server' ? 'is-disabled' : ''}`}>
+          <span className="ios-label">Sync across devices</span>
+          <input
+            type="checkbox"
+            checked={mode === 'server' && syncOn}
+            disabled={mode !== 'server'}
+            onChange={(e) => onSyncChange(e.target.checked)}
+          />
+          <span className="toggle-track" aria-hidden="true" />
+        </label>
+        <div className="ios-row is-static">
+          <span className="ios-label">Notes</span>
+          <span className="ios-value">{syncText(sync, mode)}</span>
+          {mode === 'server' && syncOn && (
+            <button type="button" className="sync-now" onClick={onSyncNow} disabled={sync.status === 'saving'}>
+              Sync now
+            </button>
+          )}
+        </div>
+      </div>
+      <p className="ios-footnote">
+        {mode !== 'server'
+          ? 'Syncing works on the live site.'
+          : syncOn
+            ? `Your topics and notes are saved to your account and show up on any computer or phone where you sign in as @${user.username}.`
+            : 'Notes on this device stay here only. Turn sync on to keep them on your account and get them on your other devices.'}
       </p>
 
       <div className="acct-actions">

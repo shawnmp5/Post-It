@@ -22,6 +22,15 @@ import { MenuLabel } from './Popover.jsx';
 const SIDEBAR_MIN = 200;
 const SIDEBAR_MAX = 440;
 
+// What the account row says under the username.
+function syncLabel(account) {
+  if (!account || account.mode !== 'server') return 'Account';
+  return (
+    { saving: 'Syncing…', offline: 'Offline', off: 'Sync off', 'too-big': 'Not synced', full: 'Not synced', 'signed-out': 'Signed out' }[account.sync] ||
+    'Synced'
+  );
+}
+
 export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, onClose, isMobile, onHide, account, onOpenAccount }) {
   const { topics, notes, activeTopicId, settings } = data;
   const groups = data.groups || [];
@@ -434,7 +443,7 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
           <Avatar username={handle} />
           <span className="profile-text">
             <span className="profile-name">@{handle}</span>
-            <span className="profile-sub">Account</span>
+            <span className="profile-sub">{syncLabel(account)}</span>
           </span>
         </button>
       </div>

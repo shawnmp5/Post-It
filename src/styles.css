@@ -5970,3 +5970,44 @@ button.ios-row:active {
     linear-gradient(0deg, rgba(0, 0, 0, 0.055) 0%, rgba(0, 0, 0, 0) 16%),
     var(--note-bg);
 }
+
+/* Account → Sync */
+.ios-row.is-toggle {
+  cursor: pointer;
+  justify-content: space-between;
+}
+.ios-row.is-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.ios-row.is-toggle input:checked + .toggle-track {
+  background: var(--ink);
+}
+.ios-row.is-toggle input:checked + .toggle-track::after {
+  transform: translateX(12px);
+}
+.ios-row.is-toggle input:focus-visible + .toggle-track {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.ios-row.is-disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.sync-now {
+  flex: none;
+  margin-left: 6px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--fill);
+}
+.sync-now:hover:not(:disabled) {
+  background: var(--fill-strong);
+}
+.sync-now:disabled {
+  opacity: 0.5;
+}
