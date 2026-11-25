@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Logo, IconEye, IconEyeOff, IconLock, IconCheck } from './Icons.jsx';
 import { Avatar } from '../account/avatar.jsx';
-import { Wordmark } from './Wordmark.jsx';
 import { checkUsername, checkPassword } from '../account/rules.js';
 import { isUsernameAvailable, signUp, signIn, unlock } from '../account/client.js';
 
@@ -63,7 +62,7 @@ function SignUp({ onDone, onSwitch }) {
   return (
     <form className="auth-form" onSubmit={submit} noValidate>
       <div className="auth-logo">
-        <Wordmark height={54} />
+        <Logo size={44} />
       </div>
       <h1 className="auth-title">Create your account</h1>
       <p className="auth-sub">Your sticky notes, on any device.</p>
@@ -134,7 +133,7 @@ function SignIn({ onDone, onSwitch }) {
   return (
     <form className="auth-form" onSubmit={submit} noValidate>
       <div className="auth-logo">
-        <Wordmark height={54} />
+        <Logo size={44} />
       </div>
       <h1 className="auth-title">Welcome back</h1>
       <p className="auth-sub">Sign in to get to your wall.</p>
