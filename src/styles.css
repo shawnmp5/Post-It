@@ -4643,19 +4643,19 @@ body,
   height: 100%;
 }
 /* With a wallpaper the app's own surfaces step aside so it shows through. */
-:root[data-wallpaper='rain'] body,
-:root[data-wallpaper='rain'] .app,
-:root[data-wallpaper='rain'] .workspace,
-:root[data-wallpaper='rain'] .board-scroll {
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']) body,
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']) .app,
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']) .workspace,
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']) .board-scroll {
   background: transparent !important;
 }
-:root[data-wallpaper='rain'] body {
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']) body {
   background: #0b1019 !important;
 }
-:root[data-wallpaper='rain'] .ws-header {
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']) .ws-header {
   background: none !important;
 }
-:root[data-wallpaper='rain'] .board-scroll {
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']) .board-scroll {
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 .wallpaper-seg {
@@ -4730,28 +4730,28 @@ body,
 /* Over the moving rain, live blur would be redone on every frame (and every scroll step),
    so the always-visible panels use a slightly more solid tint instead. Pop-up menus keep
    their blur; they're only open for a moment. */
-:root[data-wallpaper='rain']:not([data-clear='true']) .sidebar,
-:root[data-wallpaper='rain']:not([data-clear='true']) .menu-btn,
-:root[data-wallpaper='rain']:not([data-clear='true']) .ws-actions,
-:root[data-wallpaper='rain']:not([data-clear='true']) .ws-actions .tb-group,
-:root[data-wallpaper='rain']:not([data-clear='true']) .floating-controls.dock {
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']):not([data-clear='true']) .sidebar,
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']):not([data-clear='true']) .menu-btn,
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']):not([data-clear='true']) .ws-actions,
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']):not([data-clear='true']) .ws-actions .tb-group,
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']):not([data-clear='true']) .floating-controls.dock {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
-:root[data-wallpaper='rain']:not([data-clear='true'])[data-theme='light'] .sidebar {
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']):not([data-clear='true'])[data-theme='light'] .sidebar {
   background: rgba(246, 247, 249, 0.9);
 }
-:root[data-wallpaper='rain']:not([data-clear='true'])[data-theme='light'] .menu-btn,
-:root[data-wallpaper='rain']:not([data-clear='true'])[data-theme='light'] .ws-actions,
-:root[data-wallpaper='rain']:not([data-clear='true'])[data-theme='light'] .floating-controls.dock {
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']):not([data-clear='true'])[data-theme='light'] .menu-btn,
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']):not([data-clear='true'])[data-theme='light'] .ws-actions,
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']):not([data-clear='true'])[data-theme='light'] .floating-controls.dock {
   background: rgba(250, 250, 252, 0.9);
 }
-:root[data-wallpaper='rain']:not([data-clear='true'])[data-theme='dark'] .sidebar {
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']):not([data-clear='true'])[data-theme='dark'] .sidebar {
   background: rgba(36, 37, 40, 0.9);
 }
-:root[data-wallpaper='rain']:not([data-clear='true'])[data-theme='dark'] .menu-btn,
-:root[data-wallpaper='rain']:not([data-clear='true'])[data-theme='dark'] .ws-actions,
-:root[data-wallpaper='rain']:not([data-clear='true'])[data-theme='dark'] .floating-controls.dock {
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']):not([data-clear='true'])[data-theme='dark'] .menu-btn,
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']):not([data-clear='true'])[data-theme='dark'] .ws-actions,
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']):not([data-clear='true'])[data-theme='dark'] .floating-controls.dock {
   background: rgba(44, 44, 46, 0.9);
 }
 
@@ -4834,15 +4834,15 @@ body,
   background: rgba(0, 0, 0, 0.6);
 }
 /* Over the night rain, the solid-tint panels go near black too. */
-:root[data-wallpaper='rain']:not([data-clear='true'])[data-shade='black'] .sidebar {
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']):not([data-clear='true'])[data-shade='black'] .sidebar {
   background: rgba(8, 9, 11, 0.9);
 }
-:root[data-wallpaper='rain']:not([data-clear='true'])[data-shade='black'] .menu-btn,
-:root[data-wallpaper='rain']:not([data-clear='true'])[data-shade='black'] .ws-actions,
-:root[data-wallpaper='rain']:not([data-clear='true'])[data-shade='black'] .floating-controls.dock {
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']):not([data-clear='true'])[data-shade='black'] .menu-btn,
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']):not([data-clear='true'])[data-shade='black'] .ws-actions,
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef']):not([data-clear='true'])[data-shade='black'] .floating-controls.dock {
   background: rgba(16, 17, 19, 0.9);
 }
-:root[data-wallpaper='rain'][data-shade='black'] body {
+:root:is([data-wallpaper='rain'], [data-wallpaper='reef'])[data-shade='black'] body {
   background: #010204 !important;
 }
 
@@ -4852,4 +4852,15 @@ body,
   font-size: 12px;
   padding-left: 2px;
   padding-right: 2px;
+}
+
+/* Coral reef: the page colour behind it before it paints. */
+:root[data-wallpaper='reef'] body {
+  background: #0b5687 !important;
+}
+:root[data-wallpaper='reef'][data-theme='dark'] body {
+  background: #061d33 !important;
+}
+:root[data-wallpaper='reef'][data-shade='black'] body {
+  background: #01050c !important;
 }

@@ -133,8 +133,9 @@ export function SettingsPanel({ data, dispatch, toast, confirm, onDone }) {
           {[
             ['none', 'None'],
             ['rain', 'Rain'],
+            ['reef', 'Coral reef'],
           ].map(([id, label]) => {
-            const on = (settings.wallpaper === 'rain' ? 'rain' : 'none') === id;
+            const on = (['rain', 'reef'].includes(settings.wallpaper) ? settings.wallpaper : 'none') === id;
             return (
               <button
                 key={id}

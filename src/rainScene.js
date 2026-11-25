@@ -2,7 +2,7 @@
  * The rain scene: a soft sky, rain falling in three depths, fog and droplets
  * on the glass, beads that swell, run down and merge, and now and then
  * lightning. Plain canvas drawing with no page access, so it can run in a
- * worker (rainScene.worker.js) on an OffscreenCanvas and leave the page's own
+ * worker (scene.worker.js) on an OffscreenCanvas and leave the page's own
  * thread free for scrolling, typing and dragging.
  *
  * createRain(canvas, { mood, lightning, reduced, width, height, dpr, onStrike })
