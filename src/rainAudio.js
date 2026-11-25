@@ -3,11 +3,10 @@
  *
  * Real rain isn't a hiss: it's thousands of separate little impacts with
  * uneven timing and loudness. So the sound is built from individual drops:
- *   - two "beds" of rendered rain (fine crackle, splashes and the odd bubble
- *     in a puddle). Their lengths differ, so the mix only repeats every few
- *     minutes, and every grain wraps around, so the loops have no seam.
- *   - heavier drops tapping on the window, scheduled live
- *   - a slow drip or two off a ledge, scheduled live
+ *   - two "beds" of rendered rain (a soft, dense patter and splashes). Their
+ *     lengths differ, so the mix only repeats every few minutes, and every
+ *     grain wraps around, so the loops have no seam.
+ *   - a few heavier drops knocking on the window, scheduled live
  *   - a low wash of heavy rain further off, swelling with gusts
  *   - a soft room reverb, so it sounds like outside rather than in your ear
  *   - thunder after each lightning flash (the wallpaper fires `postit:lightning`)
@@ -74,21 +73,21 @@ function biquad(d, type, f, Q, sr) {
 /* ------------------------------------------------------------------ */
 /* Grains: one drop each                                               */
 
-// The tiniest drops: a sub-millisecond crackle, mostly high frequencies.
-function sizzleGrain(sr) {
-  const n = Math.max(8, Math.floor(sr * rand(0.0006, 0.0025)));
+// The small drops: a soft little "tss", dense enough to blend into a patter.
+function patterGrain(sr) {
+  const n = Math.max(16, Math.floor(sr * rand(0.003, 0.008)));
   const d = new Float32Array(n);
-  const tau = rand(0.00025, 0.0009);
-  let p1 = 0, p2 = 0;
+  const tau = rand(0.0006, 0.0018);
+  let p1 = 0;
   for (let i = 0; i < n; i++) {
     const w = Math.random() * 2 - 1;
-    const hp = w - 2 * p1 + p2; // second difference: tilts toward the highs
-    p2 = p1;
+    const hp = w - p1; // gentle tilt toward the highs
     p1 = w;
     const t = i / sr;
-    d[i] = hp * Math.exp(-t / tau) * Math.min(1, t / 0.00008);
+    d[i] = hp * Math.exp(-t / tau) * Math.min(1, t / 0.0004);
   }
-  biquad(d, 'lowpass', rand(7000, 11000), 0.7, sr);
+  biquad(d, 'lowpass', rand(3200, 6000), 0.6, sr);
+  biquad(d, 'highpass', 400, 0.6, sr);
   return normalize(d);
 }
 
@@ -98,14 +97,14 @@ function tickGrain(sr) {
   const n = Math.floor(sr * 0.022);
   const d = new Float32Array(n);
   const body = new Float32Array(n);
-  const tau = rand(0.0012, 0.0045);
+  const tau = rand(0.0016, 0.005);
   for (let i = 0; i < n; i++) {
     const t = i / sr;
-    const env = Math.exp(-t / tau) * Math.min(1, t / 0.0002);
+    const env = Math.exp(-t / tau) * Math.min(1, t / 0.0005);
     d[i] = (Math.random() * 2 - 1) * env;
     body[i] = (Math.random() * 2 - 1) * Math.exp(-t / (tau * 2.2));
   }
-  biquad(d, 'bandpass', rand(1400, 5200), rand(1.2, 3.5), sr);
+  biquad(d, 'bandpass', rand(900, 3400), rand(0.7, 1.6), sr);
   normalize(d);
   biquad(body, 'lowpass', rand(250, 700), 1.2, sr);
   normalize(body);
@@ -114,61 +113,21 @@ function tickGrain(sr) {
   return normalize(d);
 }
 
-// A drop into a puddle: the tiny air bubble rings with a pitch that rises.
-function bubbleGrain(sr) {
-  const n = Math.floor(sr * 0.06);
-  const d = new Float32Array(n);
-  const f0 = rand(1100, 3000);
-  const rise = rand(6, 16);
-  const tau = rand(0.005, 0.016);
-  let phase = 0;
-  for (let i = 0; i < n; i++) {
-    const t = i / sr;
-    phase += (TAU * f0 * (1 + rise * t)) / sr;
-    d[i] = Math.sin(phase) * Math.exp(-t / tau) * Math.min(1, t / 0.0015);
-  }
-  // the splash before the bubble
-  for (let i = 0; i < Math.min(n, sr * 0.004); i++) d[i] += (Math.random() * 2 - 1) * 0.35 * Math.exp(-i / sr / 0.001);
-  return normalize(d);
-}
-
-// A big drop tapping the window glass: a crisp knock with a glassy ring.
+// A big drop landing on the window: a soft, dull knock.
 function tapGrain(sr) {
-  const n = Math.floor(sr * 0.06);
+  const n = Math.floor(sr * 0.04);
   const d = new Float32Array(n);
-  const ring = new Float32Array(n);
-  const f = rand(1800, 3600);
-  let phase = 0;
   for (let i = 0; i < n; i++) {
     const t = i / sr;
-    d[i] = (Math.random() * 2 - 1) * Math.exp(-t / 0.0016) * Math.min(1, t / 0.0001);
-    phase += (TAU * f) / sr;
-    ring[i] = Math.sin(phase) * Math.exp(-t / rand(0.004, 0.009));
+    d[i] = (Math.random() * 2 - 1) * Math.exp(-t / 0.002) * Math.min(1, t / 0.0004);
   }
-  biquad(d, 'bandpass', rand(2200, 4200), 0.9, sr);
+  biquad(d, 'bandpass', rand(1200, 2600), 0.8, sr);
   normalize(d);
   const knock = new Float32Array(n);
   for (let i = 0; i < n; i++) knock[i] = (Math.random() * 2 - 1) * Math.exp(-i / sr / 0.004);
   biquad(knock, 'lowpass', rand(500, 900), 1, sr);
   normalize(knock);
-  const r = rand(0.08, 0.22);
-  for (let i = 0; i < n; i++) d[i] = d[i] + knock[i] * 0.55 + ring[i] * r;
-  return normalize(d);
-}
-
-// A drip off a ledge into water: a rounder, lower "plop".
-function dripGrain(sr, f0) {
-  const n = Math.floor(sr * 0.12);
-  const d = new Float32Array(n);
-  const rise = rand(9, 14);
-  const tau = rand(0.018, 0.03);
-  let phase = 0;
-  for (let i = 0; i < n; i++) {
-    const t = i / sr;
-    phase += (TAU * f0 * (1 + rise * Math.min(t, 0.05))) / sr;
-    d[i] = Math.sin(phase) * Math.exp(-t / tau) * Math.min(1, t / 0.002);
-  }
-  for (let i = 0; i < Math.min(n, sr * 0.003); i++) d[i] += (Math.random() * 2 - 1) * 0.25 * Math.exp(-i / sr / 0.0008);
+  for (let i = 0; i < n; i++) d[i] = d[i] + knock[i] * 0.6;
   return normalize(d);
 }
 
@@ -181,9 +140,8 @@ function renderBed(ctx, seconds, density) {
   const L = new Float32Array(len);
   const R = new Float32Array(len);
   const bank = (make, count) => Array.from({ length: count }, () => make(sr));
-  const sizzles = bank(sizzleGrain, 48);
+  const patter = bank(patterGrain, 48);
   const ticks = bank(tickGrain, 40);
-  const bubbles = bank(bubbleGrain, 24);
 
   const scatter = (grains, perSecond, loud, curve) => {
     const total = Math.round(perSecond * seconds);
@@ -201,9 +159,8 @@ function renderBed(ctx, seconds, density) {
       }
     }
   };
-  scatter(sizzles, 1400 * density, 0.22, 2.2);
-  scatter(ticks, 150 * density, 0.42, 2.8);
-  scatter(bubbles, 7 * density, 0.2, 1.6);
+  scatter(patter, 1900 * density, 0.22, 1.8);
+  scatter(ticks, 170 * density, 0.32, 2.4);
 
   // Even out the level.
   let sum = 0;
@@ -285,7 +242,7 @@ function build() {
   // Rain on a window is soft up top: roll off the very highs.
   const air = ctx.createBiquadFilter();
   air.type = 'lowpass';
-  air.frequency.value = 10500;
+  air.frequency.value = 8000;
   air.Q.value = 0.5;
   master.connect(air).connect(comp).connect(ctx.destination);
 
@@ -327,13 +284,13 @@ function build() {
   wash.loop = true;
   const washLp = ctx.createBiquadFilter();
   washLp.type = 'lowpass';
-  washLp.frequency.value = 1400;
+  washLp.frequency.value = 2200;
   washLp.Q.value = 0.5;
   const washHp = ctx.createBiquadFilter();
   washHp.type = 'highpass';
   washHp.frequency.value = 180;
   const washGain = ctx.createGain();
-  washGain.gain.value = 0.32;
+  washGain.gain.value = 0.4;
   wash.connect(washHp).connect(washLp).connect(washGain).connect(master);
 
   const rumble = ctx.createBufferSource();
@@ -368,26 +325,16 @@ function build() {
 
   const taps = Array.from({ length: 24 }, () => tapGrain(sr)).map((d) => toBuffer(ctx, d));
   const tapBus = ctx.createGain();
-  tapBus.gain.value = 0.38;
+  tapBus.gain.value = 0.3;
   tapBus.connect(master);
   send(tapBus, 0.35);
-
-  // One or two drips at fixed spots, each with its own pitch and pace.
-  const drips = [
-    { pan: rand(-0.75, -0.35), f: rand(750, 1050), every: rand(0.9, 1.4) },
-    { pan: rand(0.4, 0.8), f: rand(1050, 1400), every: rand(1.5, 2.6) },
-  ].map((d) => ({ ...d, bufs: Array.from({ length: 6 }, () => toBuffer(ctx, dripGrain(sr, d.f * rand(0.97, 1.03)))), next: 0 }));
-  const dripBus = ctx.createGain();
-  dripBus.gain.value = 0.22;
-  dripBus.connect(master);
-  send(dripBus, 0.7);
 
   const thunderBus = ctx.createGain();
   thunderBus.connect(master);
   send(thunderBus, 0.4);
 
   if (import.meta.env.DEV) window.__rainAudio = { ctx, master, out: comp };
-  parts = { taps, tapBus, drips, dripBus, thunderBus, thunderNoise: noiseBuffer(ctx, 10, 'brown'), crackNoise: noiseBuffer(ctx, 1.5, 'pink') };
+  parts = { taps, tapBus, thunderBus, thunderNoise: noiseBuffer(ctx, 10, 'brown'), crackNoise: noiseBuffer(ctx, 1.5, 'pink') };
 }
 
 function toBuffer(ctx, d) {
@@ -412,23 +359,16 @@ function play(buf, when, gain, pan, bus, rate = 1) {
   src.start(when);
 }
 
-// Schedule a little ahead so taps and drips land on time.
+// Schedule a little ahead so the taps land on time.
 function schedule() {
   if (!running || !ctx) return;
   const now = ctx.currentTime;
   const ahead = now + 0.3;
   if (nextTap < now) nextTap = now;
   while (nextTap < ahead) {
-    nextTap += -Math.log(1 - Math.random()) / 5; // ~5 big drops a second, randomly spaced
+    nextTap += -Math.log(1 - Math.random()) / 3; // ~3 big drops a second, randomly spaced
     const a = Math.random();
-    play(parts.taps[(Math.random() * parts.taps.length) | 0], nextTap, 0.08 + a * a * 0.6, rand(-0.9, 0.9), parts.tapBus, rand(0.85, 1.15));
-  }
-  for (const d of parts.drips) {
-    if (d.next < now) d.next = now + rand(0, d.every);
-    while (d.next < ahead) {
-      play(d.bufs[(Math.random() * d.bufs.length) | 0], d.next, rand(0.6, 1), d.pan, parts.dripBus, rand(0.98, 1.02));
-      d.next += d.every * rand(0.85, 1.2);
-    }
+    play(parts.taps[(Math.random() * parts.taps.length) | 0], nextTap, 0.06 + a * a * 0.4, rand(-0.9, 0.9), parts.tapBus, rand(0.85, 1.15));
   }
 }
 
