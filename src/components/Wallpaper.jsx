@@ -101,7 +101,7 @@ function startRain(box, { mood, lightning }) {
     clearTimeout(timer);
     timer = setTimeout(() => call('resize', view()), 120);
   };
-  const onVisible = () => document.visibilityState === 'visible' && call('visible');
+  const onVisible = () => call(document.visibilityState === 'visible' ? 'resume' : 'pause');
   window.addEventListener('resize', onResize);
   document.addEventListener('visibilitychange', onVisible);
 

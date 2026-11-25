@@ -206,14 +206,20 @@ function impulse(sr, seconds) {
 }
 
 /* Everything the rain sound needs, as plain arrays (all transferable). */
-export function makeRainSounds(sr) {
+// Everything above ~8 kHz is filtered out of the mix anyway, so the sound is made at
+// 22.05 kHz: a quarter of the memory of 44.1 kHz stereo floats... and four times faster to make.
+export const RAIN_SAMPLE_RATE = 22050;
+
+// The reverb's impulse must match the audio device's rate (verbRate).
+export function makeRainSounds(sr = RAIN_SAMPLE_RATE, verbRate = sr) {
   return {
-    beds: [renderBed(sr, 17, 0.5), renderBed(sr, 23, 0.5)],
-    wash: noise(sr, 13, 'pink'),
-    rumble: noise(sr, 11, 'brown'),
-    thunder: noise(sr, 10, 'brown'),
+    // Two loops of different lengths, so the mix only repeats every couple of minutes.
+    beds: [renderBed(sr, 11, 0.5), renderBed(sr, 13, 0.5)],
+    wash: noise(sr, 7, 'pink'),
+    rumble: noise(sr, 6, 'brown'),
+    thunder: noise(sr, 9, 'brown'),
     crack: noise(sr, 1.5, 'pink'),
-    verb: impulse(sr, 2.4),
+    verb: impulse(verbRate, 1.8),
     taps: Array.from({ length: 24 }, () => tapGrain(sr)),
   };
 }

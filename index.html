@@ -8,9 +8,13 @@
     <meta name="description" content="POST IT — a freeform wall of sticky notes for organizing your thoughts by topic." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- The interface font loads first; the note fonts follow without holding up the first paint. -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Caveat:wght@400;700&family=Gochi+Hand&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Caveat:wght@400;700&family=Gochi+Hand&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap"
+      media="print"
+      onload="this.media='all'"
     />
     <title>POST IT</title>
   </head>

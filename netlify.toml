@@ -1,0 +1,35 @@
+# Netlify: build the site with Vite and serve the result from dist/.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Vite needs Node 20.19+ or 22.12+.
+  NODE_VERSION = "22"
+
+# Built JS/CSS have a content hash in their names, so they never change: cache for a year.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# The page itself: always check for a newer version, so a deploy shows up straight away.
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+
+# It's a single-page app: any path loads the app.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

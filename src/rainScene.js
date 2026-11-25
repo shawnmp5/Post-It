@@ -240,9 +240,11 @@ function paintFog(W, H, pal) {
 }
 
 /* A jagged bolt with a few forks, drawn once per strike with its glow. */
+// Painted at half size (it's a glow seen through rain and fog, so it needn't be sharp).
 function paintBolt(W, H, x0) {
-  const c = makeCanvas(W, H);
+  const c = makeCanvas(W / 2, H / 2);
   const g = c.getContext('2d');
+  g.scale(0.5, 0.5);
   const path = (x1, y1, x2, y2, rough) => {
     let pts = [[x1, y1], [x2, y2]];
     let d = rough;
@@ -420,14 +422,22 @@ export function createRain(canvas, opts) {
     if (nw === W && nh === H && backdrop) return;
     W = nw;
     H = nh;
+    release(fog);
     fog = paintFog(W, H, pal);
     setScale(Math.min(view.dpr, maxScale), true);
     if (reduced) draw(0);
   }
 
   // (Re)build every full-size canvas at a pixel density; keep the drops where they are.
+  // Give a canvas's memory back now rather than whenever it's collected.
+  const release = (c) => {
+    if (c) c.width = c.height = 0;
+  };
+
   function setScale(next, reseed) {
     dpr = next;
+    release(backdrop);
+    release(mist);
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
     backdrop = paintBackdrop(W, H, dpr, pal);
@@ -494,7 +504,10 @@ export function createRain(canvas, opts) {
   function update(dt) {
     if (strike) {
       strike.t += dt;
-      if (strike.t > strike.end) strike = null;
+      if (strike.t > strike.end) {
+        release(strike.bolt);
+        strike = null;
+      }
     } else if (lightningOn) {
       untilStrike -= dt;
       if (untilStrike <= 0) {
@@ -663,8 +676,10 @@ export function createRain(canvas, opts) {
     return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
   }
 
+  let paused = false;
+
   function frame(now) {
-    if (!alive) return;
+    if (!alive || paused) return;
     const raw = last ? (now - last) / 1000 : 1 / 60;
     const dt = Math.min(0.05, raw);
     last = now;
@@ -695,6 +710,17 @@ export function createRain(canvas, opts) {
     },
     visible() {
       last = 0; // don't jump after the tab was hidden
+    },
+    // Stop drawing completely while the tab is hidden.
+    pause() {
+      paused = true;
+      cancelFrame(raf);
+    },
+    resume() {
+      if (!paused) return;
+      paused = false;
+      last = 0;
+      if (!reduced && alive) raf = nextFrame(frame);
     },
     setLightning(on) {
       lightningOn = !!on && !reduced;

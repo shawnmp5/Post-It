@@ -12,7 +12,7 @@
  *   - thunder after each lightning flash (the wallpaper fires `postit:lightning`)
  */
 
-import { makeRainSounds } from './rainDsp.js';
+import { makeRainSounds, RAIN_SAMPLE_RATE } from './rainDsp.js';
 import RainSoundsWorker from './rainSounds.worker.js?worker&inline';
 
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -31,7 +31,7 @@ let stopTimer = 0;
 
 // The samples take a moment to make, so they're made in a worker; the mix is
 // wired up as soon as they arrive (the volume is still fading in by then).
-function loadSounds(sampleRate) {
+function loadSounds(sampleRate, verbRate) {
   return new Promise((resolve) => {
     try {
       const worker = new RainSoundsWorker();
@@ -41,17 +41,17 @@ function loadSounds(sampleRate) {
       };
       worker.onerror = () => {
         worker.terminate();
-        resolve(makeRainSounds(sampleRate));
+        resolve(makeRainSounds(sampleRate, verbRate));
       };
-      worker.postMessage({ sampleRate });
+      worker.postMessage({ sampleRate, verbRate });
     } catch {
-      resolve(makeRainSounds(sampleRate));
+      resolve(makeRainSounds(sampleRate, verbRate));
     }
   });
 }
 
-function stereo([L, R]) {
-  const buf = ctx.createBuffer(2, L.length, ctx.sampleRate);
+function stereo([L, R], rate = RAIN_SAMPLE_RATE) {
+  const buf = ctx.createBuffer(2, L.length, rate);
   buf.getChannelData(0).set(L);
   buf.getChannelData(1).set(R);
   return buf;
@@ -141,8 +141,8 @@ function build() {
   if (import.meta.env.DEV) window.__rainAudio = { ctx, master, out: comp };
   const bus = { tapBus, thunderBus };
 
-  loadSounds(ctx.sampleRate).then((s) => {
-    verb.buffer = stereo(s.verb);
+  loadSounds(RAIN_SAMPLE_RATE, ctx.sampleRate).then((s) => {
+    verb.buffer = stereo(s.verb, ctx.sampleRate);
     const loop = (data, into, offset = 0) => {
       const src = ctx.createBufferSource();
       src.buffer = stereo(data);
@@ -164,7 +164,7 @@ function build() {
 }
 
 function toBuffer(ctx, d) {
-  const buf = ctx.createBuffer(1, d.length, ctx.sampleRate);
+  const buf = ctx.createBuffer(1, d.length, RAIN_SAMPLE_RATE);
   buf.getChannelData(0).set(d);
   return buf;
 }
