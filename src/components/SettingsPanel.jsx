@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { COLORS, FONTS, emptyData, freshSampleData, normalize } from '../store.js';
 import { IconDownload, IconUpload, IconRestore, IconTrash, IconSpeaker, IconSpeakerOff } from './Icons.jsx';
 
-export function SettingsPanel({ data, dispatch, toast, confirm, account, onDone }) {
+export function SettingsPanel({ data, dispatch, toast, confirm, account, onDone, inSheet }) {
   const { settings } = data;
   const fileRef = useRef(null);
   const set = (patch) => dispatch({ type: 'settings', patch });
@@ -69,7 +69,7 @@ export function SettingsPanel({ data, dispatch, toast, confirm, account, onDone 
 
   return (
     <div className="settings">
-      <h2 className="settings-title">Settings</h2>
+      {!inSheet && <h2 className="settings-title">Settings</h2>}
 
       <div className="field">
         <span className="field-label">New note color</span>

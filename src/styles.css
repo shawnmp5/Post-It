@@ -6055,3 +6055,40 @@ button.ios-row:active {
   letter-spacing: 0;
   color: var(--text-2);
 }
+
+/* Account row with the Settings gear beside it */
+:root .sidebar-footer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+:root .sidebar-footer .profile {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+}
+.sidebar-footer .profile-text {
+  min-width: 0;
+}
+.footer-settings {
+  flex: none;
+  width: 34px;
+  height: 34px;
+}
+.footer-settings svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* Settings window: same as Account's, a little wider for the font tiles; scrolls inside. */
+.settings-sheet {
+  width: min(480px, 100%);
+}
+.settings-sheet .sheet-page {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.sheet-page {
+  min-height: 0; /* lets the body shrink and scroll inside the window */
+}

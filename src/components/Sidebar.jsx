@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { COLOR_MAP, uid } from '../store.js';
 import { Popover, MenuItem, MenuSep } from './Popover.jsx';
 import { Avatar } from '../account/avatar.jsx';
+import { SettingsSheet } from './SettingsSheet.jsx';
 import {
   IconPlus,
   IconSidebar,
@@ -13,6 +14,7 @@ import {
   IconFolder,
   IconFolderPlus,
   IconShare,
+  IconGear,
   IconChevron,
   Logo,
 } from './Icons.jsx';
@@ -262,6 +264,8 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
   };
 
   const handle = account?.username || 'you';
+  const [settingsAnchor, setSettingsAnchor] = useState(null);
+  const closeSettings = useCallback(() => setSettingsAnchor(null), []);
 
   return (
     <aside
@@ -446,7 +450,19 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
             </span>
           </span>
         </button>
+        <button
+          type="button"
+          className={`icon-btn settings-btn footer-settings ${settingsAnchor ? 'is-active' : ''}`}
+          onClick={(e) => setSettingsAnchor(settingsAnchor ? null : e.currentTarget)}
+          title="Settings"
+          aria-label="Settings"
+        >
+          <IconGear />
+        </button>
       </div>
+      {settingsAnchor && (
+        <SettingsSheet data={data} dispatch={dispatch} toast={toast} confirm={confirm} account={account} onClose={closeSettings} />
+      )}
 
       {menuGroup && (
         <Popover anchor={menu.anchor} onClose={closeMenu} align="end" className="menu">

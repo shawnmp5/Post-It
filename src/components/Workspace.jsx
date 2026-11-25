@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Board } from './Board.jsx';
-import { SettingsPanel } from './SettingsPanel.jsx';
+import { SettingsSheet } from './SettingsSheet.jsx';
 import { SharePanel } from './SharePanel.jsx';
 import { Popover, MenuItem, MenuSep, MenuLabel } from './Popover.jsx';
 import { COLORS, COLOR_MAP, ZOOM_MAX, ZOOM_MIN } from '../store.js';
@@ -42,6 +42,7 @@ export function Workspace({ data, dispatch, toast, confirm, account, canUndo, ca
   const searchInput = useRef(null);
   const settingsBtn = useRef(null);
   const shareBtn = useRef(null);
+  const closeSettingsSheet = useCallback(() => setPanel(null), []);
   const [panel, setPanel] = useState(null); // 'search' | 'view' | 'archive' | 'settings' | 'share'
 
   // The topic menu's "Share…" opens the share panel here.
@@ -303,16 +304,19 @@ export function Workspace({ data, dispatch, toast, confirm, account, canUndo, ca
             >
               <IconSliders />
             </button>
-            <button
-              ref={settingsBtn}
-              type="button"
-              className={`icon-btn settings-btn ${panel === 'settings' ? 'is-active' : ''}`}
-              onClick={() => setPanel(panel === 'settings' ? null : 'settings')}
-              title="Settings"
-              aria-label="Settings"
-            >
-              <IconGear />
-            </button>
+            {/* Settings live at the bottom of the sidebar; up here only while it's hidden. */}
+            {sidebarHidden && (
+              <button
+                ref={settingsBtn}
+                type="button"
+                className={`icon-btn settings-btn ${panel === 'settings' ? 'is-active' : ''}`}
+                onClick={() => setPanel(panel === 'settings' ? null : 'settings')}
+                title="Settings"
+                aria-label="Settings"
+              >
+                <IconGear />
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -471,9 +475,7 @@ export function Workspace({ data, dispatch, toast, confirm, account, canUndo, ca
         </Popover>
       )}
       {panel === 'settings' && (
-        <Popover anchor={settingsBtn.current} onClose={() => setPanel(null)} align="end" className="settings-popover">
-          <SettingsPanel data={data} dispatch={dispatch} toast={toast} confirm={confirm} account={account} onDone={() => setPanel(null)} />
-        </Popover>
+        <SettingsSheet data={data} dispatch={dispatch} toast={toast} confirm={confirm} account={account} onClose={closeSettingsSheet} />
       )}
       {panel === 'view' && (
         <Popover anchor={viewBtn.current} onClose={closePanel} align="end" className="menu view-menu">
