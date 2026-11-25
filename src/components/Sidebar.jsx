@@ -303,6 +303,9 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
 
       <div className="sidebar-section-head">
         <span className="section-label">Topics</span>
+        <button type="button" className="section-add" onClick={() => addTopic()} title="New topic" aria-label="New topic">
+          <IconPlus />
+        </button>
       </div>
 
       <nav className="topic-list" ref={listRef}>
