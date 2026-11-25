@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { IconChevronRight, IconChevronLeft, IconLock } from './Icons.jsx';
 import { PasswordField, Status, Spinner, useUsernameCheck } from './AuthScreen.jsx';
-import { checkUsername, checkEmail, checkPassword } from '../account/rules.js';
-import { changeUsername, changeEmail, changePassword, deleteAccount } from '../account/client.js';
+import { checkUsername, checkPassword } from '../account/rules.js';
+import { changeUsername, changePassword, deleteAccount } from '../account/client.js';
 
-const TITLES = { main: 'Account', username: 'Username', email: 'Email', password: 'Change Password', delete: 'Delete Account' };
+const TITLES = { main: 'Account', username: 'Username', password: 'Change Password', delete: 'Delete Account' };
 
 function syncText({ status, lastSynced }, mode) {
   if (mode !== 'server') return 'Saved, encrypted, in this browser';
@@ -63,7 +63,6 @@ export function AccountSheet({ user, keyBox, mode, sync, onClose, onUser, onSign
         <div className={`sheet-page is-${dir}`} key={page}>
           {page === 'main' && <Main user={user} mode={mode} sync={sync} go={go} onSignOut={onSignOut} />}
           {page === 'username' && <EditUsername user={user} onSaved={(u) => (onUser(u), go('main'))} />}
-          {page === 'email' && <EditEmail user={user} keyBox={keyBox} onSaved={(u) => (onUser(u), go('main'))} />}
           {page === 'password' && <EditPassword user={user} keyBox={keyBox} onSaved={(u, kb) => (onUser(u, kb), go('main'))} />}
           {page === 'delete' && <DeleteAccount user={user} keyBox={keyBox} onDeleted={onDeleted} />}
         </div>
@@ -80,18 +79,13 @@ function Main({ user, mode, sync, go, onSignOut }) {
       <div className="acct-hero">
         <div className="acct-avatar">{user.username.charAt(0).toUpperCase()}</div>
         <div className="acct-handle">@{user.username}</div>
-        <div className="acct-email">{user.email}</div>
+        <div className="acct-email">Member since {since}</div>
       </div>
 
       <div className="ios-group">
         <button type="button" className="ios-row" onClick={() => go('username')}>
           <span className="ios-label">Username</span>
           <span className="ios-value">@{user.username}</span>
-          <IconChevronRight className="ios-chevron" />
-        </button>
-        <button type="button" className="ios-row" onClick={() => go('email')}>
-          <span className="ios-label">Email</span>
-          <span className="ios-value">{user.email}</span>
           <IconChevronRight className="ios-chevron" />
         </button>
       </div>
@@ -115,7 +109,7 @@ function Main({ user, mode, sync, go, onSignOut }) {
       </div>
       <p className="ios-footnote">
         Your notes are encrypted on your device with a key only your password can unlock. Nobody else, including POST IT, can
-        read them. Member since {since}.
+        read them.
       </p>
 
       <div className="ios-group">
@@ -173,41 +167,6 @@ function EditUsername({ user, onSaved }) {
       </div>
       <Status error={error} check={check} />
       <p className="ios-footnote">At least 2 characters with one letter. Letters, numbers, periods and underscores. Usernames are first come, first served: your old one becomes free for others.</p>
-      <button type="submit" className="auth-primary" disabled={busy}>
-        {busy ? <Spinner label="Saving" /> : 'Save'}
-      </button>
-    </form>
-  );
-}
-
-function EditEmail({ user, keyBox, onSaved }) {
-  const [email, setEmail] = useState(user.email);
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const save = async (e) => {
-    e.preventDefault();
-    const v = checkEmail(email);
-    if (!v.ok) return setError({ field: 'email', text: v.error });
-    if (v.email === user.email) return onSaved(user);
-    if (!password) return setError({ field: 'password', text: 'Enter your password to change your email.' });
-    setBusy(true);
-    try {
-      onSaved((await changeEmail(v.email, password, keyBox)).user);
-    } catch (err) {
-      setBusy(false);
-      setError({ field: err.field, text: err.message });
-    }
-  };
-  return (
-    <form onSubmit={save}>
-      <div className="ios-fields">
-        <label className={`ios-field ${error?.field === 'email' ? 'is-bad' : ''}`}>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Email" autoComplete="email" autoFocus />
-        </label>
-        <PasswordField value={password} onChange={setPassword} placeholder="Password" autoComplete="current-password" bad={error?.field === 'password'} />
-      </div>
-      <Status error={error} />
       <button type="submit" className="auth-primary" disabled={busy}>
         {busy ? <Spinner label="Saving" /> : 'Save'}
       </button>

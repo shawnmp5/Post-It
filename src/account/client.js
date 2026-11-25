@@ -71,21 +71,19 @@ const DEMO_KEY = 'postit:demo-accounts';
 const sha = async (s) => b64(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)));
 function demoDb() {
   try {
-    return JSON.parse(localStorage.getItem(DEMO_KEY)) || { users: {}, names: {}, emails: {}, walls: {}, session: null };
+    return JSON.parse(localStorage.getItem(DEMO_KEY)) || { users: {}, names: {}, walls: {}, session: null };
   } catch {
-    return { users: {}, names: {}, emails: {}, walls: {}, session: null };
+    return { users: {}, names: {}, walls: {}, session: null };
   }
 }
 const demoSave = (d) => localStorage.setItem(DEMO_KEY, JSON.stringify(d));
-const pub = (u) => ({ id: u.id, username: u.username, email: u.email, createdAt: u.createdAt });
+const pub = (u) => ({ id: u.id, username: u.username, createdAt: u.createdAt });
 const box = (u) => ({ salt: u.kdfSalt, iterations: u.kdfIterations, wrappedKey: u.wrappedKey });
 const err = (m, field, status = 400) => {
   throw new AccountError(m, { field, status });
 };
 function demoFind(d, login) {
-  const l = String(login ?? '').trim().toLowerCase();
-  if (l.includes('@') && !l.startsWith('@')) return d.users[d.emails[l]] || null;
-  return d.users[d.names[l.replace(/^@/, '')]] || null;
+  return d.users[d.names[String(login ?? '').trim().toLowerCase().replace(/^@/, '')]] || null;
 }
 async function demoVerify(u, authKey) {
   return u.authHash === (await sha(`${u.authSalt}:${authKey}`));
@@ -107,15 +105,12 @@ const demo = {
   async signup(b) {
     const d = demoDb();
     const un = checkUsername(b.username).username;
-    const em = String(b.email).trim().toLowerCase();
     if (d.names[un]) err(`@${un} is already taken.`, 'username', 409);
-    if (d.emails[em]) err('An account already uses this email.', 'email', 409);
     const id = crypto.randomUUID();
     const authSalt = newSalt();
-    const u = { id, username: un, email: em, authSalt, authHash: await sha(`${authSalt}:${b.authKey}`), kdfSalt: b.salt, kdfIterations: b.iterations, wrappedKey: b.wrappedKey, createdAt: Date.now() };
+    const u = { id, username: un, authSalt, authHash: await sha(`${authSalt}:${b.authKey}`), kdfSalt: b.salt, kdfIterations: b.iterations, wrappedKey: b.wrappedKey, createdAt: Date.now() };
     d.users[id] = u;
     d.names[un] = id;
-    d.emails[em] = id;
     d.session = id;
     demoSave(d);
     return { user: pub(u), keyBox: box(u) };
@@ -151,16 +146,6 @@ const demo = {
         u.username = un;
       }
     }
-    if (b.email != null) {
-      if (!(await demoVerify(u, b.authKey || ''))) err('Your password isn’t right.', 'password', 401);
-      const em = String(b.email).trim().toLowerCase();
-      if (em !== u.email) {
-        if (d.emails[em]) err('An account already uses this email.', 'email', 409);
-        delete d.emails[u.email];
-        d.emails[em] = u.id;
-        u.email = em;
-      }
-    }
     demoSave(d);
     return { user: pub(u) };
   },
@@ -183,7 +168,6 @@ const demo = {
     if (!u) err('Not signed in.', null, 401);
     if (!(await demoVerify(u, b.authKey || ''))) err('Your password isn’t right.', 'password', 401);
     delete d.names[u.username];
-    delete d.emails[u.email];
     delete d.walls[u.id];
     delete d.users[u.id];
     d.session = null;
@@ -239,12 +223,12 @@ export async function start() {
 
 export const isUsernameAvailable = (u) => api.username(u);
 
-export async function signUp({ username, email, password }) {
+export async function signUp({ username, password }) {
   const salt = newSalt();
   const { authKey, wrapKey } = await deriveKeys(password, salt);
   const dataKey = await newDataKey();
   const wrappedKey = await wrapDataKey(dataKey, wrapKey);
-  const res = await api.signup({ username, email, authKey, salt, iterations: KDF_ITERATIONS, wrappedKey });
+  const res = await api.signup({ username, authKey, salt, iterations: KDF_ITERATIONS, wrappedKey });
   const key = await unwrapDataKey(wrappedKey, wrapKey); // keep a non-extractable copy
   await saveKey(res.user.id, key);
   return { user: res.user, keyBox: res.keyBox, key };
@@ -282,11 +266,6 @@ export async function signOut(uid) {
 }
 
 export const changeUsername = (username) => api.account({ username });
-
-export async function changeEmail(email, password, keyBox) {
-  const { authKey } = await deriveKeys(password, keyBox.salt, keyBox.iterations);
-  return api.account({ email, authKey });
-}
 
 export async function changePassword(user, keyBox, current, next) {
   const old = await deriveKeys(current, keyBox.salt, keyBox.iterations);

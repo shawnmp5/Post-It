@@ -2,7 +2,7 @@
  * POST IT accounts: the server half.
  *
  * What the server stores, per account:
- *   - username (unique, case-insensitive, first come first served) and email (unique)
+ *   - username (unique, case-insensitive, first come first served)
  *   - a scrypt hash of the client's *auth key*. The password itself never reaches the
  *     server: the browser stretches it (PBKDF2, 600k rounds) and sends only a derived
  *     auth key, which can't be turned back into the password or the encryption key.
@@ -17,7 +17,7 @@
  * for local development), so this file runs anywhere.
  */
 
-import { createHmac, randomBytes, randomUUID, scrypt as scryptCb, timingSafeEqual, createHash } from 'node:crypto';
+import { createHmac, randomBytes, randomUUID, scrypt as scryptCb, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 
 const scrypt = promisify(scryptCb);
@@ -46,22 +46,14 @@ export function checkUsername(raw) {
   return { ok: true, username: u.toLowerCase() };
 }
 
-export function checkEmail(raw) {
-  const e = String(raw ?? '').trim();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e) || e.length > 254) return { ok: false, error: 'Enter a valid email address.' };
-  return { ok: true, email: e.toLowerCase() };
-}
-
 const b64 = (buf) => Buffer.from(buf).toString('base64url');
 const isB64 = (s, min, max) => typeof s === 'string' && s.length >= min && s.length <= max && /^[A-Za-z0-9_-]+$/.test(s);
-const sha = (s) => createHash('sha256').update(s).digest('hex');
 
 /* ---------------- handler ---------------- */
 
 export function createAccounts(getStore) {
   const users = () => getStore('users'); // uid -> user record
   const names = () => getStore('usernames'); // username -> { uid }
-  const mails = () => getStore('emails'); // sha256(email) -> { uid }
   const walls = () => getStore('walls'); // uid -> { blob, rev, updatedAt }
   const secrets = () => getStore('secrets');
 
@@ -123,13 +115,11 @@ export function createAccounts(getStore) {
     });
   const fail = (status, error, field) => json(status, field ? { error, field } : { error });
 
-  const publicUser = (u) => ({ id: u.id, username: u.username, email: u.email, createdAt: u.createdAt });
+  const publicUser = (u) => ({ id: u.id, username: u.username, createdAt: u.createdAt });
   const keyBox = (u) => ({ salt: u.kdfSalt, iterations: u.kdfIterations, wrappedKey: u.wrappedKey });
 
   async function findUid(login) {
-    const l = String(login ?? '').trim();
-    if (l.includes('@') && !l.startsWith('@')) return (await mails().get(sha(l.toLowerCase()), { type: 'json' }))?.uid ?? null;
-    const u = checkUsername(l);
+    const u = checkUsername(String(login ?? '').trim());
     if (!u.ok) return null;
     return (await names().get(u.username, { type: 'json' }))?.uid ?? null;
   }
@@ -159,22 +149,14 @@ export function createAccounts(getStore) {
     'POST /api/signup': async (req, user, b) => {
       const un = checkUsername(b.username);
       if (!un.ok) return fail(400, un.error, 'username');
-      const em = checkEmail(b.email);
-      if (!em.ok) return fail(400, em.error, 'email');
       if (!validKeyMaterial(b)) return fail(400, 'Something went wrong preparing your account.');
       const id = randomUUID();
       const claimed = await names().setJSON(un.username, { uid: id }, { onlyIfNew: true });
       if (!claimed.modified) return fail(409, `@${un.username} is already taken.`, 'username');
-      const mail = await mails().setJSON(sha(em.email), { uid: id }, { onlyIfNew: true });
-      if (!mail.modified) {
-        await names().delete(un.username);
-        return fail(409, 'An account already uses this email.', 'email');
-      }
       const authSalt = randomBytes(16);
       const rec = {
         id,
         username: un.username,
-        email: em.email,
         authSalt: b64(authSalt),
         authHash: await hashAuth(b.authKey, authSalt),
         kdfSalt: b.salt,
@@ -232,19 +214,6 @@ export function createAccounts(getStore) {
           if ((await names().get(old, { type: 'json' }))?.uid === user.id) await names().delete(old); // free the old name
         }
       }
-      if (b.email != null) {
-        if (!(await verifyAuth(user, b.authKey || ''))) return fail(401, 'Your password isn’t right.', 'password');
-        const em = checkEmail(b.email);
-        if (!em.ok) return fail(400, em.error, 'email');
-        if (em.email !== user.email) {
-          const claimed = await mails().setJSON(sha(em.email), { uid: user.id }, { onlyIfNew: true });
-          if (!claimed.modified) return fail(409, 'An account already uses this email.', 'email');
-          const old = sha(user.email);
-          user.email = em.email;
-          await users().setJSON(user.id, user);
-          if ((await mails().get(old, { type: 'json' }))?.uid === user.id) await mails().delete(old);
-        }
-      }
       return json(200, { user: publicUser(user) });
     },
 
@@ -269,7 +238,6 @@ export function createAccounts(getStore) {
       if (!(await verifyAuth(user, b.authKey || ''))) return fail(401, 'Your password isn’t right.', 'password');
       await walls().delete(user.id);
       if ((await names().get(user.username, { type: 'json' }))?.uid === user.id) await names().delete(user.username);
-      if ((await mails().get(sha(user.email), { type: 'json' }))?.uid === user.id) await mails().delete(sha(user.email));
       await users().delete(user.id);
       return json(200, { ok: true }, { 'set-cookie': cookie(req, '', 0) });
     },

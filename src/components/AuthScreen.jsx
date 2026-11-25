@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Logo, IconEye, IconEyeOff, IconLock, IconCheck } from './Icons.jsx';
-import { checkUsername, checkEmail, checkPassword } from '../account/rules.js';
+import { checkUsername, checkPassword } from '../account/rules.js';
 import { isUsernameAvailable, signUp, signIn, unlock } from '../account/client.js';
 
 /*
@@ -30,7 +30,6 @@ export function AuthScreen({ demo, locked, onDone, onSignOut }) {
 
 function SignUp({ onDone, onSwitch }) {
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [check, setCheck] = useState(null); // { state: 'checking' | 'ok' | 'bad', text }
@@ -46,15 +45,13 @@ function SignUp({ onDone, onSwitch }) {
     const u = checkUsername(username);
     if (!u.ok) return setError({ field: 'username', text: u.error });
     if (check?.state === 'bad') return setError({ field: 'username', text: check.text });
-    const em = checkEmail(email);
-    if (!em.ok) return setError({ field: 'email', text: em.error });
     const pw = checkPassword(password);
     if (!pw.ok) return setError({ field: 'password', text: pw.error });
     if (password !== confirm) return setError({ field: 'confirm', text: 'The passwords don’t match.' });
     setError(null);
     setBusy(true);
     try {
-      onDone(await signUp({ username: u.username, email: em.email, password }), { isNew: true });
+      onDone(await signUp({ username: u.username, password }), { isNew: true });
     } catch (err) {
       setBusy(false);
       setError({ field: err.field, text: err.message });
@@ -85,9 +82,6 @@ function SignUp({ onDone, onSwitch }) {
             spellCheck={false}
             maxLength={21}
           />
-        </label>
-        <label className={`ios-field ${error?.field === 'email' ? 'is-bad' : ''}`}>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" aria-label="Email" autoComplete="email" />
         </label>
         <PasswordField value={password} onChange={setPassword} placeholder="Password" autoComplete="new-password" bad={error?.field === 'password'} />
         <PasswordField value={confirm} onChange={setConfirm} placeholder="Confirm Password" autoComplete="new-password" bad={error?.field === 'confirm'} />
@@ -123,7 +117,7 @@ function SignIn({ onDone, onSwitch }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!login.trim()) return setError({ field: 'login', text: 'Enter your username or email.' });
+    if (!login.trim()) return setError({ field: 'login', text: 'Enter your username.' });
     if (!password) return setError({ field: 'password', text: 'Enter your password.' });
     setError(null);
     setBusy(true);
@@ -144,15 +138,19 @@ function SignIn({ onDone, onSwitch }) {
       <p className="auth-sub">Welcome back to POST IT.</p>
       <div className={`ios-fields ${error ? 'has-error' : ''}`}>
         <label className={`ios-field ${error?.field === 'login' ? 'is-bad' : ''}`}>
+          <span className="ios-field-at" aria-hidden="true">
+            @
+          </span>
           <input
             ref={first}
             value={login}
-            onChange={(e) => setLogin(e.target.value)}
-            placeholder="Username or Email"
-            aria-label="Username or email"
+            onChange={(e) => setLogin(e.target.value.replace(/^@/, '').replace(/\s/g, ''))}
+            placeholder="username"
+            aria-label="Username"
             autoComplete="username"
             autoCapitalize="none"
             spellCheck={false}
+            maxLength={21}
           />
         </label>
         <PasswordField value={password} onChange={setPassword} placeholder="Password" autoComplete="current-password" bad={error?.field === 'password'} />

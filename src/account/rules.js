@@ -1,4 +1,4 @@
-// Username and email rules — the same ones the server enforces (netlify/lib/accounts.mjs).
+// Username and password rules — the same ones the server enforces (netlify/lib/accounts.mjs).
 
 const RESERVED = new Set([
   'admin', 'administrator', 'root', 'support', 'help', 'postit', 'post-it', 'post_it', 'api', 'me', 'settings',
@@ -14,12 +14,6 @@ export function checkUsername(raw) {
   if (/^\.|\.$|\.\./.test(u)) return { ok: false, error: 'Periods can’t be first, last or next to each other.' };
   if (RESERVED.has(u.toLowerCase())) return { ok: false, error: 'That username isn’t available.' };
   return { ok: true, username: u.toLowerCase() };
-}
-
-export function checkEmail(raw) {
-  const e = String(raw ?? '').trim();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e) || e.length > 254) return { ok: false, error: 'Enter a valid email address.' };
-  return { ok: true, email: e.toLowerCase() };
 }
 
 export function checkPassword(pw) {
