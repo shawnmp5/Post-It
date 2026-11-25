@@ -6,22 +6,23 @@ import RainSceneWorker from '../rainScene.worker.js?worker&inline';
  * Animated wallpapers. Only one for now: rain on a window.
  *
  * The scene is drawn in four layers on a single canvas:
- *   1. a soft night sky (or an overcast afternoon in light mode)
+ *   1. a soft night sky (or an overcast afternoon in light mode), or with
+ *      "City lights" on, a wet avenue at night with traffic (rainCity.js)
  *   2. rain falling outside, in three depths
  *   3. fog on the glass, plus a mist of tiny droplets stuck to it
  *   4. bigger beads that swell, run down and merge
  * Now and then lightning flickers through the sky (and `postit:lightning`
  * is fired so the rain sound can roll thunder in after it).
  */
-export function Wallpaper({ kind, mood = 'light', lightning = true }) {
+export function Wallpaper({ kind, mood = 'light', lightning = true, city = false }) {
   if (kind !== 'rain') return null;
-  return <RainWallpaper mood={mood} lightning={lightning} />;
+  return <RainWallpaper mood={mood} lightning={lightning} city={city} />;
 }
 
-function RainWallpaper({ mood, lightning }) {
+function RainWallpaper({ mood, lightning, city }) {
   const boxRef = useRef(null);
   const sceneRef = useRef(null);
-  const initial = useRef({ mood, lightning });
+  const initial = useRef({ mood, lightning, city });
 
   useEffect(() => {
     const scene = startRain(boxRef.current, initial.current);
@@ -38,6 +39,10 @@ function RainWallpaper({ mood, lightning }) {
     sceneRef.current?.call('setLightning', lightning);
   }, [lightning]);
 
+  useEffect(() => {
+    sceneRef.current?.call('setCity', city);
+  }, [city]);
+
   return <div ref={boxRef} className="wallpaper wp-rain" aria-hidden="true" />;
 }
 
@@ -45,11 +50,11 @@ function RainWallpaper({ mood, lightning }) {
  * Run the scene in a worker when the browser can hand a canvas to one, so the
  * rain never competes with scrolling; otherwise run it here.
  */
-function startRain(box, { mood, lightning }) {
+function startRain(box, { mood, lightning, city }) {
   const view = () => ({ w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 });
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const onStrike = (distance) => window.dispatchEvent(new CustomEvent('postit:lightning', { detail: { distance } }));
-  const state = { mood, lightning };
+  const state = { mood, lightning, city };
   let canvas = null;
   let call = () => {};
   let stop = () => {};
@@ -62,7 +67,7 @@ function startRain(box, { mood, lightning }) {
   };
   const opts = () => {
     const v = view();
-    return { mood: state.mood, lightning: state.lightning, reduced, width: v.w, height: v.h, dpr: v.dpr };
+    return { mood: state.mood, lightning: state.lightning, city: state.city, reduced, width: v.w, height: v.h, dpr: v.dpr };
   };
   const onMainThread = () => {
     stop();
@@ -109,6 +114,7 @@ function startRain(box, { mood, lightning }) {
     call(type, value) {
       if (type === 'setMood') state.mood = value;
       if (type === 'setLightning') state.lightning = value;
+      if (type === 'setCity') state.city = value;
       call(type, value);
     },
     destroy() {

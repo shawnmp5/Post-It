@@ -116,6 +116,7 @@ export const DEFAULT_SETTINGS = {
   rainSound: false,
   rainVolume: 0.6,
   lightning: true,
+  city: false, // rain wallpaper: city lights and traffic behind the glass
 };
 
 /* ------------------------------------------------------------------ */

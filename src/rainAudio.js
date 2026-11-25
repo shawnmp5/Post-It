@@ -10,6 +10,8 @@
  *   - a low wash of heavy rain further off, swelling with gusts
  *   - a soft room reverb, so it sounds like outside rather than in your ear
  *   - thunder after each lightning flash (the wallpaper fires `postit:lightning`)
+ *   - with the city behind the rain: now and then a car swishing past on the
+ *     wet road below, panning across as it goes
  */
 
 import { makeRainSounds, RAIN_SAMPLE_RATE } from './rainDsp.js';
@@ -26,6 +28,8 @@ let timer = 0;
 let nextTap = 0;
 let unlockArmed = false;
 let stopTimer = 0;
+let city = false;
+let nextCar = 0;
 
 /* ------------------------------------------------------------------ */
 
@@ -138,8 +142,17 @@ function build() {
   thunderBus.connect(master);
   send(thunderBus, 0.4);
 
+  // Tyres on the wet street, a few floors down: soft, through the glass.
+  const carLp = ctx.createBiquadFilter();
+  carLp.type = 'lowpass';
+  carLp.frequency.value = 2600;
+  const carBus = ctx.createGain();
+  carBus.gain.value = 0.55;
+  carLp.connect(carBus).connect(master);
+  send(carBus, 0.3);
+
   if (import.meta.env.DEV) window.__rainAudio = { ctx, master, out: comp };
-  const bus = { tapBus, thunderBus };
+  const bus = { tapBus, thunderBus, carBus: carLp };
 
   loadSounds(RAIN_SAMPLE_RATE, ctx.sampleRate).then((s) => {
     verb.buffer = stereo(s.verb, ctx.sampleRate);
@@ -158,6 +171,7 @@ function build() {
       ...bus,
       taps: s.taps.map((d) => toBuffer(ctx, d)),
       thunderNoise: stereo(s.thunder),
+      hiss: stereo(s.wash),
       crackNoise: stereo(s.crack),
     };
   });
@@ -196,6 +210,44 @@ function schedule() {
     const a = Math.random();
     play(parts.taps[(Math.random() * parts.taps.length) | 0], nextTap, 0.06 + a * a * 0.4, rand(-0.9, 0.9), parts.tapBus, rand(0.85, 1.15));
   }
+  if (!city) return;
+  if (nextCar < now) nextCar = now + rand(0.5, 3);
+  while (nextCar < ahead) {
+    swish(nextCar);
+    nextCar += rand(1.2, 3) + -Math.log(1 - Math.random()) * 2.5;
+  }
+}
+
+/* A car passing on the wet road: hiss that swells, brightens as it nears, pans across. */
+function swish(t0) {
+  const dur = rand(2.2, 4.2);
+  const peak = rand(0.35, 0.65) * dur;
+  const loud = rand(0.25, 0.9);
+  const src = ctx.createBufferSource();
+  src.buffer = parts.hiss;
+  const bp = ctx.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.Q.value = 0.7;
+  const f = rand(650, 1100);
+  bp.frequency.setValueAtTime(f * 0.7, t0);
+  bp.frequency.linearRampToValueAtTime(f * 1.6, t0 + peak);
+  bp.frequency.linearRampToValueAtTime(f * 0.6, t0 + dur);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(loud, t0 + peak);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  let out = g;
+  if (ctx.createStereoPanner) {
+    const p = ctx.createStereoPanner();
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    p.pan.setValueAtTime(-0.75 * dir, t0);
+    p.pan.linearRampToValueAtTime(0.75 * dir, t0 + dur);
+    g.connect(p);
+    out = p;
+  }
+  src.connect(bp).connect(g);
+  out.connect(parts.carBus);
+  src.start(t0, rand(0, 3), dur + 0.1);
 }
 
 /* Thunder: an optional crack for close strikes, then a long rolling rumble. */
@@ -294,6 +346,11 @@ export function stopRainSound() {
   master.gain.setValueAtTime(master.gain.value, now);
   master.gain.linearRampToValueAtTime(0, now + 0.6);
   stopTimer = setTimeout(() => ctx && !running && ctx.suspend(), 700);
+}
+
+// Traffic sounds go with the city wallpaper.
+export function setCitySound(on) {
+  city = !!on;
 }
 
 export function setRainVolume(v) {
