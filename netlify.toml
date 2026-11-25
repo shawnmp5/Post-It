@@ -27,6 +27,11 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     X-Frame-Options = "SAMEORIGIN"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    # Only this site's own code may run (an injected script could read unlocked notes).
+    # Styles allow inline (React style attributes); images allow data:/blob: (pictures in notes);
+    # workers allow blob: (the wallpaper and rain sound run in inlined workers).
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
 
 # It's a single-page app: any path loads the app.
 [[redirects]]

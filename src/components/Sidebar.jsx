@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { COLOR_MAP, uid } from '../store.js';
 import { Popover, MenuItem, MenuSep } from './Popover.jsx';
-import { SettingsPanel } from './SettingsPanel.jsx';
 import {
   IconPlus,
   IconSidebar,
@@ -9,7 +8,6 @@ import {
   IconEdit,
   IconCopy,
   IconTrash,
-  IconSettings,
   IconClose,
   IconFolder,
   IconFolderPlus,
@@ -22,13 +20,12 @@ import { MenuLabel } from './Popover.jsx';
 const SIDEBAR_MIN = 200;
 const SIDEBAR_MAX = 440;
 
-export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, onClose, isMobile, onHide }) {
+export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, onClose, isMobile, onHide, account, onOpenAccount }) {
   const { topics, notes, activeTopicId, settings } = data;
   const groups = data.groups || [];
   const [addMenu, setAddMenu] = useState(null); // anchor of the folder+ menu
   const [renamingId, setRenamingId] = useState(null);
   const [menu, setMenu] = useState(null); // { kind: 'topic' | 'group', id, anchor }
-  const [settingsAnchor, setSettingsAnchor] = useState(null);
   const [drag, setDrag] = useState(null); // { id, dy, dropIndex }
   const listRef = useRef(null);
   const dragRef = useRef(null);
@@ -232,7 +229,6 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
   itemsRef.current = items;
   const closeMenu = useCallback(() => setMenu(null), []);
   const closeAdd = useCallback(() => setAddMenu(null), []);
-  const closeSettings = useCallback(() => setSettingsAnchor(null), []);
   const menuTopic = menu?.kind === 'topic' && topics.find((t) => t.id === menu.id);
   const menuGroup = menu?.kind === 'group' && groups.find((g) => g.id === menu.id);
   const dragIndex = drag ? items.findIndex((it) => it.topic?.id === drag.id) : -1;
@@ -243,7 +239,8 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
     return 0;
   };
 
-  const initial = (settings.userName || 'You').trim().charAt(0).toUpperCase();
+  const handle = account?.username || 'you';
+  const initial = handle.charAt(0).toUpperCase();
 
   return (
     <aside
@@ -298,8 +295,6 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
         </div>
       </div>
 
-      {/* The wall's search field is placed here while the sidebar is showing. */}
-      <div id="sidebar-search-slot" className="sidebar-search-slot" />
 
       <div className="sidebar-section-head">
         <span className="section-label">Topics</span>
@@ -434,18 +429,12 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
       </nav>
 
       <div className="sidebar-footer">
-        <button
-          type="button"
-          className={`profile ${settingsAnchor ? 'is-open' : ''}`}
-          onClick={(e) => setSettingsAnchor(settingsAnchor ? null : e.currentTarget)}
-          title="Settings"
-        >
+        <button type="button" className="profile" onClick={() => onOpenAccount?.()} title="Account">
           <span className="avatar">{initial}</span>
           <span className="profile-text">
-            <span className="profile-name">{settings.userName || 'You'}</span>
-            <span className="profile-sub">Settings</span>
+            <span className="profile-name">@{handle}</span>
+            <span className="profile-sub">Account</span>
           </span>
-          <IconSettings className="profile-gear" />
         </button>
       </div>
 
@@ -581,11 +570,7 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
         </Popover>
       )}
 
-      {settingsAnchor && (
-        <Popover anchor={settingsAnchor} onClose={closeSettings} className="settings-popover">
-          <SettingsPanel data={data} dispatch={dispatch} toast={toast} confirm={confirm} onDone={closeSettings} />
-        </Popover>
-      )}
+
     </aside>
   );
 }

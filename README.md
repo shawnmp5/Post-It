@@ -12,6 +12,15 @@ npm run dev      # http://localhost:5173
 npm run build    # production build in dist/
 ```
 
+## Accounts and encryption
+
+- **Sign up first.** New visitors see Create Account (username, email, password) or Sign In. Usernames show as **@name**: at least 2 characters with at least one letter (letters, numbers, `.` and `_`), case-insensitive, first come first served — a name frees up when its owner changes it or deletes the account. Availability is checked as you type.
+- **Account** (bottom-left of the sidebar): change username or email, change password, see encryption and save status, sign out, delete the account. **Settings** (⚙︎, top right) holds appearance, wallpaper, fonts and data tools.
+- **End-to-end encrypted.** The browser stretches the password (PBKDF2-SHA256, 600k rounds, per-account salt) into a master secret that never leaves the device. From it come an auth key (the server stores only a scrypt hash of that) and a wrap key, which encrypts the account's random AES-256-GCM data key. The wall is encrypted with that data key before it's saved — on this device and on the server — so the server only ever holds ciphertext. Changing the password re-wraps the same key; other devices are signed out. **A forgotten password can't be recovered.**
+- **Sync.** Each account's wall follows it to any device. Changes save locally (encrypted) at once and to the account a moment later; a device that edited an older version picks up the newer one. Works offline and catches up.
+- **Where it lives.** `netlify/functions/api.mjs` (all of `/api/*`) with `netlify/lib/accounts.mjs`, stored in Netlify Blobs. Sessions are HttpOnly cookies; sign-in locks for a few minutes after repeated wrong passwords. A strict Content Security Policy keeps any other code off the page. `npm run dev` runs the same API in memory; where there's no server at all (a static preview) accounts fall back to this browser only.
+- Notes made before accounts existed move into the first account created on that device, and the old unencrypted copy is removed.
+
 ## What it does
 
 **Topics (sidebar)**
@@ -27,7 +36,7 @@ npm run build    # production build in dist/
 - Lightning (on by default with the rain wallpaper): flickering flashes, near strikes show a forked bolt; with the sound on, thunder rolls in a moment later — sooner and louder for close strikes. Off with reduced motion
 - Appearance: Light, graphite Dark, Extra dark (near black), or Auto (follows the system) — in Settings, or View → Dark mode
 - New topics: the + beside the Topics heading, the “New Topic” row at the end of the list, or the folder menu at the top
-- Profile / settings at the bottom: your name, new note color (Random by default, or a fixed colour), note font (clean: System, Rounded, Serif, Mono; handwritten: Caveat, Kalam, Patrick Hand, Gochi Hand), tilt and connection toggles, export / import JSON, restore samples, clear all
+- Settings (⚙︎ top right): new note color (Random by default, or a fixed colour), note font (clean: System, Rounded, Serif, Mono; handwritten: Caveat, Kalam, Patrick Hand, Gochi Hand), tilt and connection toggles, export / import JSON, restore samples, clear all
 
 **The wall (workspace)**
 - Freeform placement — grab a note by its tape and drop it anywhere, no grid snapping; the wall grows downward as you go
@@ -62,7 +71,7 @@ npm run build    # production build in dist/
 
 ## Persistence
 
-Everything — topics, note text, colors, positions, sizes, rotations, archive, connections, per-topic zoom and scroll position, and settings — is saved automatically to `localStorage` (key `postit:v1`) and synced between open tabs. A new visitor starts with one topic (“My Notes”) holding a short welcome note; the full sample wall can be loaded from Settings → Samples. Both are ordinary data and can be edited or deleted.
+Everything — topics, note text, colors, positions, sizes, rotations, archive, connections, per-topic zoom and scroll position, and settings — is saved automatically, encrypted, to this browser (`postit:wall:<account id>`) and to the account, and kept in step between open tabs and devices. A new visitor starts with one topic (“My Notes”) holding a short welcome note; the full sample wall can be loaded from Settings → Samples. Both are ordinary data and can be edited or deleted.
 
 ## Code map
 

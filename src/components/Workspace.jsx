@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Board } from './Board.jsx';
+import { SettingsPanel } from './SettingsPanel.jsx';
 import { Popover, MenuItem, MenuSep, MenuLabel } from './Popover.jsx';
 import { COLORS, COLOR_MAP, ZOOM_MAX, ZOOM_MIN } from '../store.js';
 import { plainText } from '../blocks.js';
@@ -24,6 +24,7 @@ import {
   IconRestore,
   IconRotateRight,
   IconTrash,
+  IconGear,
   IconSpeaker,
   IconSpeakerOff,
 } from './Icons.jsx';
@@ -31,17 +32,14 @@ import {
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 const MOD = isMac ? '⌘' : 'Ctrl';
 
-export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, onOpenDrawer, onCreateTopic, focusNote, sidebarHidden, onShowSidebar }) {
+export function Workspace({ data, dispatch, toast, confirm, account, canUndo, canRedo, isMobile, onOpenDrawer, onCreateTopic, focusNote, sidebarHidden, onShowSidebar }) {
   const topic = data.topics.find((t) => t.id === data.activeTopicId) || null;
   const boardRef = useRef(null);
   const searchBtn = useRef(null);
   const viewBtn = useRef(null);
   const searchInput = useRef(null);
-  const [searchSlot, setSearchSlot] = useState(null);
-  useLayoutEffect(() => {
-    setSearchSlot(!isMobile && !sidebarHidden ? document.getElementById('sidebar-search-slot') : null);
-  }, [isMobile, sidebarHidden]);
-  const [panel, setPanel] = useState(null); // 'search' | 'view' | 'archive'
+  const settingsBtn = useRef(null);
+  const [panel, setPanel] = useState(null); // 'search' | 'view' | 'archive' | 'settings'
   const [query, setQuery] = useState('');
   const [colors, setColors] = useState([]);
   const [zoom, setZoomState] = useState(topic?.zoom || 1);
@@ -158,7 +156,7 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
     );
   }
 
-  // One search field: in the sidebar when it's showing, otherwise in the toolbar.
+  // The search field, in the top-right toolbar.
   const searchField = (
   <div
     ref={searchBtn}
@@ -261,7 +259,7 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
         </div>
 
         <div className="ws-actions">
-          {!searchSlot && searchField}
+          {searchField}
           <div className="tb-group" role="toolbar" aria-label="Wall options">
             {data.settings.wallpaper === 'rain' && (
               <button
@@ -285,11 +283,20 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
             >
               <IconSliders />
             </button>
+            <button
+              ref={settingsBtn}
+              type="button"
+              className={`icon-btn settings-btn ${panel === 'settings' ? 'is-active' : ''}`}
+              onClick={() => setPanel(panel === 'settings' ? null : 'settings')}
+              title="Settings"
+              aria-label="Settings"
+            >
+              <IconGear />
+            </button>
           </div>
         </div>
       </header>
 
-      {searchSlot && createPortal(searchField, searchSlot)}
       <div className="ws-body">
       <Board
         key={topic.id}
@@ -371,7 +378,7 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
       </div>
 
       {panel === 'search' && (
-        <Popover anchor={searchBtn.current} onClose={closeSearch} align={searchSlot ? 'start' : 'end'} className="panel search-panel" closeOnScroll={false}>
+        <Popover anchor={searchBtn.current} onClose={closeSearch} align="end" className="panel search-panel" closeOnScroll={false}>
           <div className="color-filter" role="group" aria-label="Filter by color">
             {COLORS.map((c) => {
               const on = colors.includes(c.id);
@@ -438,6 +445,11 @@ export function Workspace({ data, dispatch, toast, canUndo, canRedo, isMobile, o
         </Popover>
       )}
 
+      {panel === 'settings' && (
+        <Popover anchor={settingsBtn.current} onClose={() => setPanel(null)} align="end" className="settings-popover">
+          <SettingsPanel data={data} dispatch={dispatch} toast={toast} confirm={confirm} account={account} onDone={() => setPanel(null)} />
+        </Popover>
+      )}
       {panel === 'view' && (
         <Popover anchor={viewBtn.current} onClose={closePanel} align="end" className="menu view-menu">
           <MenuLabel>Zoom</MenuLabel>

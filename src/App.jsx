@@ -21,8 +21,10 @@ function useMediaQuery(q) {
   return match;
 }
 
-export default function App() {
-  const { data, dispatch, canUndo, canRedo, getData } = useStore();
+// The wall itself. Signed-in: `wall` carries the decrypted data and how to save it;
+// `account` is the signed-in user (shown in the sidebar, opens the Account sheet).
+export default function App({ wall, account, onOpenAccount }) {
+  const { data, dispatch, canUndo, canRedo, getData } = useStore(wall);
   const [focusNote, setFocusNote] = useState(null); // { id, token } — scroll the wall to this note
   const isMobile = useMediaQuery(MOBILE_QUERY);
   const sidebarHidden = !isMobile && !!data.settings.sidebarHidden;
@@ -199,6 +201,8 @@ export default function App() {
         onSelectTopic={selectTopic}
         toast={toast}
         confirm={confirm}
+        account={account}
+        onOpenAccount={onOpenAccount}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         isMobile={isMobile}
@@ -214,6 +218,8 @@ export default function App() {
         data={data}
         dispatch={dispatch}
         toast={toast}
+        confirm={confirm}
+        account={account}
         canUndo={canUndo}
         canRedo={canRedo}
         isMobile={isMobile}

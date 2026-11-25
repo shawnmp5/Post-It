@@ -1,5 +1,7 @@
 import { useEffect, useReducer, useRef } from 'react';
 import { createSeedData, createStarterData } from './seed.js';
+
+export { createStarterData };
 import { imageRefs } from './blocks.js';
 
 export const STORAGE_KEY = 'postit:v1';
@@ -463,18 +465,33 @@ export function emptyData(settings) {
 /* Hook                                                                */
 /* ------------------------------------------------------------------ */
 
-export function useStore() {
-  const [state, dispatch] = useReducer(rootReducer, undefined, () => ({ data: load(), past: [], future: [] }));
+/*
+ * useStore()                      — the wall in this browser's localStorage (no account)
+ * useStore({ initialData, persist, subscribe })
+ *                                 — a signed-in wall: starts from initialData, hands every
+ *                                   change to persist(data) (which encrypts and syncs it), and
+ *                                   subscribe(fn) delivers newer versions from elsewhere.
+ */
+export function useStore({ initialData, persist, subscribe, dirty } = {}) {
+  const [state, dispatch] = useReducer(rootReducer, undefined, () => ({
+    data: initialData ? normalize(initialData) : load(),
+    past: [],
+    future: [],
+  }));
+  const persistRef = useRef(persist);
+  persistRef.current = persist;
+  const write = (data) => (persistRef.current ? persistRef.current(data) : save(data));
   const latest = useRef(state.data);
   latest.current = state.data;
-  const lastSaved = useRef(null);
+  // An opened wall that's already saved needn't be saved again until something changes.
+  const lastSaved = useRef(initialData && !dirty ? state.data : null);
 
   // Debounced autosave.
   useEffect(() => {
     if (lastSaved.current === state.data) return undefined;
     const t = setTimeout(() => {
-      save(state.data);
-        lastSaved.current = state.data;
+      write(state.data);
+      lastSaved.current = state.data;
     }, 250);
     return () => clearTimeout(t);
   }, [state.data]);
@@ -483,7 +500,7 @@ export function useStore() {
   useEffect(() => {
     const flush = () => {
       if (lastSaved.current !== latest.current) {
-        save(latest.current);
+        write(latest.current);
         lastSaved.current = latest.current;
       }
     };
@@ -498,8 +515,19 @@ export function useStore() {
     };
   }, []);
 
-  // Keep multiple open tabs in sync.
+  // A newer version from another device or tab (signed-in walls).
   useEffect(() => {
+    if (!subscribe) return undefined;
+    return subscribe((incoming) => {
+      const data = normalize(incoming);
+      lastSaved.current = data; // already saved where it came from — don't echo it back
+      dispatch({ type: 'replace', data });
+    });
+  }, [subscribe]);
+
+  // Keep multiple open tabs in sync (walls without an account).
+  useEffect(() => {
+    if (persist) return undefined;
     const onStorage = (e) => {
       if (e.key !== STORAGE_KEY || !e.newValue) return;
       try {
@@ -512,6 +540,7 @@ export function useStore() {
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {

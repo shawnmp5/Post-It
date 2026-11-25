@@ -199,3 +199,31 @@ export const IconSpeakerOff = make(
     <path d="M10.5 6.3l3 3.4M13.5 6.3l-3 3.4" />
   </>,
 );
+export const IconEye = make(
+  <>
+    <path d="M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8s-2.4 4.5-6.5 4.5S1.5 8 1.5 8z" />
+    <circle cx="8" cy="8" r="2" />
+  </>,
+);
+export const IconEyeOff = make(
+  <>
+    <path d="M6.2 3.8A6.6 6.6 0 0 1 8 3.5c4.1 0 6.5 4.5 6.5 4.5s-.7 1.3-2 2.5M4.1 5A9.7 9.7 0 0 0 1.5 8s2.4 4.5 6.5 4.5c1 0 1.9-.3 2.7-.7" />
+    <path d="M6.6 6.6a2 2 0 0 0 2.8 2.8M2.5 2.5l11 11" />
+  </>,
+);
+export const IconLock = make(
+  <>
+    <rect x="3.5" y="7" width="9" height="6.5" rx="1.6" />
+    <path d="M5.5 7V5.2a2.5 2.5 0 0 1 5 0V7" />
+  </>,
+);
+export const IconChevronRight = make(<path d="M6.5 3.5 11 8l-4.5 4.5" />);
+export const IconChevronLeft = make(<path d="M9.5 3.5 5 8l4.5 4.5" />);
+
+// A proper gear (the old settings glyph read as a sun).
+export const IconGear = make(
+  <>
+    <path d="M12.96 6.13 L14.76 6.63 L14.76 9.37 L12.96 9.87 L12.83 10.19 L13.75 11.81 L11.81 13.75 L10.19 12.83 L9.87 12.96 L9.37 14.76 L6.63 14.76 L6.13 12.96 L5.81 12.83 L4.19 13.75 L2.25 11.81 L3.17 10.19 L3.04 9.87 L1.24 9.37 L1.24 6.63 L3.04 6.13 L3.17 5.81 L2.25 4.19 L4.19 2.25 L5.81 3.17 L6.13 3.04 L6.63 1.24 L9.37 1.24 L9.87 3.04 L10.19 3.17 L11.81 2.25 L13.75 4.19 L12.83 5.81Z" />
+    <circle cx="8" cy="8" r="2.1" />
+  </>,
+);

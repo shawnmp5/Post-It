@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { COLORS, FONTS, emptyData, freshSampleData, normalize } from '../store.js';
 import { IconDownload, IconUpload, IconRestore, IconTrash, IconSpeaker, IconSpeakerOff } from './Icons.jsx';
 
-export function SettingsPanel({ data, dispatch, toast, confirm, onDone }) {
+export function SettingsPanel({ data, dispatch, toast, confirm, account, onDone }) {
   const { settings } = data;
   const fileRef = useRef(null);
   const set = (patch) => dispatch({ type: 'settings', patch });
@@ -69,16 +69,7 @@ export function SettingsPanel({ data, dispatch, toast, confirm, onDone }) {
 
   return (
     <div className="settings">
-      <label className="field">
-        <span className="field-label">Your name</span>
-        <input
-          className="text-input"
-          value={settings.userName}
-          placeholder="You"
-          maxLength={40}
-          onChange={(e) => set({ userName: e.target.value })}
-        />
-      </label>
+      <h2 className="settings-title">Settings</h2>
 
       <div className="field">
         <span className="field-label">New note color</span>
@@ -243,7 +234,11 @@ export function SettingsPanel({ data, dispatch, toast, confirm, onDone }) {
           <IconTrash /> Clear all
         </button>
       </div>
-      <p className="settings-foot">Everything saves automatically to this browser.</p>
+      <p className="settings-foot">
+        {account?.mode === 'server'
+          ? 'Everything saves automatically to your account, end-to-end encrypted.'
+          : 'Everything saves automatically, encrypted, in this browser.'}
+      </p>
     </div>
   );
 }
