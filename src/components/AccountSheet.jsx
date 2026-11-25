@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { IconChevronRight, IconChevronLeft, IconLock } from './Icons.jsx';
+import { IconChevronRight, IconArrowLeft, IconClose, IconLock } from './Icons.jsx';
+import { Avatar } from '../account/avatar.jsx';
 import { PasswordField, Status, Spinner, useUsernameCheck } from './AuthScreen.jsx';
 import { checkUsername, checkPassword } from '../account/rules.js';
 import { changeUsername, changePassword, deleteAccount } from '../account/client.js';
 
-const TITLES = { main: 'Account', username: 'Username', password: 'Change Password', delete: 'Delete Account' };
+const TITLES = { main: 'Account', username: 'Username', password: 'Change password', delete: 'Delete account' };
 
 function syncText({ status, lastSynced }, mode) {
   if (mode !== 'server') return 'Saved, encrypted, in this browser';
@@ -48,16 +49,14 @@ export function AccountSheet({ user, keyBox, mode, sync, onClose, onUser, onSign
     <div className="sheet-backdrop" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div ref={sheet} className="sheet" role="dialog" aria-modal="true" aria-label={TITLES[page]}>
         <header className="sheet-nav">
-          {page !== 'main' ? (
-            <button type="button" className="sheet-back" onClick={() => go('main')}>
-              <IconChevronLeft /> Account
+          {page !== 'main' && (
+            <button type="button" className="icon-btn sheet-back" onClick={() => go('main')} title="Back" aria-label="Back">
+              <IconArrowLeft />
             </button>
-          ) : (
-            <span />
           )}
           <h2 className="sheet-title">{TITLES[page]}</h2>
-          <button type="button" className="sheet-done" onClick={onClose}>
-            Done
+          <button type="button" className="icon-btn sheet-close" onClick={onClose} title="Close" aria-label="Close">
+            <IconClose />
           </button>
         </header>
         <div className={`sheet-page is-${dir}`} key={page}>
@@ -77,9 +76,11 @@ function Main({ user, mode, sync, go, onSignOut }) {
   return (
     <>
       <div className="acct-hero">
-        <div className="acct-avatar">{user.username.charAt(0).toUpperCase()}</div>
-        <div className="acct-handle">@{user.username}</div>
-        <div className="acct-email">Member since {since}</div>
+        <Avatar username={user.username} size="lg" />
+        <div>
+          <div className="acct-handle">@{user.username}</div>
+          <div className="acct-email">Member since {since}</div>
+        </div>
       </div>
 
       <div className="ios-group">
@@ -90,15 +91,15 @@ function Main({ user, mode, sync, go, onSignOut }) {
         </button>
       </div>
 
-      <h3 className="ios-group-title">Password &amp; Security</h3>
+      <h3 className="ios-group-title">Security</h3>
       <div className="ios-group">
         <button type="button" className="ios-row" onClick={() => go('password')}>
-          <span className="ios-label">Change Password</span>
+          <span className="ios-label">Change password</span>
           <IconChevronRight className="ios-chevron" />
         </button>
         <div className="ios-row is-static">
           <span className="ios-label">
-            <IconLock className="ios-label-icon" /> End-to-End Encryption
+            <IconLock className="ios-label-icon" /> End-to-end encryption
           </span>
           <span className="ios-value">On</span>
         </div>
@@ -112,14 +113,12 @@ function Main({ user, mode, sync, go, onSignOut }) {
         read them.
       </p>
 
-      <div className="ios-group">
-        <button type="button" className="ios-row is-center is-blue" onClick={onSignOut}>
-          Sign Out
+      <div className="acct-actions">
+        <button type="button" className="btn" onClick={onSignOut}>
+          Sign out
         </button>
-      </div>
-      <div className="ios-group">
-        <button type="button" className="ios-row is-center is-red" onClick={() => go('delete')}>
-          Delete Account…
+        <button type="button" className="acct-delete" onClick={() => go('delete')}>
+          Delete account…
         </button>
       </div>
     </>
@@ -199,15 +198,15 @@ function EditPassword({ user, keyBox, onSaved }) {
   return (
     <form onSubmit={save}>
       <div className="ios-fields">
-        <PasswordField value={current} onChange={setCurrent} placeholder="Current Password" autoComplete="current-password" bad={error?.field === 'current'} autoFocus />
+        <PasswordField value={current} onChange={setCurrent} placeholder="Current password" autoComplete="current-password" bad={error?.field === 'current'} autoFocus />
       </div>
       <div className="ios-fields">
-        <PasswordField value={next} onChange={setNext} placeholder="New Password" autoComplete="new-password" bad={error?.field === 'next'} />
-        <PasswordField value={verify} onChange={setVerify} placeholder="Verify" autoComplete="new-password" bad={error?.field === 'verify'} />
+        <PasswordField value={next} onChange={setNext} placeholder="New password" autoComplete="new-password" bad={error?.field === 'next'} />
+        <PasswordField value={verify} onChange={setVerify} placeholder="Type it again" autoComplete="new-password" bad={error?.field === 'verify'} />
       </div>
       <Status error={error} hint="At least 8 characters. Your other devices will be signed out and need the new password." />
       <button type="submit" className="auth-primary" disabled={busy}>
-        {busy ? <Spinner label="Changing Password" /> : 'Change Password'}
+        {busy ? <Spinner label="Changing password" /> : 'Change password'}
       </button>
     </form>
   );
@@ -240,7 +239,7 @@ function DeleteAccount({ user, keyBox, onDeleted }) {
       </div>
       <Status error={error} />
       <button type="submit" className="auth-primary is-danger" disabled={busy}>
-        {busy ? <Spinner label="Deleting" /> : 'Delete Account'}
+        {busy ? <Spinner label="Deleting" /> : 'Delete account'}
       </button>
     </form>
   );

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { COLOR_MAP, uid } from '../store.js';
 import { Popover, MenuItem, MenuSep } from './Popover.jsx';
+import { Avatar } from '../account/avatar.jsx';
 import {
   IconPlus,
   IconSidebar,
@@ -240,7 +241,6 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
   };
 
   const handle = account?.username || 'you';
-  const initial = handle.charAt(0).toUpperCase();
 
   return (
     <aside
@@ -430,7 +430,7 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
 
       <div className="sidebar-footer">
         <button type="button" className="profile" onClick={() => onOpenAccount?.()} title="Account">
-          <span className="avatar">{initial}</span>
+          <Avatar username={handle} />
           <span className="profile-text">
             <span className="profile-name">@{handle}</span>
             <span className="profile-sub">Account</span>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Logo, IconEye, IconEyeOff, IconLock, IconCheck } from './Icons.jsx';
+import { Avatar } from '../account/avatar.jsx';
 import { checkUsername, checkPassword } from '../account/rules.js';
 import { isUsernameAvailable, signUp, signIn, unlock } from '../account/client.js';
 
@@ -63,8 +64,8 @@ function SignUp({ onDone, onSwitch }) {
       <div className="auth-logo">
         <Logo size={44} />
       </div>
-      <h1 className="auth-title">Create Your Account</h1>
-      <p className="auth-sub">One account for all your walls, on every device.</p>
+      <h1 className="auth-title">Create your account</h1>
+      <p className="auth-sub">Your sticky notes, on any device.</p>
 
       <div className={`ios-fields ${error ? 'has-error' : ''}`}>
         <label className={`ios-field ${error?.field === 'username' ? 'is-bad' : ''}`}>
@@ -84,13 +85,13 @@ function SignUp({ onDone, onSwitch }) {
           />
         </label>
         <PasswordField value={password} onChange={setPassword} placeholder="Password" autoComplete="new-password" bad={error?.field === 'password'} />
-        <PasswordField value={confirm} onChange={setConfirm} placeholder="Confirm Password" autoComplete="new-password" bad={error?.field === 'confirm'} />
+        <PasswordField value={confirm} onChange={setConfirm} placeholder="Confirm password" autoComplete="new-password" bad={error?.field === 'confirm'} />
       </div>
 
       <Status error={error} check={username ? check : null} hint="Usernames need at least 2 characters and one letter. Passwords need 8 or more." />
 
       <button type="submit" className="auth-primary" disabled={busy}>
-        {busy ? <Spinner label="Creating Account" /> : 'Create Account'}
+        {busy ? <Spinner label="Creating your account" /> : 'Create account'}
       </button>
 
       <p className="auth-fine">
@@ -100,7 +101,7 @@ function SignUp({ onDone, onSwitch }) {
       <p className="auth-switch">
         Already have an account?{' '}
         <button type="button" className="auth-link" onClick={onSwitch}>
-          Sign In
+          Sign in
         </button>
       </p>
     </form>
@@ -134,8 +135,8 @@ function SignIn({ onDone, onSwitch }) {
       <div className="auth-logo">
         <Logo size={44} />
       </div>
-      <h1 className="auth-title">Sign In</h1>
-      <p className="auth-sub">Welcome back to POST IT.</p>
+      <h1 className="auth-title">Welcome back</h1>
+      <p className="auth-sub">Sign in to get to your wall.</p>
       <div className={`ios-fields ${error ? 'has-error' : ''}`}>
         <label className={`ios-field ${error?.field === 'login' ? 'is-bad' : ''}`}>
           <span className="ios-field-at" aria-hidden="true">
@@ -157,7 +158,7 @@ function SignIn({ onDone, onSwitch }) {
       </div>
       <Status error={error} />
       <button type="submit" className="auth-primary" disabled={busy}>
-        {busy ? <Spinner label="Signing In" /> : 'Sign In'}
+        {busy ? <Spinner label="Signing in" /> : 'Sign in'}
       </button>
       <p className="auth-switch">
         New to POST IT?{' '}
@@ -187,7 +188,9 @@ function Unlock({ locked, onDone, onSignOut }) {
   };
   return (
     <form className="auth-form" onSubmit={submit} noValidate>
-      <div className="auth-avatar">{locked.user.username.charAt(0).toUpperCase()}</div>
+      <div className="auth-logo">
+        <Avatar username={locked.user.username} size="lg" />
+      </div>
       <h1 className="auth-title">@{locked.user.username}</h1>
       <p className="auth-sub">Enter your password to unlock your notes on this device.</p>
       <div className={`ios-fields ${error ? 'has-error' : ''}`}>
@@ -200,7 +203,7 @@ function Unlock({ locked, onDone, onSignOut }) {
       <p className="auth-switch">
         Not you?{' '}
         <button type="button" className="auth-link" onClick={onSignOut}>
-          Sign Out
+          Sign out
         </button>
       </p>
     </form>

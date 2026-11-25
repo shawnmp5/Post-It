@@ -5509,3 +5509,215 @@ button.ios-row:active {
   letter-spacing: -0.01em;
   color: var(--text);
 }
+
+/* --------------------------------------------------------------------------
+   Accounts in POST IT's own look (toned down from iOS)
+   -------------------------------------------------------------------------- */
+
+/* Sticky-note avatar */
+.note-avatar {
+  position: relative;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
+  background: var(--av-bg);
+  color: rgba(0, 0, 0, 0.72);
+  font-size: 13px;
+  font-weight: 700;
+  transform: rotate(var(--av-tilt));
+  box-shadow:
+    inset 0 -2px 0 rgba(0, 0, 0, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.14);
+}
+.note-avatar::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  width: 46%;
+  height: 6px;
+  transform: translateX(-50%) rotate(-2deg);
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.05);
+}
+.note-avatar.is-lg {
+  width: 58px;
+  height: 58px;
+  border-radius: 5px;
+  font-size: 25px;
+}
+.note-avatar.is-lg::before {
+  top: -5px;
+  height: 11px;
+}
+
+/* Buttons and links in the app's own ink, like New Note */
+.auth-primary {
+  height: 42px;
+  border-radius: 10px;
+  background: #1d1d1f;
+  color: #fff;
+  font-size: 15px;
+}
+.auth-primary:hover:not(:disabled) {
+  background: #000;
+}
+:root[data-theme='dark'] .auth-primary {
+  background: #f5f5f7;
+  color: #1c1c1e;
+}
+:root[data-theme='dark'] .auth-primary:hover:not(:disabled) {
+  background: #fff;
+}
+.auth-primary.is-danger,
+:root[data-theme='dark'] .auth-primary.is-danger {
+  background: var(--sys-red);
+  color: #fff;
+}
+.auth-primary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.spinner {
+  border-color: color-mix(in srgb, currentColor 30%, transparent);
+  border-top-color: currentColor;
+}
+.auth-link {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 3px;
+}
+.auth-link:hover {
+  text-decoration-color: currentColor;
+}
+.auth-title {
+  font-size: 24px;
+  letter-spacing: -0.015em;
+}
+.auth-card {
+  border-radius: 18px;
+}
+
+/* Fields: one outlined box that lights up softly, no blue edge */
+.ios-fields {
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px var(--line);
+  transition: box-shadow 0.15s;
+}
+.ios-fields:focus-within {
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 0 0 4px var(--fill);
+}
+.ios-field:focus-within,
+.ios-field.is-bad:focus-within {
+  box-shadow: none;
+}
+.ios-field + .ios-field::before {
+  background: var(--line);
+}
+
+/* The Account panel */
+.sheet {
+  border-radius: 16px;
+  background: #fff;
+}
+:root[data-theme='dark'] .sheet {
+  background: #232325;
+}
+:root[data-shade='black'] .sheet {
+  background: #121214;
+}
+.sheet-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 56px;
+  padding: 0 12px 0 20px;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+}
+.sheet-title {
+  flex: 1;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  text-align: left;
+  color: var(--text);
+}
+.sheet-back {
+  margin-left: -10px;
+}
+.sheet-page {
+  padding: 20px 20px 22px;
+}
+.acct-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 4px 2px 22px;
+  text-align: left;
+}
+.acct-handle {
+  font-size: 20px;
+  color: var(--text);
+}
+.acct-email {
+  color: var(--text-3);
+}
+.ios-group {
+  background: transparent;
+  box-shadow: none;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.ios-row {
+  color: var(--text);
+  font-size: 14.5px;
+}
+.ios-row + .ios-row::before {
+  background: var(--line);
+}
+.ios-group-title {
+  margin: 0 0 8px 2px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-2);
+}
+.ios-value,
+.ios-chevron {
+  color: var(--text-3);
+}
+.ios-label-icon {
+  color: var(--text-2);
+}
+.ios-footnote {
+  margin: -8px 2px 20px;
+  color: var(--text-3);
+}
+.ios-footnote.is-lead {
+  color: var(--text);
+}
+.acct-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.acct-delete {
+  padding: 6px 8px;
+  margin-right: -8px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--sys-red);
+}
+.acct-delete:hover {
+  background: var(--bg-hover);
+}
