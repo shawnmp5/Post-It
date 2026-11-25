@@ -6011,3 +6011,49 @@ button.ios-row:active {
 .sync-now:disabled {
   opacity: 0.5;
 }
+
+/* ==========================================================================
+   One frosted material for every floating window: menus, panels, pickers,
+   the Account window, dialogs and toasts. Translucent, blurred, a fine edge.
+   ========================================================================== */
+:root {
+  --window-bg: rgba(250, 250, 252, 0.76);
+  --window-edge: rgba(0, 0, 0, 0.1);
+  --window-blur: saturate(180%) blur(28px);
+  --window-dim: rgba(0, 0, 0, 0.16);
+}
+:root[data-theme='dark'] {
+  --window-bg: rgba(40, 40, 44, 0.72);
+  --window-edge: rgba(255, 255, 255, 0.12);
+}
+:root[data-shade='black'] {
+  --window-bg: rgba(22, 22, 24, 0.74);
+  --window-edge: rgba(255, 255, 255, 0.1);
+}
+
+:root .popover,
+:root .sheet,
+:root .dialog,
+:root .auth-card {
+  background: var(--window-bg) !important;
+  -webkit-backdrop-filter: var(--window-blur) !important;
+  backdrop-filter: var(--window-blur) !important;
+  border: 0.5px solid var(--window-edge) !important;
+}
+:root .popover .popover,
+:root .sheet .ios-group {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+/* Toasts are a dark HUD in both themes, frosted too. */
+:root .toast {
+  background: rgba(28, 28, 30, 0.72) !important;
+  -webkit-backdrop-filter: var(--window-blur) !important;
+  backdrop-filter: var(--window-blur) !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+}
+/* Behind a window, dim the page only lightly so the frosting shows. */
+:root .sheet-backdrop,
+:root .dialog-backdrop {
+  background: var(--window-dim) !important;
+}

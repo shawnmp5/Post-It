@@ -56,7 +56,7 @@ export function SettingsPanel({ data, dispatch, toast, confirm, account, onDone 
   const clearAll = async () => {
     const ok = await confirm({
       title: 'Start with an empty wall?',
-      message: 'All topics and notes will be removed from this device.',
+      message: 'All your topics and notes will be removed, on every device you’re signed in on.',
       confirmLabel: 'Clear everything',
       danger: true,
     });
