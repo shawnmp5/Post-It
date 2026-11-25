@@ -110,6 +110,7 @@ export function SettingsPanel({ data, dispatch, toast, confirm, onDone }) {
           {[
             ['light', 'Light'],
             ['dark', 'Dark'],
+            ['black', 'Extra dark'],
             ['system', 'Auto'],
           ].map(([id, label]) => (
             <button

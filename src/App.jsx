@@ -148,7 +148,7 @@ export default function App() {
     };
   }, [dispatch, toast]);
 
-  // Appearance: light, graphite dark, or follow the system.
+  // Appearance: light, graphite dark, extra dark (near black), or follow the system.
   const themePref = data.settings.theme || 'light';
   const [systemDark, setSystemDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
   useEffect(() => {
@@ -158,7 +158,8 @@ export default function App() {
     return () => m.removeEventListener('change', on);
   }, []);
   const clearUI = !!data.settings.clearUI;
-  const dark = themePref === 'dark' || (themePref === 'system' && systemDark);
+  const black = themePref === 'black';
+  const dark = black || themePref === 'dark' || (themePref === 'system' && systemDark);
   const wallpaper = data.settings.wallpaper === 'rain' ? 'rain' : 'none';
   useEffect(() => {
     const root = document.documentElement;
@@ -179,8 +180,9 @@ export default function App() {
   useEffect(() => () => stopRainSound(), []);
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#1c1c1e' : '#f5f5f7');
-  }, [dark]);
+    document.documentElement.dataset.shade = black ? 'black' : 'none';
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', black ? '#000000' : dark ? '#1c1c1e' : '#f5f5f7');
+  }, [dark, black]);
 
   const activeName = data.topics.find((t) => t.id === data.activeTopicId)?.name;
   useEffect(() => {
@@ -189,7 +191,7 @@ export default function App() {
 
   return (
     <div className={`app ${isMobile ? 'is-mobile' : ''} ${sidebarHidden ? 'sidebar-hidden' : ''}`}>
-      <Wallpaper kind={wallpaper} dark={dark} lightning={data.settings.lightning !== false} />
+      <Wallpaper kind={wallpaper} mood={black ? 'night' : dark ? 'dark' : 'light'} lightning={data.settings.lightning !== false} />
       {!sidebarHidden && <Sidebar
         onHide={() => dispatch({ type: 'settings', patch: { sidebarHidden: true } })}
         data={data}

@@ -5,8 +5,9 @@
  * worker (rainScene.worker.js) on an OffscreenCanvas and leave the page's own
  * thread free for scrolling, typing and dragging.
  *
- * createRain(canvas, { dark, lightning, reduced, width, height, dpr, onStrike })
- * returns { resize({ w, h, dpr }), visible(), setDark(b), setLightning(b), strike(), destroy() }.
+ * createRain(canvas, { mood, lightning, reduced, width, height, dpr, onStrike })
+ * mood: 'light' (overcast afternoon), 'dark' (evening), 'night' (deep night, moon behind cloud)
+ * returns { resize({ w, h, dpr }), visible(), setMood(m), setLightning(b), strike(), destroy() }.
  */
 
 const TAU = Math.PI * 2;
@@ -30,6 +31,18 @@ const PALETTES = {
     streakAlpha: 1,
     fog: '#93a3b9',
     fogOpacity: 0.3,
+  },
+  // Extra dark: deep night. Almost black, a moon somewhere behind the clouds,
+  // dimmer cool rain and thinner fog.
+  night: {
+    sky: ['#010204', '#03060c', '#050a13', '#020307'],
+    glow: 'rgba(22, 34, 58, 0.3)',
+    moon: { x: 0.66, y: 0.2, halo: 'rgba(120, 142, 190, 0.24)', core: 'rgba(215, 225, 250, 0.36)' },
+    vignette: 'rgba(0, 0, 0, 0.72)',
+    streak: [190, 205, 235],
+    streakAlpha: 0.78,
+    fog: '#4d5a70',
+    fogOpacity: 0.2,
   },
   light: {
     sky: ['#8f9cab', '#a9b5c3', '#c4ced9', '#b5c0cc'],
@@ -132,6 +145,42 @@ function paintBackdrop(W, H, dpr, pal) {
   grad.addColorStop(1, 'rgba(0,0,0,0)');
   g.fillStyle = grad;
   g.fillRect(0, 0, W, H);
+
+  // At night: the moon, blurred behind cloud — a wide cold halo and a soft core,
+  // with a few darker cloud banks drifting across it.
+  if (pal.moon) {
+    const mx = W * pal.moon.x;
+    const my = H * pal.moon.y;
+    const R = Math.max(W, H);
+    grad = g.createRadialGradient(mx, my, 0, mx, my, R * 0.55);
+    grad.addColorStop(0, pal.moon.halo);
+    grad.addColorStop(0.35, 'rgba(60, 75, 110, 0.06)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, W, H);
+    grad = g.createRadialGradient(mx, my, 0, mx, my, R * 0.05);
+    grad.addColorStop(0, pal.moon.core);
+    grad.addColorStop(0.5, 'rgba(170, 185, 220, 0.12)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, W, H);
+    for (const [cx, cy, rx, ry, a] of [
+      [0.6, 0.18, 0.22, 0.035, 0.55],
+      [0.74, 0.25, 0.2, 0.03, 0.5],
+      [0.5, 0.28, 0.28, 0.045, 0.45],
+      [0.7, 0.12, 0.18, 0.025, 0.4],
+    ]) {
+      g.save();
+      g.translate(W * cx, H * cy);
+      g.scale(1, (ry * H) / (rx * W));
+      grad = g.createRadialGradient(0, 0, 0, 0, 0, rx * W);
+      grad.addColorStop(0, `rgba(1, 2, 5, ${a})`);
+      grad.addColorStop(1, 'rgba(1, 2, 5, 0)');
+      g.fillStyle = grad;
+      g.fillRect(-rx * W, -rx * W, rx * W * 2, rx * W * 2);
+      g.restore();
+    }
+  }
 
   // Vignette.
   grad = g.createRadialGradient(W / 2, H * 0.45, Math.min(W, H) * 0.35, W / 2, H * 0.45, Math.hypot(W, H) * 0.62);
@@ -250,8 +299,9 @@ export function createRain(canvas, opts) {
   const cancelFrame = self.cancelAnimationFrame ? (id) => self.cancelAnimationFrame(id) : (id) => clearTimeout(id);
   let view = { w: opts.width, h: opts.height, dpr: opts.dpr || 1 };
   const streakSprite = makeStreakSprite();
-  let dark = !!opts.dark;
-  let pal = dark ? PALETTES.dark : PALETTES.light;
+  let mood = PALETTES[opts.mood] ? opts.mood : 'light';
+  let dark = mood !== 'light';
+  let pal = PALETTES[mood];
   let dropSprite = makeDropSprite(dark);
 
   let W = 0;
@@ -653,11 +703,13 @@ export function createRain(canvas, opts) {
     strike() {
       if (!reduced) startStrike();
     },
-    setDark(next) {
-      if (!!next === dark) return;
-      dark = !!next;
-      pal = dark ? PALETTES.dark : PALETTES.light;
-      dropSprite = makeDropSprite(dark);
+    setMood(next) {
+      if (!PALETTES[next] || next === mood) return;
+      const wasDark = dark;
+      mood = next;
+      dark = mood !== 'light';
+      pal = PALETTES[mood];
+      if (dark !== wasDark) dropSprite = makeDropSprite(dark);
       backdrop = paintBackdrop(W, H, dpr, pal);
       fog = paintFog(W, H, pal);
       redrawMist();

@@ -4774,3 +4774,82 @@ body,
   width: 100vw;
   height: 100vh;
 }
+
+/* ==========================================================================
+   Extra dark: near-black surfaces on top of the dark theme
+   ========================================================================== */
+:root[data-shade='black'] {
+  --bg-app: #000;
+  --bg-sidebar: #0a0a0b;
+  --bg-elev: #151517;
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --bg-press: rgba(255, 255, 255, 0.09);
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.13);
+  --material: rgba(18, 18, 20, 0.78);
+  --material-strong: rgba(14, 14, 16, 0.96);
+  --material-border: rgba(255, 255, 255, 0.08);
+  --fill: rgba(118, 118, 128, 0.18);
+  --fill-strong: rgba(118, 118, 128, 0.28);
+  --shadow-pop: 0 18px 44px -14px rgba(0, 0, 0, 0.85), 0 3px 10px rgba(0, 0, 0, 0.5);
+}
+:root[data-shade='black'] body {
+  background: #000;
+}
+:root[data-shade='black'] .sidebar {
+  background: rgba(14, 14, 16, 0.8);
+  box-shadow:
+    0 0 0 0.5px rgba(255, 255, 255, 0.07),
+    0 16px 40px -16px rgba(0, 0, 0, 0.9);
+}
+@media (max-width: 767px) {
+  :root[data-shade='black'] .sidebar {
+    background: rgba(8, 8, 9, 0.97);
+  }
+}
+:root[data-shade='black'] .topic-rename {
+  background: #000;
+}
+:root[data-shade='black'] .ws-header {
+  background: linear-gradient(180deg, #000 0%, #000 58%, rgba(0, 0, 0, 0) 100%);
+}
+:root[data-shade='black'] .menu-btn,
+:root[data-shade='black'] .ws-actions,
+:root[data-shade='black'] .floating-controls.dock {
+  background: rgba(20, 20, 22, 0.82);
+  box-shadow:
+    0 0 0 0.5px rgba(255, 255, 255, 0.08),
+    0 10px 30px -12px rgba(0, 0, 0, 0.9);
+}
+:root[data-shade='black'] .swatch.is-active {
+  box-shadow:
+    inset 0 0 0 1px var(--swatch-edge),
+    0 0 0 2px #151517,
+    0 0 0 3.5px #d1d1d6;
+}
+:root[data-shade='black'] .dialog {
+  background: rgba(18, 18, 20, 0.98);
+}
+:root[data-shade='black'] .drawer-backdrop.is-open {
+  background: rgba(0, 0, 0, 0.6);
+}
+/* Over the night rain, the solid-tint panels go near black too. */
+:root[data-wallpaper='rain']:not([data-clear='true'])[data-shade='black'] .sidebar {
+  background: rgba(8, 9, 11, 0.9);
+}
+:root[data-wallpaper='rain']:not([data-clear='true'])[data-shade='black'] .menu-btn,
+:root[data-wallpaper='rain']:not([data-clear='true'])[data-shade='black'] .ws-actions,
+:root[data-wallpaper='rain']:not([data-clear='true'])[data-shade='black'] .floating-controls.dock {
+  background: rgba(16, 17, 19, 0.9);
+}
+:root[data-wallpaper='rain'][data-shade='black'] body {
+  background: #010204 !important;
+}
+
+/* Four appearance choices: keep each label on one line. */
+.seg.appearance button {
+  white-space: nowrap;
+  font-size: 12px;
+  padding-left: 2px;
+  padding-right: 2px;
+}

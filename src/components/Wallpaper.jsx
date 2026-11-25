@@ -13,15 +13,15 @@ import RainSceneWorker from '../rainScene.worker.js?worker&inline';
  * Now and then lightning flickers through the sky (and `postit:lightning`
  * is fired so the rain sound can roll thunder in after it).
  */
-export function Wallpaper({ kind, dark, lightning = true }) {
+export function Wallpaper({ kind, mood = 'light', lightning = true }) {
   if (kind !== 'rain') return null;
-  return <RainWallpaper dark={dark} lightning={lightning} />;
+  return <RainWallpaper mood={mood} lightning={lightning} />;
 }
 
-function RainWallpaper({ dark, lightning }) {
+function RainWallpaper({ mood, lightning }) {
   const boxRef = useRef(null);
   const sceneRef = useRef(null);
-  const initial = useRef({ dark, lightning });
+  const initial = useRef({ mood, lightning });
 
   useEffect(() => {
     const scene = startRain(boxRef.current, initial.current);
@@ -31,8 +31,8 @@ function RainWallpaper({ dark, lightning }) {
   }, []);
 
   useEffect(() => {
-    sceneRef.current?.call('setDark', dark);
-  }, [dark]);
+    sceneRef.current?.call('setMood', mood);
+  }, [mood]);
 
   useEffect(() => {
     sceneRef.current?.call('setLightning', lightning);
@@ -45,11 +45,11 @@ function RainWallpaper({ dark, lightning }) {
  * Run the scene in a worker when the browser can hand a canvas to one, so the
  * rain never competes with scrolling; otherwise run it here.
  */
-function startRain(box, { dark, lightning }) {
+function startRain(box, { mood, lightning }) {
   const view = () => ({ w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 });
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const onStrike = (distance) => window.dispatchEvent(new CustomEvent('postit:lightning', { detail: { distance } }));
-  const state = { dark, lightning };
+  const state = { mood, lightning };
   let canvas = null;
   let call = () => {};
   let stop = () => {};
@@ -62,7 +62,7 @@ function startRain(box, { dark, lightning }) {
   };
   const opts = () => {
     const v = view();
-    return { dark: state.dark, lightning: state.lightning, reduced, width: v.w, height: v.h, dpr: v.dpr };
+    return { mood: state.mood, lightning: state.lightning, reduced, width: v.w, height: v.h, dpr: v.dpr };
   };
   const onMainThread = () => {
     stop();
@@ -107,7 +107,7 @@ function startRain(box, { dark, lightning }) {
 
   return {
     call(type, value) {
-      if (type === 'setDark') state.dark = value;
+      if (type === 'setMood') state.mood = value;
       if (type === 'setLightning') state.lightning = value;
       call(type, value);
     },
