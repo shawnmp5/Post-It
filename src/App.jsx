@@ -160,7 +160,7 @@ export default function App() {
   const clearUI = !!data.settings.clearUI;
   const black = themePref === 'black';
   const dark = black || themePref === 'dark' || (themePref === 'system' && systemDark);
-  const wallpaper = ['rain', 'reef'].includes(data.settings.wallpaper) ? data.settings.wallpaper : 'none';
+  const wallpaper = data.settings.wallpaper === 'rain' ? 'rain' : 'none';
   useEffect(() => {
     const root = document.documentElement;
     root.dataset.clear = clearUI ? 'true' : 'false';

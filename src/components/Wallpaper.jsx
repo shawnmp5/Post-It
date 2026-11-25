@@ -1,34 +1,33 @@
 import { useEffect, useRef } from 'react';
 import { createRain } from '../rainScene.js';
-import { createReef } from '../reefScene.js';
-import SceneWorker from '../scene.worker.js?worker&inline';
+import RainSceneWorker from '../rainScene.worker.js?worker&inline';
 
 /*
- * Animated wallpapers, each drawn on a canvas (in a worker where the browser allows):
- *   rain — rain on a window: sky, falling rain, fog and drops on the glass, lightning
- *          (fires `postit:lightning` so the rain sound can roll thunder in after it)
- *   reef — a coral reef: sunbeams and rippling light, three depths of coral, fish,
- *          seaweed, bubbles, jellyfish; glowing plankton at night
- * mood follows the appearance: 'light', 'dark' or 'night' (extra dark).
+ * Animated wallpapers. Only one for now: rain on a window.
+ *
+ * The scene is drawn in four layers on a single canvas:
+ *   1. a soft night sky (or an overcast afternoon in light mode)
+ *   2. rain falling outside, in three depths
+ *   3. fog on the glass, plus a mist of tiny droplets stuck to it
+ *   4. bigger beads that swell, run down and merge
+ * Now and then lightning flickers through the sky (and `postit:lightning`
+ * is fired so the rain sound can roll thunder in after it).
  */
-const SCENES = { rain: createRain, reef: createReef };
-
 export function Wallpaper({ kind, mood = 'light', lightning = true }) {
-  if (!SCENES[kind]) return null;
-  return <SceneWallpaper key={kind} kind={kind} mood={mood} lightning={lightning} />;
+  if (kind !== 'rain') return null;
+  return <RainWallpaper mood={mood} lightning={lightning} />;
 }
 
-function SceneWallpaper({ kind, mood, lightning }) {
+function RainWallpaper({ mood, lightning }) {
   const boxRef = useRef(null);
   const sceneRef = useRef(null);
   const initial = useRef({ mood, lightning });
 
   useEffect(() => {
-    const scene = startScene(boxRef.current, kind, initial.current);
+    const scene = startRain(boxRef.current, initial.current);
     sceneRef.current = scene;
     if (import.meta.env.DEV) window.__rainStrike = () => scene.call('strike');
     return () => scene.destroy();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -39,14 +38,14 @@ function SceneWallpaper({ kind, mood, lightning }) {
     sceneRef.current?.call('setLightning', lightning);
   }, [lightning]);
 
-  return <div ref={boxRef} className={`wallpaper wp-${kind}`} aria-hidden="true" />;
+  return <div ref={boxRef} className="wallpaper wp-rain" aria-hidden="true" />;
 }
 
 /*
- * Run the scene in a worker when the browser can hand a canvas to one, so it
- * never competes with scrolling; otherwise run it here.
+ * Run the scene in a worker when the browser can hand a canvas to one, so the
+ * rain never competes with scrolling; otherwise run it here.
  */
-function startScene(box, kind, { mood, lightning }) {
+function startRain(box, { mood, lightning }) {
   const view = () => ({ w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 });
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const onStrike = (distance) => window.dispatchEvent(new CustomEvent('postit:lightning', { detail: { distance } }));
@@ -67,7 +66,7 @@ function startScene(box, kind, { mood, lightning }) {
   };
   const onMainThread = () => {
     stop();
-    const engine = SCENES[kind](mount(), { ...opts(), onStrike });
+    const engine = createRain(mount(), { ...opts(), onStrike });
     call = (type, value) => engine[type]?.(value);
     stop = () => engine.destroy();
   };
@@ -76,7 +75,7 @@ function startScene(box, kind, { mood, lightning }) {
   try {
     const c = mount();
     if (!c.transferControlToOffscreen || typeof Worker === 'undefined') throw new Error('no offscreen');
-    worker = new SceneWorker();
+    worker = new RainSceneWorker();
     const off = c.transferControlToOffscreen();
     worker.onmessage = (e) => e.data?.type === 'strike' && onStrike(e.data.distance);
     worker.onerror = () => {
@@ -85,7 +84,7 @@ function startScene(box, kind, { mood, lightning }) {
       worker = null;
       onMainThread();
     };
-    worker.postMessage({ type: 'init', kind, canvas: off, opts: opts() }, [off]);
+    worker.postMessage({ type: 'init', canvas: off, opts: opts() }, [off]);
     call = (type, value) => worker?.postMessage({ type, value });
     stop = () => {
       worker?.terminate();
