@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Board } from './Board.jsx';
 import { SettingsPanel } from './SettingsPanel.jsx';
+import { SharePanel } from './SharePanel.jsx';
 import { Popover, MenuItem, MenuSep, MenuLabel } from './Popover.jsx';
 import { COLORS, COLOR_MAP, ZOOM_MAX, ZOOM_MIN } from '../store.js';
 import { plainText } from '../blocks.js';
@@ -25,6 +26,7 @@ import {
   IconRotateRight,
   IconTrash,
   IconGear,
+  IconShare,
   IconSpeaker,
   IconSpeakerOff,
 } from './Icons.jsx';
@@ -39,7 +41,15 @@ export function Workspace({ data, dispatch, toast, confirm, account, canUndo, ca
   const viewBtn = useRef(null);
   const searchInput = useRef(null);
   const settingsBtn = useRef(null);
-  const [panel, setPanel] = useState(null); // 'search' | 'view' | 'archive' | 'settings'
+  const shareBtn = useRef(null);
+  const [panel, setPanel] = useState(null); // 'search' | 'view' | 'archive' | 'settings' | 'share'
+
+  // The topic menu's "Share…" opens the share panel here.
+  useEffect(() => {
+    const open = () => setPanel('share');
+    window.addEventListener('postit:share', open);
+    return () => window.removeEventListener('postit:share', open);
+  }, []);
   const [query, setQuery] = useState('');
   const [colors, setColors] = useState([]);
   const [zoom, setZoomState] = useState(topic?.zoom || 1);
@@ -274,6 +284,16 @@ export function Workspace({ data, dispatch, toast, confirm, account, canUndo, ca
               </button>
             )}
             <button
+              ref={shareBtn}
+              type="button"
+              className={`icon-btn share-btn ${panel === 'share' ? 'is-active' : ''}`}
+              onClick={() => setPanel(panel === 'share' ? null : 'share')}
+              title="Share"
+              aria-label="Share"
+            >
+              <IconShare />
+            </button>
+            <button
               ref={viewBtn}
               type="button"
               className={`icon-btn ${panel === 'view' || panel === 'archive' ? 'is-active' : ''}`}
@@ -445,6 +465,11 @@ export function Workspace({ data, dispatch, toast, confirm, account, canUndo, ca
         </Popover>
       )}
 
+      {panel === 'share' && (
+        <Popover anchor={shareBtn.current} onClose={() => setPanel(null)} align="end" className="share-popover">
+          <SharePanel data={data} topicId={topic.id} dispatch={dispatch} toast={toast} onDone={() => setPanel(null)} />
+        </Popover>
+      )}
       {panel === 'settings' && (
         <Popover anchor={settingsBtn.current} onClose={() => setPanel(null)} align="end" className="settings-popover">
           <SettingsPanel data={data} dispatch={dispatch} toast={toast} confirm={confirm} account={account} onDone={() => setPanel(null)} />

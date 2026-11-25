@@ -146,7 +146,8 @@ function dataReducer(d, a) {
       const src = d.topics.find((t) => t.id === a.id);
       if (!src) return d;
       const idx = d.topics.indexOf(src);
-      const copy = { ...src, id: a.newId, name: `${src.name} copy`, createdAt: Date.now(), scrollTop: 0 };
+      const { share: _share, ...srcRest } = src; // a copy isn't shared
+      const copy = { ...srcRest, id: a.newId, name: `${src.name} copy`, createdAt: Date.now(), scrollTop: 0 };
       const topics = [...d.topics];
       topics.splice(idx + 1, 0, copy);
       const idMap = {};
@@ -233,6 +234,17 @@ function dataReducer(d, a) {
     case 'topic/select':
       if (d.activeTopicId === a.id) return d;
       return { ...d, activeTopicId: a.id };
+    case 'topic/share': {
+      // The topic's share link ({ id, key, at }) or null. Not part of undo history.
+      return {
+        ...d,
+        topics: d.topics.map((t) => {
+          if (t.id !== a.id) return t;
+          const { share: _old, ...rest } = t;
+          return a.share ? { ...rest, share: a.share } : rest;
+        }),
+      };
+    }
     case 'topic/view': {
       // View state (scroll / zoom) — not part of undo history.
       let changed = false;
@@ -333,7 +345,8 @@ const pushPast = (past, s) => {
 
 function restore(d, s) {
   // Keep view state (scroll/zoom) of topics that still exist so undo doesn't jump the viewport.
-  const view = Object.fromEntries(d.topics.map((t) => [t.id, { scrollTop: t.scrollTop, zoom: t.zoom }]));
+  // (and its share link, which undo shouldn't take away)
+  const view = Object.fromEntries(d.topics.map((t) => [t.id, { scrollTop: t.scrollTop, zoom: t.zoom, share: t.share }]));
   const topics = s.topics.map((t) => (view[t.id] ? { ...t, ...view[t.id] } : t));
   const activeTopicId = topics.some((t) => t.id === d.activeTopicId) ? d.activeTopicId : topics[0]?.id ?? null;
   return { ...d, topics, notes: s.notes, connections: s.connections, groups: s.groups ?? d.groups, activeTopicId };

@@ -9,6 +9,8 @@
  *   - the user's note-encryption key, itself encrypted ("wrapped") with a key only the
  *     password can make — so the server holds it but can't open it.
  *   - the wall (topics, notes, settings) as AES-GCM ciphertext made in the browser.
+ *   - shared topics: a snapshot encrypted with a key that exists only in the share link
+ *     (after the #, which browsers never send), so a share is readable only via its link.
  *
  * So the notes are end-to-end encrypted: nobody with access to the storage can read them.
  * The flip side: a forgotten password can't be reset into the notes.
@@ -56,6 +58,8 @@ export function createAccounts(getStore) {
   const names = () => getStore('usernames'); // username -> { uid }
   const walls = () => getStore('walls'); // uid -> { blob, rev, updatedAt }
   const secrets = () => getStore('secrets');
+  const shares = () => getStore('shares'); // share id -> { uid, username, blob, updatedAt }
+  const validBlob = (blob) => blob && isB64(blob.iv, 14, 20) && typeof blob.ct === 'string' && blob.ct.length < MAX_WALL_BYTES;
 
   let secretCache = null;
   async function secret() {
@@ -237,6 +241,7 @@ export function createAccounts(getStore) {
       if (!user) return fail(401, 'Not signed in.');
       if (!(await verifyAuth(user, b.authKey || ''))) return fail(401, 'Your password isn’t right.', 'password');
       await walls().delete(user.id);
+      for (const id of user.shares || []) await shares().delete(id); // their share links stop working
       if ((await names().get(user.username, { type: 'json' }))?.uid === user.id) await names().delete(user.username);
       await users().delete(user.id);
       return json(200, { ok: true }, { 'set-cookie': cookie(req, '', 0) });
@@ -252,6 +257,7 @@ export function createAccounts(getStore) {
     'PUT /api/data': async (req, user, b, raw) => {
       if (!user) return fail(401, 'Not signed in.');
       if (raw.length > MAX_WALL_BYTES) return fail(413, 'Your wall is too big to save to your account (large images?).');
+      // (shares are size-checked in validBlob)
       if (!b.blob || !isB64(b.blob.iv, 14, 20) || typeof b.blob.ct !== 'string') return fail(400, 'Bad data.');
       const store = walls();
       const cur = await store.getWithMetadata(user.id, { type: 'json' });
@@ -264,9 +270,54 @@ export function createAccounts(getStore) {
     },
   };
 
+  // Share links. Anyone with a link can read it; only its owner can change or remove it.
+  const shareRoutes = {
+    POST: async (req, user, b) => {
+      if (!user) return fail(401, 'Sign in to share.');
+      if (!validBlob(b.blob)) return fail(400, 'Bad data.');
+      const id = b64(randomBytes(12));
+      const now = Date.now();
+      await shares().setJSON(id, { uid: user.id, username: user.username, blob: b.blob, updatedAt: now }, { onlyIfNew: true });
+      user.shares = [...(user.shares || []), id].slice(-500);
+      await users().setJSON(user.id, user);
+      return json(201, { id, updatedAt: now });
+    },
+    GET: async (req, user, b, raw, id) => {
+      const sh = id && (await shares().get(id, { type: 'json' }));
+      if (!sh) return fail(404, 'This link doesn’t work anymore.');
+      return json(200, { blob: sh.blob, username: sh.username, updatedAt: sh.updatedAt });
+    },
+    PUT: async (req, user, b, raw, id) => {
+      if (!user) return fail(401, 'Not signed in.');
+      const sh = id && (await shares().get(id, { type: 'json' }));
+      if (!sh || sh.uid !== user.id) return fail(404, 'Not found.');
+      if (!validBlob(b.blob)) return fail(400, 'Bad data.');
+      const now = Date.now();
+      await shares().setJSON(id, { ...sh, username: user.username, blob: b.blob, updatedAt: now });
+      return json(200, { id, updatedAt: now });
+    },
+    DELETE: async (req, user, b, raw, id) => {
+      if (!user) return fail(401, 'Not signed in.');
+      const sh = id && (await shares().get(id, { type: 'json' }));
+      if (sh && sh.uid === user.id) {
+        await shares().delete(id);
+        user.shares = (user.shares || []).filter((x) => x !== id);
+        await users().setJSON(user.id, user);
+      }
+      return json(200, { ok: true });
+    },
+  };
+
   return async function handle(req) {
     const url = new URL(req.url);
-    const route = routes[`${req.method} ${url.pathname.replace(/\/+$/, '')}`];
+    const path = url.pathname.replace(/\/+$/, '');
+    let route = routes[`${req.method} ${path}`];
+    let param = null;
+    const share = path.match(/^\/api\/share(?:\/([A-Za-z0-9_-]{8,32}))?$/);
+    if (share && (req.method === 'POST' ? !share[1] : !!share[1])) {
+      route = shareRoutes[req.method];
+      param = share[1] || null;
+    }
     if (!route) return fail(404, 'Not found.');
     // Only accept requests from this site's own pages.
     const origin = req.headers.get('origin');
@@ -285,7 +336,7 @@ export function createAccounts(getStore) {
     }
     try {
       const user = await readSession(req);
-      return await route(req, user, body, raw);
+      return await route(req, user, body, raw, param);
     } catch (err) {
       console.error(err);
       return fail(500, 'Something went wrong. Try again.');

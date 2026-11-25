@@ -227,3 +227,22 @@ export const IconGear = make(
     <circle cx="8" cy="8" r="2.1" />
   </>,
 );
+export const IconShare = make(
+  <>
+    <path d="M8 2.5v8M5.2 5.2 8 2.5l2.8 2.7" />
+    <path d="M5.5 7H4.2a.9.9 0 0 0-.9.9v5a.9.9 0 0 0 .9.9h7.6a.9.9 0 0 0 .9-.9v-5a.9.9 0 0 0-.9-.9h-1.3" />
+  </>,
+);
+export const IconImage = make(
+  <>
+    <rect x="2.5" y="3" width="11" height="10" rx="1.6" />
+    <circle cx="6" cy="6.5" r="1.1" />
+    <path d="m2.8 11.6 3.4-3.2 2.4 2.2 1.9-1.6 2.8 2.5" />
+  </>,
+);
+export const IconFileText = make(
+  <>
+    <path d="M4.2 1.9h5.2l3 3v9a.6.6 0 0 1-.6.6H4.2a.6.6 0 0 1-.6-.6V2.5a.6.6 0 0 1 .6-.6z" />
+    <path d="M9.2 2v3h3M5.8 8.2h4.4M5.8 10.6h4.4" />
+  </>,
+);

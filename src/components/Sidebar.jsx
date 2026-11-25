@@ -12,6 +12,7 @@ import {
   IconClose,
   IconFolder,
   IconFolderPlus,
+  IconShare,
   IconChevron,
   IconCompose,
   Logo,
@@ -518,6 +519,18 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
             }}
           >
             Duplicate
+          </MenuItem>
+          <MenuItem
+            icon={IconShare}
+            onClick={() => {
+              setMenu(null);
+              onSelectTopic(menuTopic.id);
+              onClose?.(); // on phones, close the drawer so the panel can show
+              // Opened on the next frame, once the topic is on screen.
+              requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('postit:share')));
+            }}
+          >
+            Share…
           </MenuItem>
           <MenuSep />
           <MenuLabel>Move to</MenuLabel>

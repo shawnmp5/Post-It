@@ -17,6 +17,9 @@ import {
   saveKey,
   forgetKey,
   b64,
+  unb64,
+  encryptJSON,
+  decryptJSON,
 } from './crypto.js';
 
 export class AccountError extends Error {
@@ -63,6 +66,10 @@ const server = {
   remove: (b) => call('POST', '/api/delete', b),
   getWall: () => call('GET', '/api/data'),
   putWall: (b) => call('PUT', '/api/data', b),
+  shareCreate: (b) => call('POST', '/api/share', b),
+  shareUpdate: (id, b) => call('PUT', `/api/share/${id}`, b),
+  shareRemove: (id) => call('DELETE', `/api/share/${id}`),
+  shareGet: (id) => call('GET', `/api/share/${id}`),
 };
 
 /* ---------------- demo (this browser only) ---------------- */
@@ -88,7 +95,14 @@ function demoFind(d, login) {
 async function demoVerify(u, authKey) {
   return u.authHash === (await sha(`${u.authSalt}:${authKey}`));
 }
+const noLinks = () => {
+  throw new AccountError('Share links work on the live site, not in this preview.', { status: 501 });
+};
 const demo = {
+  shareCreate: noLinks,
+  shareUpdate: noLinks,
+  shareRemove: async () => ({ ok: true }),
+  shareGet: noLinks,
   async me() {
     const d = demoDb();
     const u = d.users[d.session];
@@ -291,3 +305,38 @@ export async function deleteAccount(user, keyBox, password) {
 
 export const getWall = () => api.getWall();
 export const putWall = (b) => api.putWall(b);
+
+/* ---------------- share links ----------------
+   A shared topic is encrypted with its own random key. The key goes only in the link,
+   after the # (browsers never send that part to a server), so the server stores a share
+   it can't read, and only people with the link can. */
+
+export const canShareLinks = () => mode === 'server';
+
+export async function createShareLink(payload) {
+  const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+  const raw = b64(await crypto.subtle.exportKey('raw', key));
+  const res = await api.shareCreate({ blob: await encryptJSON(key, payload) });
+  return { id: res.id, key: raw, at: res.updatedAt };
+}
+
+async function importShareKey(raw, usages) {
+  return crypto.subtle.importKey('raw', unb64(raw), 'AES-GCM', false, usages);
+}
+
+export async function updateShareLink(share, payload) {
+  const key = await importShareKey(share.key, ['encrypt']);
+  const res = await api.shareUpdate(share.id, { blob: await encryptJSON(key, payload) });
+  return { ...share, at: res.updatedAt };
+}
+
+export const removeShareLink = (id) => api.shareRemove(id);
+
+export const shareUrl = (share) => `${location.origin}/s/${share.id}#${share.key}`;
+
+// For the shared page: no account needed, just the link.
+export async function openShareLink(id, rawKey) {
+  const res = await server.shareGet(id);
+  const key = await importShareKey(rawKey, ['decrypt']);
+  return { data: await decryptJSON(key, res.blob), username: res.username, updatedAt: res.updatedAt };
+}

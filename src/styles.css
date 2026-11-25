@@ -5721,3 +5721,252 @@ button.ios-row:active {
 .acct-delete:hover {
   background: var(--bg-hover);
 }
+
+/* ==========================================================================
+   Sharing: the Share panel, the shared-link page, exports
+   ========================================================================== */
+.share-popover {
+  width: 300px;
+  padding: 16px;
+}
+.share-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.share-link {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.share-url {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: var(--fill);
+  color: var(--text-2);
+  font-size: 12.5px;
+  overflow: hidden;
+}
+.share-url span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.share-url svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+.share-primary {
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border-radius: 9px;
+  background: #1d1d1f;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background 0.15s,
+    opacity 0.15s;
+}
+.share-primary:hover:not(:disabled) {
+  background: #000;
+}
+.share-primary:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+:root[data-theme='dark'] .share-primary {
+  background: #f5f5f7;
+  color: #1c1c1e;
+}
+:root[data-theme='dark'] .share-primary:hover:not(:disabled) {
+  background: #fff;
+}
+.share-primary svg {
+  width: 15px;
+  height: 15px;
+}
+.share-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+.share-stop {
+  font-size: inherit;
+  color: var(--sys-red);
+}
+.share-stop:hover {
+  text-decoration: underline;
+}
+.share-actions {
+  display: flex;
+  flex-direction: column;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.share-row {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+  margin: 0 -8px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--text);
+  text-align: left;
+}
+.share-row:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+.share-row:disabled {
+  opacity: 0.6;
+}
+.share-row svg {
+  width: 16px;
+  height: 16px;
+  color: var(--text-2);
+}
+.share-error {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--sys-red);
+}
+
+/* A read-only wall (share links and exports) */
+.static-wall {
+  position: relative;
+  overflow: hidden;
+}
+.static-wall .note {
+  transition: none;
+  animation: none;
+  cursor: default;
+}
+.static-wall .note-edge,
+.static-wall .note-handle,
+.static-wall .conn-hit {
+  display: none !important;
+}
+/* The note's button strip keeps its space (so the text sits where it always does), unseen. */
+.static-wall .note-bar {
+  visibility: hidden !important;
+}
+.export-host {
+  position: fixed;
+  left: -100000px;
+  top: 0;
+  pointer-events: none;
+}
+
+/* The shared-link page */
+.shared {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-app);
+}
+.shared-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.shared-brand {
+  display: inline-flex;
+  flex: none;
+}
+.shared-heading {
+  flex: 1;
+  min-width: 0;
+}
+.shared-heading h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.shared-heading p {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+.shared-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.shared-actions .btn svg {
+  width: 15px;
+  height: 15px;
+}
+.shared-scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+}
+.shared-canvas {
+  width: max-content;
+  margin: 0 auto;
+}
+.shared-empty,
+.shared-message p {
+  color: var(--text-2);
+  font-size: 14px;
+}
+.shared-message {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+}
+@media (max-width: 640px) {
+  .shared-bar {
+    flex-wrap: wrap;
+    padding: 12px 14px;
+  }
+  .shared-heading {
+    flex-basis: calc(100% - 40px);
+  }
+  .shared-actions {
+    width: 100%;
+  }
+  .shared-actions > * {
+    flex: 1;
+  }
+}
+/* Exports: the paper grain (an SVG noise filter) doesn't survive the snapshot, so it's left off. */
+.export-host .note-paper {
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 45%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.055) 0%, rgba(0, 0, 0, 0) 16%),
+    var(--note-bg);
+}
