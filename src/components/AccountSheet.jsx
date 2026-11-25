@@ -18,7 +18,7 @@ function syncText({ status, lastSynced }, mode) {
   if (status === 'signed-out') return 'Signed out: sign in again to save';
   if (!lastSynced) return 'Synced';
   const s = Math.round((Date.now() - lastSynced) / 1000);
-  return s < 10 ? 'Synced just now' : s < 3600 ? `Synced ${Math.max(1, Math.round(s / 60))} min ago` : 'Synced';
+  return s < 60 ? 'Synced just now' : s < 3600 ? `Synced ${Math.round(s / 60)} min ago` : s < 86400 ? `Synced ${Math.round(s / 3600)} h ago` : 'Synced';
 }
 
 export function AccountSheet({ user, keyBox, mode, sync, syncOn, onSyncChange, onSyncNow, onClose, onUser, onSignOut, onDeleted }) {
@@ -124,7 +124,7 @@ function Main({ user, mode, sync, syncOn, onSyncChange, onSyncNow, go, onSignOut
         </label>
         <div className="ios-row is-static">
           <span className="ios-label">Notes</span>
-          <span className="ios-value">{syncText(sync, mode)}</span>
+          <span className={`ios-value ${/^Synced/.test(syncText(sync, mode)) ? 'is-synced' : ''}`}>{syncText(sync, mode)}</span>
           {mode === 'server' && syncOn && (
             <button type="button" className="sync-now" onClick={onSyncNow} disabled={sync.status === 'saving'}>
               Sync now

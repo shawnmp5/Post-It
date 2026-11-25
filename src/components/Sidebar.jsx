@@ -21,13 +21,27 @@ import { MenuLabel } from './Popover.jsx';
 const SIDEBAR_MIN = 200;
 const SIDEBAR_MAX = 440;
 
-// What the account row says under the username.
+// What the account row says under the username: "Synced just now", "Synced 3 min ago", …
 function syncLabel(account) {
   if (!account || account.mode !== 'server') return 'Account';
-  return (
-    { saving: 'Syncing…', offline: 'Offline', off: 'Sync off', 'too-big': 'Not synced', full: 'Not synced', 'signed-out': 'Signed out' }[account.sync] ||
-    'Synced'
-  );
+  const other = { saving: 'Syncing…', offline: 'Offline', off: 'Sync off', 'too-big': 'Not synced', full: 'Not synced', 'signed-out': 'Signed out' }[account.sync];
+  if (other) return other;
+  if (!account.lastSynced) return 'Synced';
+  const s = Math.round((Date.now() - account.lastSynced) / 1000);
+  if (s < 60) return 'Synced just now';
+  if (s < 3600) return `Synced ${Math.round(s / 60)} min ago`;
+  if (s < 86400) return `Synced ${Math.round(s / 3600)} h ago`;
+  return 'Synced';
+}
+
+// Keeps the "… min ago" fresh.
+function SyncLabel({ account }) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => tick((n) => n + 1), 20000);
+    return () => clearInterval(t);
+  }, []);
+  return syncLabel(account);
 }
 
 export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, onClose, isMobile, onHide, account, onOpenAccount }) {
@@ -427,7 +441,9 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
           <Avatar username={handle} />
           <span className="profile-text">
             <span className="profile-name">@{handle}</span>
-            <span className="profile-sub">{syncLabel(account)}</span>
+            <span className={`profile-sub ${account?.mode === 'server' && /^Synced/.test(syncLabel(account)) ? 'is-synced' : ''}`}>
+              <SyncLabel account={account} />
+            </span>
           </span>
         </button>
       </div>

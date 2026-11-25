@@ -119,7 +119,7 @@ export default function Root() {
       <App
         key={phase.user.id}
         wall={wall}
-        account={{ username: phase.user.username, mode: phase.mode, sync: syncState.status }}
+        account={{ username: phase.user.username, mode: phase.mode, sync: syncState.status, lastSynced: syncState.lastSynced }}
         onOpenAccount={() => setAccountOpen(true)}
       />
       {accountOpen && (

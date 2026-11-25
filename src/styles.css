@@ -6057,3 +6057,9 @@ button.ios-row:active {
 :root .dialog-backdrop {
   background: var(--window-dim) !important;
 }
+
+/* "Synced …" reads green; anything else (Syncing…, Offline, Sync off) stays grey. */
+.profile-sub.is-synced,
+.ios-value.is-synced {
+  color: var(--sys-green);
+}
