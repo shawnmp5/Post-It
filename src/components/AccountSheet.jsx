@@ -10,7 +10,6 @@ const TITLES = { main: 'Account', username: 'Username', password: 'Change passwo
 
 function syncText({ status, lastSynced }, mode) {
   if (mode !== 'server') return 'Saved, encrypted, in this browser';
-  if (status === 'off') return 'Saved on this device only';
   if (status === 'saving') return 'Syncing…';
   if (status === 'offline') return 'Offline: saved on this device for now';
   if (status === 'too-big') return 'Too big to save to your account';
@@ -21,7 +20,7 @@ function syncText({ status, lastSynced }, mode) {
   return s < 60 ? 'Synced just now' : s < 3600 ? `Synced ${Math.round(s / 60)} min ago` : s < 86400 ? `Synced ${Math.round(s / 3600)} h ago` : 'Synced';
 }
 
-export function AccountSheet({ user, keyBox, mode, sync, syncOn, onSyncChange, onSyncNow, onClose, onUser, onSignOut, onDeleted }) {
+export function AccountSheet({ user, keyBox, mode, sync, onSyncNow, onClose, onUser, onSignOut, onDeleted }) {
   const [page, setPage] = useState('main');
   const [dir, setDir] = useState('in');
   const [, tick] = useState(0);
@@ -61,7 +60,7 @@ export function AccountSheet({ user, keyBox, mode, sync, syncOn, onSyncChange, o
           </button>
         </header>
         <div className={`sheet-page is-${dir}`} key={page}>
-          {page === 'main' && <Main user={user} mode={mode} sync={sync} syncOn={syncOn} onSyncChange={onSyncChange} onSyncNow={onSyncNow} go={go} onSignOut={onSignOut} />}
+          {page === 'main' && <Main user={user} mode={mode} sync={sync} onSyncNow={onSyncNow} go={go} onSignOut={onSignOut} />}
           {page === 'username' && <EditUsername user={user} onSaved={(u) => (onUser(u), go('main'))} />}
           {page === 'password' && <EditPassword user={user} keyBox={keyBox} onSaved={(u, kb) => (onUser(u, kb), go('main'))} />}
           {page === 'delete' && <DeleteAccount user={user} keyBox={keyBox} onDeleted={onDeleted} />}
@@ -72,7 +71,7 @@ export function AccountSheet({ user, keyBox, mode, sync, syncOn, onSyncChange, o
   );
 }
 
-function Main({ user, mode, sync, syncOn, onSyncChange, onSyncNow, go, onSignOut }) {
+function Main({ user, mode, sync, onSyncNow, go, onSignOut }) {
   const since = new Date(user.createdAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
   return (
     <>
@@ -112,20 +111,10 @@ function Main({ user, mode, sync, syncOn, onSyncChange, onSyncNow, go, onSignOut
 
       <h3 className="ios-group-title">Sync</h3>
       <div className="ios-group">
-        <label className={`ios-row is-toggle ${mode !== 'server' ? 'is-disabled' : ''}`}>
-          <span className="ios-label">Sync across devices</span>
-          <input
-            type="checkbox"
-            checked={mode === 'server' && syncOn}
-            disabled={mode !== 'server'}
-            onChange={(e) => onSyncChange(e.target.checked)}
-          />
-          <span className="toggle-track" aria-hidden="true" />
-        </label>
         <div className="ios-row is-static">
           <span className="ios-label">Notes</span>
           <span className={`ios-value ${/^Synced/.test(syncText(sync, mode)) ? 'is-synced' : ''}`}>{syncText(sync, mode)}</span>
-          {mode === 'server' && syncOn && (
+          {mode === 'server' && (
             <button type="button" className="sync-now" onClick={onSyncNow} disabled={sync.status === 'saving'}>
               Sync now
             </button>
@@ -135,9 +124,7 @@ function Main({ user, mode, sync, syncOn, onSyncChange, onSyncNow, go, onSignOut
       <p className="ios-footnote">
         {mode !== 'server'
           ? 'Syncing works on the live site.'
-          : syncOn
-            ? `Your topics and notes are saved to your account and show up on any computer or phone where you sign in as @${user.username}.`
-            : 'Notes on this device stay here only. Turn sync on to keep them on your account and get them on your other devices.'}
+          : `Your topics and notes are saved to your account and show up on any computer or phone where you sign in as @${user.username}.`}
       </p>
 
       <div className="acct-actions">

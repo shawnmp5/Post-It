@@ -5972,29 +5972,6 @@ button.ios-row:active {
 }
 
 /* Account → Sync */
-.ios-row.is-toggle {
-  cursor: pointer;
-  justify-content: space-between;
-}
-.ios-row.is-toggle input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-.ios-row.is-toggle input:checked + .toggle-track {
-  background: var(--ink);
-}
-.ios-row.is-toggle input:checked + .toggle-track::after {
-  transform: translateX(12px);
-}
-.ios-row.is-toggle input:focus-visible + .toggle-track {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-.ios-row.is-disabled {
-  opacity: 0.55;
-  cursor: default;
-}
 .sync-now {
   flex: none;
   margin-left: 6px;

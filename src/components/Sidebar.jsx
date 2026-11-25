@@ -24,7 +24,7 @@ const SIDEBAR_MAX = 440;
 // What the account row says under the username: "Synced just now", "Synced 3 min ago", …
 function syncLabel(account) {
   if (!account || account.mode !== 'server') return 'Account';
-  const other = { saving: 'Syncing…', offline: 'Offline', off: 'Sync off', 'too-big': 'Not synced', full: 'Not synced', 'signed-out': 'Signed out' }[account.sync];
+  const other = { saving: 'Syncing…', offline: 'Offline', 'too-big': 'Not synced', full: 'Not synced', 'signed-out': 'Signed out' }[account.sync];
   if (other) return other;
   if (!account.lastSynced) return 'Synced';
   const s = Math.round((Date.now() - account.lastSynced) / 1000);

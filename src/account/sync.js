@@ -10,18 +10,14 @@ import { encryptJSON, decryptJSON } from './crypto.js';
 import { getWall, putWall, mode } from './client.js';
 
 const cacheKey = (uid) => `postit:wall:${uid}`;
-const offKey = (uid) => `postit:sync-off:${uid}`;
-
-// Sync can be turned off per device (Account → Sync across devices). It's on by default.
-export function isSyncOn(uid) {
+// Sync used to have an on/off switch; it's always on now. Clear any old "off" setting.
+function clearOldSyncOff(uid) {
   try {
-    return localStorage.getItem(offKey(uid)) !== '1';
+    localStorage.removeItem(`postit:sync-off:${uid}`);
   } catch {
-    return true;
+    /* ignore */
   }
 }
-const LEGACY_KEY = 'postit:v1'; // the old, unencrypted single-user wall
-const ADOPTED_KEY = 'postit:v1:adopted';
 
 function readCache(uid) {
   try {
@@ -70,7 +66,8 @@ export async function openWall(user, key, makeStarter) {
     }
   }
   let remote = null;
-  if (mode === 'server' && isSyncOn(user.id)) {
+  clearOldSyncOff(user.id);
+  if (mode === 'server') {
     try {
       remote = await getWall();
     } catch {
@@ -97,9 +94,8 @@ export function createSync(user, key, initialMeta, { onRemote, adoptedLegacy }) 
   let pushTimer = 0;
   let inflight = false;
   let again = false;
-  let enabled = isSyncOn(user.id);
-  const live = () => mode === 'server' && enabled;
-  let status = mode !== 'server' ? 'local' : enabled ? 'saved' : 'off';
+  const live = () => mode === 'server';
+  let status = mode !== 'server' ? 'local' : 'saved';
   let lastSynced = meta.dirty ? 0 : Date.now();
   const listeners = new Set();
   const setStatus = (s) => {
@@ -227,42 +223,6 @@ export function createSync(user, key, initialMeta, { onRemote, adoptedLegacy }) 
       return () => listeners.delete(fn);
     },
     flush: push,
-    get enabled() {
-      return enabled;
-    },
-    // Turn syncing on or off for this device. Turning it on catches up: the newer of this
-    // device's notes and the account's wins.
-    async setEnabled(on) {
-      try {
-        if (on) localStorage.removeItem(offKey(user.id));
-        else localStorage.setItem(offKey(user.id), '1');
-      } catch {
-        /* ignore */
-      }
-      enabled = !!on;
-      if (!enabled) {
-        clearTimeout(pushTimer);
-        setStatus('off');
-        return;
-      }
-      setStatus('saving');
-      try {
-        const remote = await getWall();
-        if (remote.blob && remote.rev !== meta.rev && (!meta.dirty || remote.updatedAt > meta.updatedAt)) {
-          await adopt(remote);
-        } else {
-          meta.rev = remote.rev || 0;
-          if (!box) {
-            setStatus('saved');
-            return;
-          }
-          meta.dirty = true;
-          await push();
-        }
-      } catch (e) {
-        setStatus(e.status === 401 ? 'signed-out' : 'offline');
-      }
-    },
     // Save now, or fetch the latest if there's nothing to save.
     async syncNow() {
       if (!live()) return;
