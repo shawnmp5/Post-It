@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useRef } from 'react';
-import { createSeedData } from './seed.js';
+import { createSeedData, createStarterData } from './seed.js';
 import { imageRefs } from './blocks.js';
 
 export const STORAGE_KEY = 'postit:v1';
@@ -423,7 +423,7 @@ function load() {
   try {
     raw = localStorage.getItem(STORAGE_KEY);
   } catch {
-    /* storage unavailable (private mode) — fall back to sample data in memory */
+    /* storage unavailable (private mode) — start fresh in memory */
   }
   if (raw) {
     try {
@@ -436,7 +436,8 @@ function load() {
       }
     }
   }
-  return normalize(createSeedData());
+  // First visit: a single topic with a welcome note, not the whole sample wall.
+  return normalize(createStarterData());
 }
 
 function save(data) {

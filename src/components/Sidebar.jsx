@@ -420,6 +420,14 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
             </div>
           );
         })}
+        {topics.length > 0 && (
+          <button type="button" className="topic-new" onClick={() => addTopic()} title="New topic">
+            <span className="topic-new-icon" aria-hidden="true">
+              <IconPlus />
+            </span>
+            New Topic
+          </button>
+        )}
       </nav>
 
       <div className="sidebar-footer">

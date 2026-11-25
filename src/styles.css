@@ -4853,3 +4853,42 @@ body,
   padding-left: 2px;
   padding-right: 2px;
 }
+
+/* "New Topic" row at the end of the topic list. */
+.topic-new {
+  width: 100%;
+  height: var(--topic-row-h, 34px);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 2px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--text-3);
+  font-size: 13.5px;
+  text-align: left;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.topic-new:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+.topic-new:active {
+  background: var(--bg-press);
+}
+.topic-new:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+.topic-new-icon {
+  width: 8px;
+  display: inline-flex;
+  justify-content: center;
+}
+.topic-new-icon svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}

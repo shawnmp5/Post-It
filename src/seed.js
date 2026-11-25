@@ -1,5 +1,7 @@
 /**
- * Sample workspace shown on first launch. Everything here is ordinary data:
+ * First-launch data. A new user gets createStarterData(): one topic with a
+ * single welcome note. The full sample wall (createSeedData) is only loaded
+ * on request, from Settings → Samples. Everything here is ordinary data:
  * it is saved, edited, and deleted exactly like anything the user creates.
  */
 
@@ -175,4 +177,23 @@ export function createSeedData() {
     activeTopicId: personal.id,
     settings: { userName: '', tilt: true, showConnections: true, newNoteColor: 'random' },
   };
+}
+
+/* What a brand-new user sees: one topic and one note with the basics. */
+export function createStarterData() {
+  seq = 0;
+  const topic = { id: id('t'), name: 'My Notes', createdAt: Date.now(), scrollTop: 0, zoom: 1 };
+  const notes = wall(
+    topic.id,
+    [
+      [
+        'Welcome to POST IT',
+        '- Click a note to write in it\n- Drag the tape to move it\n- Type \\ for lists, checklists, tables and more\n- Press N for a new note\n- Add topics with New Topic on the left\n\nDelete this note whenever you like.',
+        'yellow',
+        { w: 260, rotation: -1.2 },
+      ],
+    ],
+    3,
+  );
+  return { topics: [topic], notes, connections: [], activeTopicId: topic.id };
 }

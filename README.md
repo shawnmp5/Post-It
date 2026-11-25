@@ -26,6 +26,7 @@ npm run build    # production build in dist/
 - Rain sound (Settings, or the speaker button in the toolbar): built from thousands of individual drops — a soft, dense patter, splashes and a few heavier drops on the glass — over a soft wash of distant rain with gusts and a little outdoor reverb. Generated in the browser, no audio files; volume slider
 - Lightning (on by default with the rain wallpaper): flickering flashes, near strikes show a forked bolt; with the sound on, thunder rolls in a moment later — sooner and louder for close strikes. Off with reduced motion
 - Appearance: Light, graphite Dark, Extra dark (near black), or Auto (follows the system) — in Settings, or View → Dark mode
+- A “New Topic” row at the end of the topic list (also in the folder menu at the top)
 - Profile / settings at the bottom: your name, new note color (Random by default, or a fixed colour), note font (clean: System, Rounded, Serif, Mono; handwritten: Caveat, Kalam, Patrick Hand, Gochi Hand), tilt and connection toggles, export / import JSON, restore samples, clear all
 
 **The wall (workspace)**
@@ -61,14 +62,14 @@ npm run build    # production build in dist/
 
 ## Persistence
 
-Everything — topics, note text, colors, positions, sizes, rotations, archive, connections, per-topic zoom and scroll position, and settings — is saved automatically to `localStorage` (key `postit:v1`) and synced between open tabs. The sample topics shown on first launch are ordinary data and can be edited or deleted.
+Everything — topics, note text, colors, positions, sizes, rotations, archive, connections, per-topic zoom and scroll position, and settings — is saved automatically to `localStorage` (key `postit:v1`) and synced between open tabs. A new visitor starts with one topic (“My Notes”) holding a short welcome note; the full sample wall can be loaded from Settings → Samples. Both are ordinary data and can be edited or deleted.
 
 ## Code map
 
 ```
 src/
   store.js              state, reducer, undo/redo history, localStorage persistence
-  seed.js               sample topics and notes for first launch
+  seed.js               first-launch starter (one topic, one note) and the optional sample wall
   blocks.js             note text <-> blocks, block menu commands, images
   App.jsx               layout, toasts, confirm dialog, global undo shortcuts
   components/
