@@ -281,7 +281,7 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
         />
       )}
       <div className="sidebar-brand">
-        <Logo size={24} />
+        <Logo size={34} />
         <div className="brand-tools">
           {isMobile ? (
             <button type="button" className="icon-btn" onClick={onClose} aria-label="Close menu">

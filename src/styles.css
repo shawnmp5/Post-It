@@ -6040,3 +6040,8 @@ button.ios-row:active {
 .ios-value.is-synced {
   color: var(--sys-green);
 }
+
+/* The logo in the sidebar's top corner, a little bigger. */
+.sidebar-brand {
+  padding-left: 16px;
+}
