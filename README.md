@@ -36,7 +36,7 @@ npm run build    # production build in dist/
 - Rain sound (Settings, or the speaker button in the toolbar): built from thousands of individual drops — a soft, dense patter, splashes and a few heavier drops on the glass — over a soft wash of distant rain with gusts and a little outdoor reverb. Generated in the browser, no audio files; volume slider
 - Lightning (on by default with the rain wallpaper): flickering flashes, near strikes show a forked bolt; with the sound on, thunder rolls in a moment later — sooner and louder for close strikes. Off with reduced motion
 - Appearance: Light, graphite Dark, Extra dark (near black), or Auto (follows the system) — in Settings, or View → Dark mode
-- New topics: the + beside the Topics heading, the “New Topic” row at the end of the list, or the folder menu at the top
+- New topics: the + beside the Topics heading or the “New Topic” row at the end of the list; “New Group” sits right under it
 - Settings (⚙︎ top right): new note color (Random by default, or a fixed colour), note font (clean: System, Rounded, Serif, Mono; handwritten: Caveat, Kalam, Patrick Hand, Gochi Hand), tilt and connection toggles, export / import JSON, restore samples, clear all
 
 **The wall (workspace)**

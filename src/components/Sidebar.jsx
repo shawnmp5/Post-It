@@ -14,7 +14,6 @@ import {
   IconFolderPlus,
   IconShare,
   IconChevron,
-  IconCompose,
   Logo,
 } from './Icons.jsx';
 import { MenuLabel } from './Popover.jsx';
@@ -34,7 +33,6 @@ function syncLabel(account) {
 export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, onClose, isMobile, onHide, account, onOpenAccount }) {
   const { topics, notes, activeTopicId, settings } = data;
   const groups = data.groups || [];
-  const [addMenu, setAddMenu] = useState(null); // anchor of the folder+ menu
   const [renamingId, setRenamingId] = useState(null);
   const [menu, setMenu] = useState(null); // { kind: 'topic' | 'group', id, anchor }
   const [drag, setDrag] = useState(null); // { id, dy, dropIndex }
@@ -239,7 +237,6 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
   const itemsRef = useRef(items);
   itemsRef.current = items;
   const closeMenu = useCallback(() => setMenu(null), []);
-  const closeAdd = useCallback(() => setAddMenu(null), []);
   const menuTopic = menu?.kind === 'topic' && topics.find((t) => t.id === menu.id);
   const menuGroup = menu?.kind === 'group' && groups.find((g) => g.id === menu.id);
   const dragIndex = drag ? items.findIndex((it) => it.topic?.id === drag.id) : -1;
@@ -272,27 +269,6 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
       <div className="sidebar-brand">
         <Logo size={24} />
         <div className="brand-tools">
-          <button
-            type="button"
-            className={`icon-btn ${addMenu ? 'is-active' : ''}`}
-            title="New topic or group"
-            aria-label="New topic or group"
-            onClick={(e) => setAddMenu(addMenu ? null : e.currentTarget)}
-          >
-            <IconFolderPlus />
-          </button>
-          <button
-            type="button"
-            className="icon-btn"
-            title="New note (N)"
-            aria-label="New note"
-            onClick={() => {
-              if (isMobile) onClose();
-              window.dispatchEvent(new Event('postit:new-note'));
-            }}
-          >
-            <IconCompose />
-          </button>
           {isMobile ? (
             <button type="button" className="icon-btn" onClick={onClose} aria-label="Close menu">
               <IconClose />
@@ -436,6 +412,14 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
             New Topic
           </button>
         )}
+        {topics.length > 0 && (
+          <button type="button" className="topic-new" onClick={() => addGroup()} title="New group">
+            <span className="topic-new-icon" aria-hidden="true">
+              <IconFolderPlus />
+            </span>
+            New Group
+          </button>
+        )}
       </nav>
 
       <div className="sidebar-footer">
@@ -447,29 +431,6 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
           </span>
         </button>
       </div>
-
-      {addMenu && (
-        <Popover anchor={addMenu} onClose={closeAdd} className="menu">
-          <MenuItem
-            icon={IconPlus}
-            onClick={() => {
-              setAddMenu(null);
-              addTopic();
-            }}
-          >
-            New Topic
-          </MenuItem>
-          <MenuItem
-            icon={IconFolder}
-            onClick={() => {
-              setAddMenu(null);
-              addGroup();
-            }}
-          >
-            New Group
-          </MenuItem>
-        </Popover>
-      )}
 
       {menuGroup && (
         <Popover anchor={menu.anchor} onClose={closeMenu} align="end" className="menu">
