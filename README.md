@@ -12,6 +12,10 @@ npm run dev      # http://localhost:5173
 npm run build    # production build in dist/
 ```
 
+## Logo
+
+The **post it** wordmark (Nunito Black, with a tilted pink sticky note for the dot of the i) is in `public/brand/`: `wordmark.svg` (dark letters), `wordmark-white.svg` (for dark backgrounds), and transparent PNGs at 2400px. In the app it's `src/components/Wordmark.jsx`, whose letters follow the text colour. The pink note icon stays as the favicon.
+
 ## Accounts and encryption
 
 - **Sign up first.** New visitors see Create Account (username and password) or Sign In. Usernames show as **@name**: at least 2 characters with at least one letter (letters, numbers, `.` and `_`), case-insensitive, first come first served — a name frees up when its owner changes it or deletes the account. Availability is checked as you type.

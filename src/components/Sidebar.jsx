@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { COLOR_MAP, uid } from '../store.js';
 import { Popover, MenuItem, MenuSep } from './Popover.jsx';
 import { Avatar } from '../account/avatar.jsx';
+import { Wordmark } from './Wordmark.jsx';
 import { SettingsSheet } from './SettingsSheet.jsx';
 import {
   IconPlus,
@@ -285,7 +286,7 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
         />
       )}
       <div className="sidebar-brand">
-        <Logo size={34} />
+        <Wordmark height={46} />
         <div className="brand-tools">
           {isMobile ? (
             <button type="button" className="icon-btn" onClick={onClose} aria-label="Close menu">

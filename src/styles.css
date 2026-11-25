@@ -6091,3 +6091,14 @@ button.ios-row:active {
 .sheet-page {
   min-height: 0; /* lets the body shrink and scroll inside the window */
 }
+
+/* The wordmark takes the text colour (black in light mode, white in dark). */
+.wordmark-logo {
+  display: block;
+  flex: none;
+  color: var(--text);
+}
+.sidebar-brand .wordmark-logo {
+  filter: none;
+  margin-left: 2px;
+}

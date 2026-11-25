@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Logo, IconFileText } from '../components/Icons.jsx';
 import { StaticWall } from './StaticWall.jsx';
+import { Wordmark } from '../components/Wordmark.jsx';
 import { openShareLink } from '../account/client.js';
 import { exportPDF } from './export.js';
 
@@ -70,7 +71,7 @@ export function SharedView({ id, rawKey }) {
     <div className="shared">
       <header className="shared-bar">
         <a href="/" className="shared-brand" title="POST IT">
-          <Logo size={22} />
+          <Wordmark height={28} />
         </a>
         <div className="shared-heading">
           <h1>{data.topic.name}</h1>
