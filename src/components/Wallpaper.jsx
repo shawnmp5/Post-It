@@ -274,7 +274,8 @@ function paintBolt(W, H, x0) {
 /* ------------------------------------------------------------------ */
 
 function createRain(canvas, opts) {
-  const ctx = canvas.getContext('2d');
+  // Opaque: the browser needn't blend the wallpaper with anything under it.
+  const ctx = canvas.getContext('2d', { alpha: false });
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const streakSprite = makeStreakSprite();
   let dark = !!opts.dark;
@@ -285,10 +286,14 @@ function createRain(canvas, opts) {
   let H = 0;
   let dpr = 1;
   let backdrop = null;
-  let mist = null; // canvas holding the tiny droplets stuck to the glass
+  let mist = null; // the glass: fog with the tiny droplets on top, one layer
   let mctx = null;
   let specks = []; // [x, y, r, alpha] for each tiny droplet on `mist`
-  let fog = null; // condensation on the glass
+  let fog = null; // condensation on the glass (low-res source for `mist`)
+  // Resolution: start modest and step down if the machine can't keep up.
+  let maxScale = 1;
+  let slowFrames = 0;
+  let sinceScale = 0;
   let beads = [];
   let streaks = [];
   let raf = 0;
@@ -325,8 +330,17 @@ function createRain(canvas, opts) {
     mctx.globalAlpha = 1;
   }
 
+  function paintFogInto(g) {
+    g.save();
+    g.globalAlpha = pal.fogOpacity;
+    g.imageSmoothingEnabled = true;
+    g.drawImage(fog, 0, 0, W, H);
+    g.restore();
+  }
+
   function redrawMist() {
     mctx.clearRect(0, 0, W, H);
+    paintFogInto(mctx);
     for (const [x, y, r, a] of specks) {
       mctx.globalAlpha = a;
       mctx.drawImage(dropSprite, x - r, y - r, r * 2, r * 2);
@@ -356,6 +370,7 @@ function createRain(canvas, opts) {
   function seed() {
     specks = [];
     mctx.clearRect(0, 0, W, H);
+    paintFogInto(mctx);
     const n = Math.round(maxSpecks() * 0.75);
     for (let i = 0; i < n; i++) speck(rand(0, W), rand(0, H), tinyR());
     beads = [];
@@ -383,25 +398,36 @@ function createRain(canvas, opts) {
     if (nw === W && nh === H && backdrop) return;
     W = nw;
     H = nh;
-    dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+    fog = paintFog(W, H, pal);
+    setScale(Math.min(window.devicePixelRatio || 1, maxScale), true);
+    if (reduced) draw(0);
+  }
+
+  // (Re)build every full-size canvas at a pixel density; keep the drops where they are.
+  function setScale(next, reseed) {
+    dpr = next;
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
     backdrop = paintBackdrop(W, H, dpr, pal);
     mist = makeCanvas(W * dpr, H * dpr);
     mctx = mist.getContext('2d');
     mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    fog = paintFog(W, H, pal);
-    seed();
-    if (reduced) draw(0);
+    if (reseed) seed();
+    else redrawMist();
+    sinceScale = 0;
+    slowFrames = 0;
   }
 
-  // Wipe the tiny droplets under a sliding bead.
+  // Wipe the tiny droplets under a sliding bead (the fog under them stays).
   function wipe(x, y, r) {
     mctx.save();
-    mctx.globalCompositeOperation = 'destination-out';
     mctx.beginPath();
     mctx.arc(x, y, r, 0, TAU);
-    mctx.fill();
+    mctx.clip();
+    mctx.clearRect(x - r - 1, y - r - 1, r * 2 + 2, r * 2 + 2);
+    mctx.globalAlpha = pal.fogOpacity;
+    const k = fog.width / W;
+    mctx.drawImage(fog, (x - r - 1) * k, (y - r - 1) * k, (r * 2 + 2) * k, (r * 2 + 2) * k, x - r - 1, y - r - 1, r * 2 + 2, r * 2 + 2);
     mctx.restore();
     const r2 = r * r;
     let j = 0;
@@ -576,16 +602,15 @@ function createRain(canvas, opts) {
     }
     ctx.restore();
 
-    // The glass: fog, then the droplets.
-    ctx.save();
-    ctx.globalAlpha = Math.min(1, pal.fogOpacity * (1 + I * 0.6));
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(fog, 0, 0, W, H);
-    ctx.restore();
+    // The glass: fog and droplets, already combined in one layer.
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(mist, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawBeads();
+  }
 
+  function drawBeads() {
+    const g = ctx;
     for (const b of beads) {
       const e = b.born < 1 ? easeOutBack(b.born) : 1;
       const r = b.r * e;
@@ -594,18 +619,19 @@ function createRain(canvas, opts) {
       const rx = r / Math.sqrt(stretch);
       const ry = r * stretch;
       // Refraction: a bead shows the world behind it, shrunk and upside down.
-      const field = r * 5;
-      const sx = (b.x - field) * dpr;
-      const sy = (b.y - field) * dpr;
-      ctx.save();
-      ctx.beginPath();
-      ctx.ellipse(b.x, b.y, rx, ry, 0, 0, TAU);
-      ctx.clip();
-      ctx.translate(b.x, b.y);
-      ctx.scale(1, -1);
-      ctx.drawImage(backdrop, sx, sy, field * 2 * dpr, field * 2 * dpr, -rx, -ry, rx * 2, ry * 2);
-      ctx.restore();
-      ctx.drawImage(dropSprite, b.x - rx, b.y - ry, rx * 2, ry * 2);
+      // Too small to see on little beads, so they skip it.
+      if (r >= 3.6) {
+        const field = r * 5;
+        g.save();
+        g.beginPath();
+        g.ellipse(b.x, b.y, rx, ry, 0, 0, TAU);
+        g.clip();
+        g.translate(b.x, b.y);
+        g.scale(1, -1);
+        g.drawImage(backdrop, (b.x - field) * dpr, (b.y - field) * dpr, field * 2 * dpr, field * 2 * dpr, -rx, -ry, rx * 2, ry * 2);
+        g.restore();
+      }
+      g.drawImage(dropSprite, b.x - rx, b.y - ry, rx * 2, ry * 2);
     }
   }
 
@@ -617,11 +643,24 @@ function createRain(canvas, opts) {
 
   function frame(now) {
     if (!alive) return;
-    const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
+    const raw = last ? (now - last) / 1000 : 1 / 60;
+    const dt = Math.min(0.05, raw);
     last = now;
     update(dt);
     draw();
+    adapt(raw);
     raf = requestAnimationFrame(frame);
+  }
+
+  // If frames keep running long, drop the resolution a notch (never back up, so it can't flicker).
+  function adapt(raw) {
+    sinceScale += raw;
+    if (sinceScale < 2 || raw > 0.25) return; // settle first; ignore hiccups like tab switches
+    slowFrames = raw > 1 / 45 ? slowFrames + 1 : Math.max(0, slowFrames - 1);
+    if (slowFrames > 45 && dpr > 0.75) {
+      maxScale = dpr > 1 ? 1 : 0.75;
+      setScale(maxScale, false);
+    }
   }
 
   let resizeTimer = 0;
