@@ -72,7 +72,7 @@ export function AccountSheet({ user, keyBox, mode, sync, onSyncNow, onClose, onU
 }
 
 function Main({ user, mode, sync, onSyncNow, go, onSignOut }) {
-  const since = new Date(user.createdAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const since = new Date(user.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
   return (
     <>
       <div className="acct-hero">
