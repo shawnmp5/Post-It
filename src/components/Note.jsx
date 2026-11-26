@@ -5,6 +5,8 @@ import { IconMore, IconTrash } from './Icons.jsx';
 import { BlockEditor, NoteView, highlight } from './NoteBlocks.jsx';
 import { NoteSticker } from './Stickers.jsx';
 import { BellIcon, ReminderChip } from './Reminders.jsx';
+import { InkStrokes, InkSurface } from './Ink.jsx';
+import { inkBottom } from '../ink.js';
 
 function autosize(el) {
   if (!el) return;
@@ -37,6 +39,7 @@ export const Note = memo(function Note({
   isNew,
   menuOpen,
   connecting,
+  drawing,
 }) {
   const ref = useRef(null);
   const titleRef = useRef(null);
@@ -86,11 +89,14 @@ export const Note = memo(function Note({
     }
   };
 
-  const rotation = editing || !tilt ? 0 : note.rotation;
+  // Straight while editing or drawing, so the pen goes where you put it.
+  const rotation = editing || drawing || !tilt ? 0 : note.rotation;
+  const inkH = note.ink?.length ? Math.ceil(inkBottom(note.ink)) + 10 : 0;
   const cls = [
     'note',
     fixed ? 'is-fixed' : 'is-auto',
     editing && 'is-editing',
+    drawing && 'is-drawing',
     selected && 'is-selected',
     dragging && 'is-dragging',
     dimmed && 'is-dimmed',
@@ -117,7 +123,7 @@ export const Note = memo(function Note({
         transform: `translate(${note.x}px, ${note.y}px) rotate(var(--rot))`,
         width: note.w,
         // A resized note keeps at least that size but always grows to fit its content — nothing is ever cut off.
-        minHeight: fixed ? note.h : undefined,
+        minHeight: Math.max(fixed ? note.h : 0, inkH) || undefined,
         zIndex: dragging ? 100000 : note.z,
       }}
       onPointerDown={(e) => api.pointerDown(e, note.id)}
@@ -149,6 +155,22 @@ export const Note = memo(function Note({
           }}
         >
           <BellIcon width="14" height="14" />
+        </button>
+        <button
+          type="button"
+          className="note-react note-draw"
+          aria-label="Draw"
+          title="Draw"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            api.startDraw(note.id);
+          }}
+        >
+          <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 13l1-3.5L11.2 2.3a1.4 1.4 0 0 1 2 0l.5.5a1.4 1.4 0 0 1 0 2L6.5 12 3 13z" />
+            <path d="M10 3.5 12.5 6" />
+          </svg>
         </button>
         <button
           type="button"
@@ -264,12 +286,15 @@ export const Note = memo(function Note({
         )}
       </div>
 
+      {drawing ? <InkSurface note={note} api={api} /> : <InkStrokes ink={note.ink} />}
+
       {(note.stickers || []).map((s) => (
         <NoteSticker
           key={s.id}
           s={s}
           noteRotation={rotation}
           getZoom={api.zoom}
+          getBounds={() => ({ w: note.w, h: ref.current?.offsetHeight || 160 })}
           fresh={Date.now() - (s.addedAt || 0) < 1500}
           onMove={(id, x, y) => {
             const w = note.w;

@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useRef } from 'react';
+import { cleanInk } from './ink.js';
 import { createSeedData, createStarterData } from './seed.js';
 
 export { createStarterData };
@@ -64,9 +65,9 @@ export const FONT_MAP = Object.fromEntries(FONTS.map((f) => [f.id, f]));
 
 export const NOTE_DEFAULT_W = 220;
 export const NOTE_MIN_W = 150;
-export const NOTE_MAX_W = 560;
+export const NOTE_MAX_W = 1400;
 export const NOTE_MIN_H = 110;
-export const NOTE_MAX_H = 900;
+export const NOTE_MAX_H = 2000;
 export const ZOOM_MIN = 0.4;
 export const ZOOM_MAX = 1.6;
 
@@ -116,7 +117,6 @@ export const DEFAULT_SETTINGS = {
   rainSound: false,
   rainVolume: 0.6,
   lightning: true,
-  city: false, // rain wallpaper: a city skyline behind the glass
   autoCaps: true, // capitalise the first letter of sentences while typing
 };
 
@@ -243,6 +243,17 @@ function dataReducer(d, a) {
         topics: d.topics.map((t) => {
           if (t.id !== a.id) return t;
           const { share: _old, ...rest } = t;
+          return a.share ? { ...rest, share: a.share } : rest;
+        }),
+      };
+    }
+    case 'group/share': {
+      // A folder's share link ({ id, key, at }) or null.
+      return {
+        ...d,
+        groups: (d.groups || []).map((g) => {
+          if (g.id !== a.id) return g;
+          const { share: _old, ...rest } = g;
           return a.share ? { ...rest, share: a.share } : rest;
         }),
       };
@@ -407,6 +418,7 @@ function normalize(raw) {
             body,
             images,
             stickers: Array.isArray(n.stickers) ? n.stickers.filter((t) => t && t.id && t.emoji) : [],
+            ink: cleanInk(n.ink),
             reminder: n.reminder && Number.isFinite(n.reminder.at) ? { at: n.reminder.at, fired: !!n.reminder.fired } : null,
           };
         })
@@ -417,7 +429,9 @@ function normalize(raw) {
     : [];
   const activeTopicId = topicIds.has(raw?.activeTopicId) ? raw.activeTopicId : topics[0]?.id ?? null;
   const groups = Array.isArray(raw?.groups)
-    ? raw.groups.filter((g) => g && g.id).map((g) => ({ id: g.id, name: String(g.name || 'Group'), collapsed: !!g.collapsed }))
+    ? raw.groups
+        .filter((g) => g && g.id)
+        .map((g) => ({ id: g.id, name: String(g.name || 'Group'), collapsed: !!g.collapsed, ...(g.share ? { share: g.share } : {}) }))
     : [];
   const groupIds = new Set(groups.map((g) => g.id));
   return {

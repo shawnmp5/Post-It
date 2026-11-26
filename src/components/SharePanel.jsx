@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { IconLink, IconCopy, IconImage, IconFileText } from './Icons.jsx';
 import { canShareLinks, createShareLink, updateShareLink, removeShareLink, shareUrl } from '../account/client.js';
-import { topicPayload, exportPDF, exportPNG, topicText } from '../share/export.js';
+import { topicPayload, folderPayload, exportPDF, exportPNG, topicText } from '../share/export.js';
 
 async function copy(text) {
   try {
@@ -28,14 +28,26 @@ function ago(at) {
   return new Date(at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-/* Share a topic: a view-only link, a PDF, a picture, or its text. */
-export function SharePanel({ data, topicId, dispatch, toast, onDone }) {
+/*
+ * Share a topic, or the whole folder it's in: a view-only link, a PDF, a picture, or the text.
+ * `folderId` opens it on the folder; a topic in a folder can switch between the two.
+ */
+export function SharePanel({ data, topicId, folderId, dispatch, toast, onDone }) {
   const topic = data.topics.find((t) => t.id === topicId);
+  const groupId = folderId || topic?.groupId || null;
+  const group = groupId ? (data.groups || []).find((g) => g.id === groupId) : null;
+  const [scope, setScope] = useState(folderId ? 'folder' : 'topic');
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
-  if (!topic) return null;
-  const share = topic.share;
+  const isFolder = scope === 'folder' && !!group;
+  if (!isFolder && !topic) return null;
+  const share = isFolder ? group.share : topic.share;
+  const name = isFolder ? group.name : topic.name;
+  const count = isFolder ? data.topics.filter((t) => t.groupId === group.id).length : 0;
   const links = canShareLinks();
+  const payload = () => (isFolder ? folderPayload(data, group.id) : topicPayload(data, topic.id));
+  const save = (next) => dispatch(isFolder ? { type: 'group/share', id: group.id, share: next } : { type: 'topic/share', id: topic.id, share: next });
+  const what = isFolder ? 'folder' : 'topic';
 
   const run = (name, fn) => async () => {
     if (busy) return;
@@ -51,34 +63,57 @@ export function SharePanel({ data, topicId, dispatch, toast, onDone }) {
   };
 
   const copyLink = run('link', async () => {
-    const payload = topicPayload(data, topicId);
-    const next = share ? await updateShareLink(share, payload) : await createShareLink(payload);
-    dispatch({ type: 'topic/share', id: topicId, share: next });
+    const p = payload();
+    const next = share ? await updateShareLink(share, p) : await createShareLink(p);
+    save(next);
     await copy(shareUrl(next));
-    toast(share ? 'Link updated and copied' : 'Link copied. Anyone with it can view this topic');
+    toast(share ? 'Link updated and copied' : `Link copied. Anyone with it can view this ${what}`);
   });
   const stop = run('stop', async () => {
     await removeShareLink(share.id);
-    dispatch({ type: 'topic/share', id: topicId, share: null });
+    save(null);
     toast('Sharing turned off. The old link no longer works');
   });
   const pdf = run('pdf', async () => {
-    await exportPDF(topicPayload(data, topicId));
+    await exportPDF(payload());
     onDone?.();
   });
   const png = run('png', async () => {
-    await exportPNG(topicPayload(data, topicId));
+    await exportPNG(payload());
     onDone?.();
   });
   const text = run('text', async () => {
-    await copy(topicText(topicPayload(data, topicId)));
+    await copy(topicText(payload()));
     toast('Text copied');
     onDone?.();
   });
 
   return (
     <div className="share-panel">
-      <h2 className="share-title">Share “{topic.name}”</h2>
+      <h2 className="share-title">Share “{name}”</h2>
+      {group && topic && (
+        <div className="seg wide share-scope" role="radiogroup" aria-label="What to share">
+          {[
+            ['topic', 'This topic'],
+            ['folder', 'Whole folder'],
+          ].map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={scope === id}
+              className={scope === id ? 'seg-value' : ''}
+              onClick={() => {
+                setScope(id);
+                setError(null);
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+      {isFolder && <p className="share-sub">{count} topic{count === 1 ? '' : 's'}, shared together. People can flip between them.</p>}
 
       <div className="share-link">
         {share ? (
@@ -91,7 +126,7 @@ export function SharePanel({ data, topicId, dispatch, toast, onDone }) {
               {busy === 'link' ? 'Copying…' : 'Copy link'}
             </button>
             <p className="share-note">
-              Anyone with the link can view this topic. Copying it again updates what they see (last updated {ago(share.at)}).{' '}
+              Anyone with the link can view this {what}. Copying it again updates what they see (last updated {ago(share.at)}).{' '}
               <button type="button" className="share-stop" onClick={stop} disabled={!!busy}>
                 Stop sharing
               </button>

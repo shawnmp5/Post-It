@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ImageViewer } from './components/ImageViewer.jsx';
 import { typing } from './autoCaps.js';
 import { useStore, uid } from './store.js';
 import { plainText } from './blocks.js';
@@ -7,7 +8,7 @@ import { Workspace } from './components/Workspace.jsx';
 import { ConfirmDialog } from './components/ConfirmDialog.jsx';
 import { Toast } from './components/Toast.jsx';
 import { Wallpaper } from './components/Wallpaper.jsx';
-import { startRainSound, stopRainSound, setRainVolume, setCitySound } from './rainAudio.js';
+import { startRainSound, stopRainSound, setRainVolume } from './rainAudio.js';
 
 const MOBILE_QUERY = '(max-width: 767px)';
 
@@ -182,10 +183,6 @@ export default function App({ wall, account, onOpenAccount }) {
     else stopRainSound();
   }, [rainSound]);
   useEffect(() => () => stopRainSound(), []);
-  const citySound = rainSound && !!data.settings.city;
-  useEffect(() => {
-    setCitySound(citySound);
-  }, [citySound]);
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     document.documentElement.dataset.shade = black ? 'black' : 'none';
@@ -199,7 +196,8 @@ export default function App({ wall, account, onOpenAccount }) {
 
   return (
     <div className={`app ${isMobile ? 'is-mobile' : ''} ${sidebarHidden ? 'sidebar-hidden' : ''}`}>
-      <Wallpaper kind={wallpaper} mood={black ? 'night' : dark ? 'dark' : 'light'} lightning={data.settings.lightning !== false} city={!!data.settings.city} />
+      <ImageViewer />
+      <Wallpaper kind={wallpaper} mood={black ? 'night' : dark ? 'dark' : 'light'} lightning={data.settings.lightning !== false} />
       {!sidebarHidden && <Sidebar
         onHide={() => dispatch({ type: 'settings', patch: { sidebarHidden: true } })}
         data={data}

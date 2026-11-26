@@ -29,6 +29,7 @@ import {
   IconShare,
   IconSpeaker,
   IconSpeakerOff,
+  IconFolder,
 } from './Icons.jsx';
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
@@ -36,6 +37,7 @@ const MOD = isMac ? '⌘' : 'Ctrl';
 
 export function Workspace({ data, dispatch, toast, confirm, account, canUndo, canRedo, isMobile, onOpenDrawer, onCreateTopic, focusNote, sidebarHidden, onShowSidebar }) {
   const topic = data.topics.find((t) => t.id === data.activeTopicId) || null;
+  const folder = topic?.groupId ? (data.groups || []).find((g) => g.id === topic.groupId) || null : null;
   const boardRef = useRef(null);
   const searchBtn = useRef(null);
   const viewBtn = useRef(null);
@@ -45,9 +47,13 @@ export function Workspace({ data, dispatch, toast, confirm, account, canUndo, ca
   const closeSettingsSheet = useCallback(() => setPanel(null), []);
   const [panel, setPanel] = useState(null); // 'search' | 'view' | 'archive' | 'settings' | 'share'
 
-  // The topic menu's "Share…" opens the share panel here.
+  // The sidebar's "Share…" (topic or folder) opens the share panel here.
+  const [shareFolder, setShareFolder] = useState(null);
   useEffect(() => {
-    const open = () => setPanel('share');
+    const open = (e) => {
+      setShareFolder(e.detail?.folderId || null);
+      setPanel('share');
+    };
     window.addEventListener('postit:share', open);
     return () => window.removeEventListener('postit:share', open);
   }, []);
@@ -234,6 +240,12 @@ export function Workspace({ data, dispatch, toast, confirm, account, canUndo, ca
           </button>
         )}
         <div className="ws-title-wrap">
+          {folder && (
+            <div className="ws-folder" title={`In the folder “${folder.name}”`}>
+              <IconFolder />
+              <span>{folder.name}</span>
+            </div>
+          )}
           {renaming ? (
             <input
               className="ws-title ws-title-input"
@@ -288,7 +300,10 @@ export function Workspace({ data, dispatch, toast, confirm, account, canUndo, ca
               ref={shareBtn}
               type="button"
               className={`icon-btn share-btn ${panel === 'share' ? 'is-active' : ''}`}
-              onClick={() => setPanel(panel === 'share' ? null : 'share')}
+              onClick={() => {
+                setShareFolder(null);
+                setPanel(panel === 'share' ? null : 'share');
+              }}
               title="Share"
               aria-label="Share"
             >
@@ -471,7 +486,15 @@ export function Workspace({ data, dispatch, toast, confirm, account, canUndo, ca
 
       {panel === 'share' && (
         <Popover anchor={shareBtn.current} onClose={() => setPanel(null)} align="end" className="share-popover">
-          <SharePanel data={data} topicId={topic.id} dispatch={dispatch} toast={toast} onDone={() => setPanel(null)} />
+          <SharePanel
+            key={shareFolder || topic.id}
+            data={data}
+            topicId={topic.id}
+            folderId={shareFolder}
+            dispatch={dispatch}
+            toast={toast}
+            onDone={() => setPanel(null)}
+          />
         </Popover>
       )}
       {panel === 'settings' && (

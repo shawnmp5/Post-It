@@ -1,6 +1,13 @@
 import { COLORS, clamp } from '../store.js';
 import { Popover, MenuItem, MenuSep } from './Popover.jsx';
 import { BellIcon } from './Reminders.jsx';
+
+const IconPen = (props) => (
+  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+    <path d="M3 13l1-3.5L11.2 2.3a1.4 1.4 0 0 1 2 0l.5.5a1.4 1.4 0 0 1 0 2L6.5 12 3 13z" />
+    <path d="M10 3.5 12.5 6" />
+  </svg>
+);
 import {
   IconLink,
   IconSmile,
@@ -24,7 +31,7 @@ function ago(ts) {
   return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export function NoteMenu({ note, anchor, onClose, dispatch, toast, onDelete, onConnect, onDuplicate, onArchive, onStickers, onReminder }) {
+export function NoteMenu({ note, anchor, onClose, dispatch, toast, onDelete, onConnect, onDuplicate, onArchive, onStickers, onReminder, onDraw }) {
   const update = (patch, record = true) => dispatch({ type: 'note/update', id: note.id, patch, touch: false, record });
   const tilt = (delta) => update({ rotation: delta === 0 ? 0 : clamp(Math.round((note.rotation + delta) * 10) / 10, -8, 8) });
 
@@ -47,6 +54,9 @@ export function NoteMenu({ note, anchor, onClose, dispatch, toast, onDelete, onC
       <MenuSep />
       <MenuItem icon={BellIcon} onClick={onReminder} hint={note.reminder ? '●' : undefined}>
         {note.reminder ? 'Change reminder…' : 'Remind me…'}
+      </MenuItem>
+      <MenuItem icon={IconPen} onClick={onDraw} hint={note.ink?.length ? '●' : undefined}>
+        Draw
       </MenuItem>
       <MenuItem icon={IconSmile} onClick={onStickers}>
         Add sticker…

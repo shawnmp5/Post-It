@@ -85,6 +85,7 @@ export const Board = forwardRef(function Board(
   const sizerRef = useRef(null);
 
   const [editing, setEditing] = useState(null); // { id, field, caret, token }
+  const [drawingId, setDrawingId] = useState(null); // the note in draw mode
   const [selectedId, setSelectedId] = useState(null);
   const [draggingId, setDraggingId] = useState(null);
   const [menu, setMenu] = useState(null); // { id, anchor }
@@ -156,7 +157,7 @@ export const Board = forwardRef(function Board(
   /* ---------------- latest-value ref for stable callbacks ---------------- */
 
   const live = useRef({});
-  live.current = { notes, visible, byId, zoom, editing, selectedId, connect, viewport, topic, boardW, settings, isMobile };
+  live.current = { notes, visible, byId, zoom, editing, drawingId, selectedId, connect, viewport, topic, boardW, settings, isMobile };
 
   /* ---------------- scroll restore / persist ---------------- */
 
@@ -254,9 +255,35 @@ export const Board = forwardRef(function Board(
   /* ---------------- editing helpers ---------------- */
 
   const startEdit = useCallback((id, field = 'body', caret = null) => {
+    setDrawingId(null);
     setEditing({ id, field, caret, token: Math.random() });
     setSelectedId(id);
   }, []);
+  const startDraw = useCallback(
+    (id) => {
+      setEditing(null);
+      setSelectedId(id);
+      dispatch({ type: 'note/front', id });
+      setDrawingId(id);
+    },
+    [dispatch],
+  );
+
+  // Clicking anywhere outside the note being drawn on finishes drawing.
+  useEffect(() => {
+    if (!drawingId) return undefined;
+    const onDown = (e) => {
+      const t = e.target;
+      if (t.closest?.(`[data-note-id="${drawingId}"]`) || t.closest?.('.ink-toolbar') || t.closest?.('.popover') || t.closest?.('.toast')) return;
+      setDrawingId(null);
+    };
+    document.addEventListener('pointerdown', onDown, true);
+    return () => document.removeEventListener('pointerdown', onDown, true);
+  }, [drawingId]);
+  // A note that's gone (deleted, other topic) can't stay in draw mode.
+  useEffect(() => {
+    if (drawingId && !byId[drawingId]) setDrawingId(null);
+  }, [drawingId, byId]);
   const stopEditing = useCallback(() => setEditing(null), []);
 
   // Clicking anywhere outside the note being edited finishes editing.
@@ -653,7 +680,8 @@ export const Board = forwardRef(function Board(
       const L = live.current;
       if (e.defaultPrevented) return;
       if (e.key === 'Escape') {
-        if (L.connect) setConnect(null);
+        if (L.drawingId) setDrawingId(null);
+        else if (L.connect) setConnect(null);
         else if (L.editing) setEditing(null);
         else if (L.selectedId) setSelectedId(null);
         return;
@@ -702,6 +730,8 @@ export const Board = forwardRef(function Board(
         setReminderFor((m) => (m?.id === id ? null : { id, anchor }));
       },
       deleteNote: (id) => deleteNote(id),
+      startDraw: (id) => startDraw(id),
+      stopDraw: () => setDrawingId(null),
       openStickers: (id, anchor) => {
         setSelectedId(id);
         dispatch({ type: 'note/front', id });
@@ -714,7 +744,7 @@ export const Board = forwardRef(function Board(
       },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [dispatch, startEdit],
+    [dispatch, startEdit, startDraw],
   );
 
   /* ---------------- search filter ---------------- */
@@ -784,14 +814,15 @@ export const Board = forwardRef(function Board(
     const h = heightOf(n);
     const existing = n.stickers || [];
     // Corners and edges first — stickers poke out over the paper like real ones.
+    // (Clear of the very corners, where you grab to resize.)
     const spots = [
-      [w - 6, h - 8],
+      [w - 34, h - 6],
       [w + 4, h * 0.45],
-      [12, h - 6],
+      [36, h - 4],
       [w * 0.55, h + 2],
-      [w + 6, 20],
+      [w + 6, 44],
       [-4, h * 0.5],
-      [w - 46, h - 4],
+      [w - 76, h - 2],
       [w * 0.3, h + 2],
       [w + 4, h * 0.72],
       [-4, h * 0.78],
@@ -898,6 +929,7 @@ export const Board = forwardRef(function Board(
               isNew={newIds.current.has(n.id)}
               menuOpen={menu?.id === n.id}
               connecting={!!connect && connect.from !== n.id}
+              drawing={drawingId === n.id}
             />
           ))}
 
@@ -977,6 +1009,11 @@ export const Board = forwardRef(function Board(
             const anchor = menu.anchor;
             setMenu(null);
             setReminderFor({ id: menuNote.id, anchor });
+          }}
+          onDraw={() => {
+            const id = menuNote.id;
+            setMenu(null);
+            startDraw(id);
           }}
           onStickers={() => {
             const anchor = menu.anchor;

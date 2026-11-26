@@ -24,6 +24,8 @@ export function StaticWall({ notes, connections = [], settings = {}, onReady, pa
       openStickers: noop,
       openMenu: noop,
       deleteNote: noop,
+      startDraw: noop,
+      stopDraw: noop,
       checkpoint: noop,
       update: noop,
       toast: noop,

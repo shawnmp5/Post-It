@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { openImageViewer } from './ImageViewer.jsx';
 import { typing, fixCaps } from '../autoCaps.js';
 import { createPortal } from 'react-dom';
 import { uid } from '../store.js';
@@ -475,6 +476,17 @@ function ImageBlock({ b, src, removeBtn, onWidth, onMove, index }) {
       frame.removeEventListener('pointercancel', up);
       document.body.classList.remove('is-dragging-image');
       setDrag(null);
+      if (!moved) {
+        // A tap: look at it full screen, with the note's other pictures a swipe away.
+        const all = [...body.querySelectorAll('.blk-image img')];
+        const at = Math.max(0, all.indexOf(imgRef.current));
+        openImageViewer(
+          all.map((im) => ({ src: im.currentSrc || im.src, alt: im.alt })),
+          at,
+          imgRef.current,
+        );
+        return;
+      }
       if (moved && target) {
         const samePlace = target.k === index || target.k === index + 1;
         if (!samePlace || target.align !== align) onMove(samePlace ? index : target.k, target.align);

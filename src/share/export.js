@@ -71,6 +71,29 @@ export function topicPayload(data, topicId) {
   };
 }
 
+/* A folder: every topic in it, in sidebar order. */
+export function folderPayload(data, groupId) {
+  const group = (data.groups || []).find((g) => g.id === groupId);
+  const topics = data.topics.filter((t) => t.groupId === groupId);
+  return {
+    v: 2,
+    kind: 'folder',
+    folder: { name: group?.name || 'Folder' },
+    topics: topics.map((t) => {
+      const p = topicPayload(data, t.id);
+      return { id: t.id, name: p.topic.name, notes: p.notes, connections: p.connections };
+    }),
+    settings: { noteFont: data.settings.noteFont, tilt: data.settings.tilt, showConnections: data.settings.showConnections },
+  };
+}
+
+// A folder payload's topics as single-topic payloads (a topic payload gives just itself).
+export function topicsOf(payload) {
+  if (payload.kind !== 'folder') return [payload];
+  return payload.topics.map((t) => ({ v: 1, topic: { name: t.name }, notes: t.notes, connections: t.connections, settings: payload.settings }));
+}
+const titleOf = (payload) => (payload.kind === 'folder' ? payload.folder.name : payload.topic.name);
+
 // Draw the wall off-screen and photograph it.
 export async function renderWall(payload, { scale = 2, background = '#f5f5f7' } = {}) {
   const host = document.createElement('div');
@@ -110,28 +133,69 @@ export function download(blob, filename) {
 
 export const safeName = (name) => (name || 'topic').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80) || 'topic';
 
+// Each topic's wall under a heading with its name, stacked into one picture.
+async function folderCanvas(payload, background) {
+  const parts = [];
+  for (const t of topicsOf(payload)) {
+    if (!t.notes.length) continue;
+    parts.push({ name: t.topic.name, canvas: await renderWall(t, { background }) });
+  }
+  if (!parts.length) return renderWall({ ...topicsOf(payload)[0], notes: [] }, { background });
+  const head = 120; // heading band, in the walls' own pixels (they're drawn at about 2x)
+  const width = Math.max(...parts.map((p) => p.canvas.width));
+  let height = 0;
+  for (const p of parts) height += head + p.canvas.height;
+  const k = Math.min(1, Math.sqrt(MAX_PIXELS / Math.max(1, width * height)));
+  const out = document.createElement('canvas');
+  out.width = Math.round(width * k);
+  out.height = Math.round(height * k);
+  const g = out.getContext('2d');
+  g.fillStyle = background;
+  g.fillRect(0, 0, out.width, out.height);
+  g.scale(k, k);
+  let y = 0;
+  for (const p of parts) {
+    g.fillStyle = '#1b1b1a';
+    g.font = `700 ${Math.round(head * 0.42)}px Inter, -apple-system, "Segoe UI", sans-serif`;
+    g.textBaseline = 'middle';
+    g.fillText(p.name, Math.round(head * 0.6), y + head * 0.62);
+    y += head;
+    g.drawImage(p.canvas, 0, y);
+    y += p.canvas.height;
+  }
+  return out;
+}
+
 export async function exportPNG(payload) {
-  const canvas = await renderWall(payload);
+  const canvas = payload.kind === 'folder' ? await folderCanvas(payload, '#f5f5f7') : await renderWall(payload);
   const blob = await new Promise((r) => canvas.toBlob(r, 'image/png'));
-  download(blob, `${safeName(payload.topic.name)}.png`);
+  download(blob, `${safeName(titleOf(payload))}.png`);
 }
 
 export async function exportPDF(payload) {
-  const canvas = await renderWall(payload, { background: '#ffffff' });
-  download(await canvasToPDF(canvas, payload.topic.name), `${safeName(payload.topic.name)}.pdf`);
+  const canvas = payload.kind === 'folder' ? await folderCanvas(payload, '#ffffff') : await renderWall(payload, { background: '#ffffff' });
+  download(await canvasToPDF(canvas, titleOf(payload)), `${safeName(titleOf(payload))}.pdf`);
 }
 
 // Every note's text, as Markdown-ish plain text, ready to paste anywhere.
 export function topicText(payload) {
+  if (payload.kind === 'folder') {
+    const parts = [`# ${payload.folder.name}`];
+    for (const t of topicsOf(payload)) parts.push(notesText(t, '##'));
+    return parts.join('\n\n') + '\n';
+  }
+  return notesText(payload, '#') + '\n';
+}
+function notesText(payload, h) {
   const notes = [...payload.notes].sort((a, b) => a.y - b.y || a.x - b.x);
-  const parts = [`# ${payload.topic.name}`];
+  const parts = [`${h} ${payload.topic.name}`];
   for (const n of notes) {
     const body = plainText(n.body || '').trim();
     const title = (n.title || '').trim();
     if (!title && !body) continue;
-    parts.push([title && `## ${title}`, body].filter(Boolean).join('\n'));
+    parts.push([title && `${h}# ${title}`, body].filter(Boolean).join('\n'));
   }
-  return parts.join('\n\n') + '\n';
+  return parts.join('\n\n');
 }
 
 /* ---------------- a small PDF writer ----------------

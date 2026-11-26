@@ -484,6 +484,21 @@ export function Sidebar({ data, dispatch, onSelectTopic, toast, confirm, open, o
           >
             Rename
           </MenuItem>
+          <MenuItem
+            icon={IconShare}
+            disabled={!topics.some((t) => t.groupId === menuGroup.id)}
+            onClick={() => {
+              setMenu(null);
+              const first = topics.find((t) => t.groupId === menuGroup.id);
+              if (!first) return;
+              const folderId = menuGroup.id;
+              if (!topics.some((t) => t.id === data.activeTopicId && t.groupId === folderId)) onSelectTopic(first.id);
+              onClose?.();
+              requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('postit:share', { detail: { folderId } })));
+            }}
+          >
+            Share Folder…
+          </MenuItem>
           <MenuSep />
           <MenuItem
             icon={IconTrash}

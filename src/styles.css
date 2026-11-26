@@ -503,6 +503,31 @@ body.is-resizing-sidebar * {
   position: relative;
   z-index: 5;
 }
+/* The folder a topic sits in, above its name. */
+.ws-folder {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  margin-bottom: 3px;
+  color: var(--text-2);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+}
+.ws-folder svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  opacity: 0.85;
+}
+.ws-folder span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .ws-title-wrap {
   flex: 1;
   min-width: 0;
@@ -2307,7 +2332,7 @@ body.is-dragging-image * {
 
 .sticker {
   position: absolute !important;
-  z-index: 10; /* below the corner resize zones */
+  z-index: 13; /* above the resize zones: grabbing a sticker always moves the sticker */
   width: 40px;
   height: 40px;
   margin: -20px 0 0 -20px;
@@ -2319,30 +2344,38 @@ body.is-dragging-image * {
   touch-action: none;
   -webkit-user-select: none;
   user-select: none;
+  /* Its own layer: moving it, or the note under it changing, never repaints it. */
+  will-change: transform;
+  backface-visibility: hidden;
 }
 .sticker-face {
   display: block;
   font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
   font-size: 27px;
   line-height: 1;
-  /* White die-cut edge + a soft drop, like a real vinyl sticker. */
-  filter: drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff)
-    drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.22));
-  transition:
-    transform 0.22s cubic-bezier(0.3, 1.5, 0.5, 1),
-    filter 0.2s ease;
+  /* White die-cut edge + a soft drop, like a real vinyl sticker. Text shadows are far
+     cheaper to paint than a chain of drop-shadow filters. */
+  text-shadow:
+    1.5px 0 0 #fff,
+    -1.5px 0 0 #fff,
+    0 1.5px 0 #fff,
+    0 -1.5px 0 #fff,
+    1.1px 1.1px 0 #fff,
+    -1.1px 1.1px 0 #fff,
+    1.1px -1.1px 0 #fff,
+    -1.1px -1.1px 0 #fff,
+    0 2.5px 3px rgba(0, 0, 0, 0.22);
+  transition: transform 0.22s cubic-bezier(0.3, 1.5, 0.5, 1);
 }
 .sticker:hover .sticker-face {
   transform: scale(1.1) rotate(5deg);
 }
 .sticker.is-dragging {
-  z-index: 11;
+  z-index: 14;
   cursor: grabbing;
 }
 .sticker.is-dragging .sticker-face {
-  transform: scale(1.25) rotate(-4deg);
-  filter: drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff)
-    drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 10px 8px rgba(0, 0, 0, 0.25));
+  transform: scale(1.22) rotate(-4deg);
 }
 .sticker.is-fresh .sticker-face {
   animation: sticker-slap 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) both;
@@ -2381,9 +2414,13 @@ body.is-dragging-image * {
     opacity 0.15s ease,
     transform 0.2s cubic-bezier(0.3, 1.6, 0.5, 1);
 }
-.sticker:hover .sticker-x {
+.sticker:hover .sticker-x,
+.sticker.is-active .sticker-x {
   opacity: 1;
   transform: scale(1);
+}
+.sticker.is-active .sticker-face {
+  transform: scale(1.1) rotate(5deg);
 }
 .sticker.is-dragging .sticker-x {
   opacity: 0;
@@ -5799,6 +5836,14 @@ button.ios-row:active {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.share-scope {
+  margin: -4px 0 12px;
+}
+.share-sub {
+  margin: -6px 0 12px;
+  font-size: 12px;
+  color: var(--text-3);
+}
 .share-link {
   display: flex;
   flex-direction: column;
@@ -5985,6 +6030,45 @@ button.ios-row:active {
   width: 15px;
   height: 15px;
 }
+/* A shared folder: one tab per topic. */
+.shared-tabs {
+  flex: none;
+  display: flex;
+  gap: 6px;
+  padding: 10px 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--line);
+}
+.shared-tabs::-webkit-scrollbar {
+  display: none;
+}
+.shared-tab {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--text-2);
+  background: var(--fill, rgba(118, 118, 128, 0.12));
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+.shared-tab:hover {
+  color: var(--text);
+}
+.shared-tab.is-active {
+  background: var(--ink);
+  color: var(--bg-app);
+}
+.shared-tab-count {
+  font-size: 11.5px;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
 .shared-scroll {
   flex: 1;
   overflow: auto;
@@ -6150,4 +6234,378 @@ button.ios-row:active {
 }
 .sheet-page {
   min-height: 0; /* lets the body shrink and scroll inside the window */
+}
+
+/* ==========================================================================
+   Drawing on notes
+   ========================================================================== */
+.note > .ink-layer {
+  position: absolute !important;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 3;
+}
+.ink-layer path {
+  shape-rendering: geometricPrecision;
+}
+/* Highlighter: see-through, and overlapping strokes don't build up. */
+.ink-marker,
+.ink-live.is-marker path {
+  opacity: 0.48;
+  mix-blend-mode: multiply;
+}
+.note > .ink-live {
+  z-index: 4;
+}
+
+.note.is-drawing {
+  --curl: 0.3;
+}
+.note.is-drawing .note-paper {
+  box-shadow: inset 0 1px 0 #ffffff73, var(--shadow), 0 0 0 2px rgba(36, 99, 235, 0.55);
+}
+.note.is-drawing .note-edge,
+.note.is-drawing .note-handle {
+  display: none;
+}
+.note.is-drawing .note-bar > * {
+  visibility: hidden;
+}
+
+.note > .ink-surface {
+  position: absolute !important;
+  inset: 0;
+  z-index: 8;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Ccircle cx='6' cy='6' r='2.6' fill='%231f1f1d' stroke='white' stroke-width='1.4'/%3E%3C/svg%3E") 6 6, crosshair;
+}
+.ink-surface.is-eraser {
+  cursor: none;
+}
+.ink-eraser-cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 0, 0, 0.45);
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.ink-surface:not(.is-eraser) .ink-eraser-cursor {
+  display: none;
+}
+
+/* The toolbar floats by the note (placed from script), on top of everything. */
+.ink-toolbar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px;
+  border-radius: 14px;
+  background: var(--material-strong, #fff);
+  -webkit-backdrop-filter: saturate(180%) blur(22px);
+  backdrop-filter: saturate(180%) blur(22px);
+  box-shadow: 0 0 0 0.5px var(--material-border, rgba(0, 0, 0, 0.1)), 0 14px 34px -12px rgba(0, 0, 0, 0.38), 0 2px 8px rgba(0, 0, 0, 0.06);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: default;
+  visibility: hidden;
+}
+.ink-toolbar.is-placed {
+  visibility: visible;
+  animation: ink-bar-in 0.22s var(--ease);
+}
+@keyframes ink-bar-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+}
+.ink-tools,
+.ink-colors,
+.ink-sizes {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.ink-colors {
+  gap: 6px;
+  padding: 0 4px;
+}
+.ink-sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: var(--line);
+}
+.ink-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+  transition: background 0.12s, color 0.12s, transform 0.12s var(--ease);
+}
+.ink-btn svg {
+  width: 17px;
+  height: 17px;
+}
+.ink-btn:hover:not(:disabled) {
+  background: rgba(118, 118, 128, 0.14);
+  color: var(--text);
+}
+.ink-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+.ink-btn:disabled {
+  opacity: 0.3;
+}
+.ink-btn.is-on {
+  background: var(--ink);
+  color: var(--bg-app);
+}
+.ink-btn .ink-hl-bar {
+  stroke: #f5c400;
+}
+.ink-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--sw);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.16);
+  transition: transform 0.14s var(--ease), box-shadow 0.14s;
+}
+.ink-swatch:hover {
+  transform: scale(1.12);
+}
+.ink-swatch.is-on {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.16), 0 0 0 2px var(--bg-elev), 0 0 0 3.6px var(--sw);
+}
+.ink-size {
+  width: 28px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+  transition: background 0.12s;
+}
+.ink-size i {
+  display: block;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.2);
+}
+.ink-size:hover {
+  background: rgba(118, 118, 128, 0.12);
+}
+.ink-size.is-on {
+  background: rgba(118, 118, 128, 0.2);
+}
+.ink-done {
+  height: 32px;
+  margin-left: 4px;
+  padding: 0 14px;
+  border-radius: 9px;
+  background: var(--ink);
+  color: var(--bg-app);
+  font-size: 13px;
+  font-weight: 600;
+  transition: transform 0.12s var(--ease), opacity 0.12s;
+}
+.ink-done:active {
+  transform: scale(0.95);
+}
+@media (max-width: 640px) {
+  .ink-colors {
+    gap: 4px;
+  }
+  .ink-swatch {
+    width: 18px;
+    height: 18px;
+  }
+  .ink-btn,
+  .ink-size {
+    width: 28px;
+  }
+}
+
+/* ==========================================================================
+   Picture viewer
+   ========================================================================== */
+.iv {
+  --fade: 1;
+  position: fixed;
+  inset: 0;
+  z-index: 3500;
+  color: #fff;
+  font-family: var(--font);
+}
+.iv-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 8, 10, 0.9);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+  backdrop-filter: blur(18px) saturate(120%);
+  opacity: calc(var(--fade));
+  animation: iv-fade-in 0.24s ease both;
+}
+.iv.is-closing .iv-backdrop {
+  animation: iv-fade-out 0.2s ease both;
+}
+.iv-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(56px, env(safe-area-inset-top)) 16px max(56px, env(safe-area-inset-bottom));
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  overflow: hidden;
+  cursor: zoom-in;
+}
+.iv.is-zoomed .iv-stage {
+  cursor: grab;
+}
+.iv.is-zoomed .iv-stage:active {
+  cursor: grabbing;
+}
+.iv-pic {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7);
+  transform-origin: 50% 50%;
+  will-change: transform;
+  opacity: 0;
+}
+.iv.is-ready .iv-pic {
+  opacity: 1;
+}
+.iv.is-closing .iv-pic {
+  transition: opacity 0.18s ease, transform 0.2s ease !important;
+  opacity: 0;
+  transform: scale(0.94) !important;
+}
+.iv-top {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  left: max(12px, env(safe-area-inset-left));
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  pointer-events: none;
+  animation: iv-fade-in 0.3s ease both;
+}
+.iv-count {
+  margin-right: auto;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.iv-btn {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition: background 0.15s, transform 0.15s var(--ease), opacity 0.2s;
+}
+.iv-btn:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+.iv-btn:active {
+  transform: scale(0.92);
+}
+.iv-btn svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.iv-nav {
+  position: absolute;
+  top: 50%;
+  margin-top: -22px;
+  width: 44px;
+  height: 44px;
+  animation: iv-fade-in 0.3s ease both;
+}
+.iv-nav.is-prev {
+  left: max(14px, env(safe-area-inset-left));
+}
+.iv-nav.is-next {
+  right: max(14px, env(safe-area-inset-right));
+}
+.iv.is-zoomed .iv-nav,
+.iv.is-closing .iv-top,
+.iv.is-closing .iv-nav {
+  opacity: 0;
+  pointer-events: none;
+}
+.iv-caption {
+  position: absolute;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  max-width: min(640px, calc(100% - 32px));
+  padding: 7px 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.45);
+  font-size: 13.5px;
+  text-align: center;
+  pointer-events: none;
+}
+@keyframes iv-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes iv-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+.img-frame img {
+  cursor: zoom-in;
+}
+
+/* Read-only walls (shared links, exports): no "Write something…" prompt in empty notes. */
+.shared .note-body[data-empty]::before,
+.export-host .note-body[data-empty]::before {
+  content: none;
 }

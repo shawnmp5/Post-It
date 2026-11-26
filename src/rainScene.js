@@ -5,13 +5,10 @@
  * worker (rainScene.worker.js) on an OffscreenCanvas and leave the page's own
  * thread free for scrolling, typing and dragging.
  *
- * createRain(canvas, { mood, lightning, city, reduced, width, height, dpr, onStrike })
+ * createRain(canvas, { mood, lightning, reduced, width, height, dpr, onStrike })
  * mood: 'light' (overcast afternoon), 'dark' (evening), 'night' (deep night, moon behind cloud)
- * city: look out on a wet avenue with city lights and moving traffic (rainCity.js) instead of open sky
- * returns { resize({ w, h, dpr }), visible(), setMood(m), setLightning(b), setCity(b), strike(), destroy() }.
+ * returns { resize({ w, h, dpr }), visible(), setMood(m), setLightning(b), strike(), destroy() }.
  */
-
-import { createCity } from './rainCity.js';
 
 const TAU = Math.PI * 2;
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -308,9 +305,6 @@ export function createRain(canvas, opts) {
   let dark = mood !== 'light';
   let pal = PALETTES[mood];
   let dropSprite = makeDropSprite(dark);
-  let cityOn = !!opts.city;
-  let city = null; // the street scene, when cityOn
-  let sky = null; // with the city: the sky alone, for lightning to light up behind the buildings
 
   let W = 0;
   let H = 0;
@@ -360,12 +354,9 @@ export function createRain(canvas, opts) {
     mctx.globalAlpha = 1;
   }
 
-  // Thinner condensation with the city behind, so the lights come through.
-  const fogOpacity = () => pal.fogOpacity * (cityOn ? 0.62 : 1);
-
   function paintFogInto(g) {
     g.save();
-    g.globalAlpha = fogOpacity();
+    g.globalAlpha = pal.fogOpacity;
     g.imageSmoothingEnabled = true;
     g.drawImage(fog, 0, 0, W, H);
     g.restore();
@@ -449,7 +440,7 @@ export function createRain(canvas, opts) {
     release(mist);
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
-    paintWorld();
+    backdrop = paintBackdrop(W, H, dpr, pal);
     mist = makeCanvas(W * dpr, H * dpr);
     mctx = mist.getContext('2d');
     mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -466,7 +457,7 @@ export function createRain(canvas, opts) {
     mctx.arc(x, y, r, 0, TAU);
     mctx.clip();
     mctx.clearRect(x - r - 1, y - r - 1, r * 2 + 2, r * 2 + 2);
-    mctx.globalAlpha = fogOpacity();
+    mctx.globalAlpha = pal.fogOpacity;
     const k = fog.width / W;
     mctx.drawImage(fog, (x - r - 1) * k, (y - r - 1) * k, (r * 2 + 2) * k, (r * 2 + 2) * k, x - r - 1, y - r - 1, r * 2 + 2, r * 2 + 2);
     mctx.restore();
@@ -479,26 +470,6 @@ export function createRain(canvas, opts) {
       if (dx * dx + dy * dy > r2) specks[j++] = s;
     }
     specks.length = j;
-  }
-
-  // What's behind the glass: open sky, or the city (sky + street, composed once).
-  function paintWorld() {
-    release(backdrop);
-    if (!cityOn) {
-      city?.destroy();
-      city = null;
-      sky = null;
-      backdrop = paintBackdrop(W, H, dpr, pal);
-      return;
-    }
-    if (!city) city = createCity({ mood });
-    city.setMood(mood);
-    city.resize(W, H, dpr);
-    sky = city.sky;
-    backdrop = makeCanvas(W * dpr, H * dpr);
-    const g = backdrop.getContext('2d');
-    g.drawImage(city.sky, 0, 0);
-    g.drawImage(city.city, 0, 0);
   }
 
   function startStrike() {
@@ -624,16 +595,14 @@ export function createRain(canvas, opts) {
     beads = beads.filter((b) => !b.dead && b.y - b.r < H + 10 && b.r > 1);
   }
 
-  function draw(dt = 0) {
-    const I = flash();
-    const lit = I > 0.003;
+  function draw() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    // With the city, lightning is behind the buildings: sky, flash, then the street on top.
-    ctx.drawImage(city && lit ? sky : backdrop, 0, 0);
+    ctx.drawImage(backdrop, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     // Lightning: the sky lights up from where it strikes, and a near bolt shows through.
-    if (lit) {
+    const I = flash();
+    if (I > 0.003) {
       ctx.save();
       const grad = ctx.createRadialGradient(strike.x, 0, 0, strike.x, 0, Math.hypot(W, H));
       if (dark) {
@@ -654,23 +623,6 @@ export function createRain(canvas, opts) {
         ctx.drawImage(strike.bolt, 0, 0, W, H);
       }
       ctx.restore();
-      if (city) {
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.drawImage(city.city, 0, 0);
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        // The street catches a little of it too.
-        ctx.save();
-        ctx.globalCompositeOperation = dark ? 'lighter' : 'source-over';
-        ctx.fillStyle = dark ? `rgba(120, 135, 175, ${0.12 * I})` : `rgba(255, 255, 255, ${0.18 * I})`;
-        ctx.fillRect(0, 0, W, H);
-        ctx.restore();
-      }
-    }
-
-    // The street: traffic, signals, neon, windows going on and off.
-    if (city) {
-      city.draw(ctx, dt);
-      if (beads.some((b) => b.r >= 3.6)) city.drawSmall();
     }
 
     // Rain: everything shares one lean, so rotate once.
@@ -679,25 +631,8 @@ export function createRain(canvas, opts) {
     ctx.rotate(-ANGLE);
     ctx.translate(-W / 2, 0);
     ctx.globalCompositeOperation = dark ? 'lighter' : 'source-over';
-    // With the city: rain falling through a street lamp's light lights up.
-    const glints = city?.glints;
-    const cosA = Math.cos(ANGLE);
-    const sinA = Math.sin(ANGLE);
     for (const s of streaks) {
-      let a = s.a * pal.streakAlpha * (1 + I * 2.5);
-      if (glints?.length) {
-        const my = s.y - s.len / 2;
-        const sx = W / 2 + (s.x - W / 2) * cosA + my * sinA;
-        const sy = -(s.x - W / 2) * sinA + my * cosA;
-        for (const gl of glints) {
-          if (sy < gl.y0 || sy > gl.y1) continue;
-          const t = (sy - gl.y0) / (gl.y1 - gl.y0);
-          const half = gl.r0 + (gl.half - gl.r0) * t;
-          const dx = Math.abs(sx - gl.x);
-          if (dx < half) a *= 1 + gl.k * (1 - dx / half) * (1 - t * 0.7);
-        }
-      }
-      ctx.globalAlpha = Math.min(1, a);
+      ctx.globalAlpha = Math.min(1, s.a * pal.streakAlpha * (1 + I * 2.5));
       ctx.drawImage(streakSprite, s.x, s.y - s.len, s.L.w * 2, s.len);
     }
     ctx.restore();
@@ -728,12 +663,7 @@ export function createRain(canvas, opts) {
         g.clip();
         g.translate(b.x, b.y);
         g.scale(1, -1);
-        if (city) {
-          const k = city.k;
-          g.drawImage(city.small, (b.x - field) * k, (b.y - field) * k, field * 2 * k, field * 2 * k, -rx, -ry, rx * 2, ry * 2);
-        } else {
-          g.drawImage(backdrop, (b.x - field) * dpr, (b.y - field) * dpr, field * 2 * dpr, field * 2 * dpr, -rx, -ry, rx * 2, ry * 2);
-        }
+        g.drawImage(backdrop, (b.x - field) * dpr, (b.y - field) * dpr, field * 2 * dpr, field * 2 * dpr, -rx, -ry, rx * 2, ry * 2);
         g.restore();
       }
       g.drawImage(dropSprite, b.x - rx, b.y - ry, rx * 2, ry * 2);
@@ -754,8 +684,7 @@ export function createRain(canvas, opts) {
     const dt = Math.min(0.05, raw);
     last = now;
     update(dt);
-    city?.step(dt);
-    draw(dt);
+    draw();
     adapt(raw);
     raf = nextFrame(frame);
   }
@@ -807,22 +736,14 @@ export function createRain(canvas, opts) {
       dark = mood !== 'light';
       pal = PALETTES[mood];
       if (dark !== wasDark) dropSprite = makeDropSprite(dark);
-      paintWorld();
+      backdrop = paintBackdrop(W, H, dpr, pal);
       fog = paintFog(W, H, pal);
-      redrawMist();
-      if (reduced) draw();
-    },
-    setCity(on) {
-      if (!!on === cityOn) return;
-      cityOn = !!on;
-      paintWorld();
       redrawMist();
       if (reduced) draw();
     },
     destroy() {
       alive = false;
       cancelFrame(raf);
-      city?.destroy();
     },
   };
 }
