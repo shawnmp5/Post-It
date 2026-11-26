@@ -7,7 +7,7 @@ import RainSceneWorker from '../rainScene.worker.js?worker&inline';
  *
  * The scene is drawn in four layers on a single canvas:
  *   1. a soft night sky (or an overcast afternoon in light mode), or with
- *      "City lights" on, a wet avenue at night with traffic (rainCity.js)
+ *      "City skyline" on, towers across a river with traffic on the waterfront (rainCity.js)
  *   2. rain falling outside, in three depths
  *   3. fog on the glass, plus a mist of tiny droplets stuck to it
  *   4. bigger beads that swell, run down and merge

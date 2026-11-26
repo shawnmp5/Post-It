@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { typing } from './autoCaps.js';
 import { useStore, uid } from './store.js';
 import { plainText } from './blocks.js';
 import { Sidebar } from './components/Sidebar.jsx';
@@ -160,6 +161,7 @@ export default function App({ wall, account, onOpenAccount }) {
     return () => m.removeEventListener('change', on);
   }, []);
   const clearUI = !!data.settings.clearUI;
+  typing.autoCaps = data.settings.autoCaps !== false;
   const black = themePref === 'black';
   const dark = black || themePref === 'dark' || (themePref === 'system' && systemDark);
   const wallpaper = data.settings.wallpaper === 'rain' ? 'rain' : 'none';

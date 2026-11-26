@@ -1249,6 +1249,66 @@ textarea.blk-cell {
   height: 4.5px;
   border-radius: 50%;
   background: currentColor;
+  transition: opacity 0.15s, transform 0.2s var(--ease);
+}
+
+/* Starring a bullet: its dot is a button. Hover shows the star; click fills it in gold. */
+.blk-star {
+  position: relative;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.blk-star svg {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 13px;
+  height: 13px;
+  margin: -6.5px 0 0 -6.5px;
+  fill: transparent;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+  opacity: 0;
+  transform: scale(0.4) rotate(-30deg);
+  transition: opacity 0.15s, transform 0.22s var(--ease), fill 0.15s, stroke 0.15s;
+}
+.blk-star:hover::before,
+.blk-star:focus-visible::before,
+.blk-bullet.is-starred .blk-star::before {
+  opacity: 0;
+  transform: scale(0.3);
+}
+.blk-star:hover svg,
+.blk-star:focus-visible svg {
+  opacity: 0.75;
+  transform: none;
+}
+.blk-bullet.is-starred .blk-star svg {
+  opacity: 1;
+  transform: none;
+  fill: #f5b301;
+  stroke: #d99a00;
+  filter: drop-shadow(0 0 3px rgba(255, 196, 0, 0.55));
+  animation: star-pop 0.42s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.blk-bullet.is-starred .blk-star:hover svg {
+  fill: #ffc933;
+}
+.blk-bullet.is-starred .blk-input {
+  font-weight: 600;
+  color: var(--note-ink);
+}
+@keyframes star-pop {
+  0% {
+    transform: scale(0.3) rotate(-40deg);
+  }
+  60% {
+    transform: scale(1.3) rotate(8deg);
+  }
+  100% {
+    transform: none;
+  }
 }
 .blk-number .blk-mark {
   width: auto;

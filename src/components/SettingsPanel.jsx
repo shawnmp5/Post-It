@@ -161,7 +161,7 @@ export function SettingsPanel({ data, dispatch, toast, confirm, account, onDone,
               </label>
             )}
             <Toggle checked={settings.lightning !== false} onChange={(v) => set({ lightning: v })} label="Lightning" />
-            <Toggle checked={!!settings.city} onChange={(v) => set({ city: v })} label="City lights & traffic" />
+            <Toggle checked={!!settings.city} onChange={(v) => set({ city: v })} label="City skyline" />
           </div>
         )}
         <Toggle checked={!!settings.clearUI} onChange={(v) => set({ clearUI: v })} label="Clear interface" />
@@ -201,6 +201,7 @@ export function SettingsPanel({ data, dispatch, toast, confirm, account, onDone,
 
       <div className="field">
         <Toggle checked={settings.tilt} onChange={(v) => set({ tilt: v })} label="Tilted notes" />
+        <Toggle checked={settings.autoCaps !== false} onChange={(v) => set({ autoCaps: v })} label="Auto caps" />
         <Toggle
           checked={settings.showConnections}
           onChange={(v) => set({ showConnections: v })}

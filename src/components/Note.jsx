@@ -1,4 +1,5 @@
 import { memo, useEffect, useLayoutEffect, useRef } from 'react';
+import { typing, fixCaps } from '../autoCaps.js';
 import { COLOR_MAP } from '../store.js';
 import { IconMore, IconTrash } from './Icons.jsx';
 import { BlockEditor, NoteView, highlight } from './NoteBlocks.jsx';
@@ -206,8 +207,10 @@ export const Note = memo(function Note({
               placeholder="Title"
               maxLength={200}
               spellCheck
+              autoCapitalize={typing.autoCaps ? 'sentences' : 'off'}
               onPointerDown={(e) => e.stopPropagation()}
               onChange={(e) => {
+                fixCaps(e.target, note.title);
                 if (!titleDirty.current) {
                   titleDirty.current = true;
                   api.checkpoint();

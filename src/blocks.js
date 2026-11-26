@@ -1,6 +1,7 @@
 /**
  * Note bodies are plain text with light markdown-style block syntax:
  *   # / ## / ###  headings      - item   bullets      1. item  numbered
+ *   - ★ item      a starred bullet
  *   - [ ] / - [x] checklist     > quote               --- divider
  *   ```code```    code block    | a | b | tables      ![](img:id) images
  * In the editor each line is a block; typing the trigger key (\) opens the block menu.
@@ -139,6 +140,7 @@ export function toBlocks(src) {
     }
     if ((m = /^(#{1,3}) (.*)$/.exec(l))) out.push(newBlock(`h${m[1].length}`, m[2]));
     else if ((m = /^[-*] \[([ xX])\] ?(.*)$/.exec(l))) out.push(newBlock('check', m[2], { checked: m[1] !== ' ' }));
+    else if ((m = /^[-*] ★ ?(.*)$/.exec(l))) out.push(newBlock('bullet', m[1], { starred: true }));
     else if ((m = /^[-*] (.*)$/.exec(l))) out.push(newBlock('bullet', m[1]));
     else if ((m = /^\d+[.)] (.*)$/.exec(l))) out.push(newBlock('number', m[1]));
     else if ((m = /^> ?(.*)$/.exec(l))) {
@@ -175,7 +177,7 @@ export function fromBlocks(blocks) {
         lines.push(`${'#'.repeat(Number(b.type[1]))} ${t.replace(/\n/g, ' ')}`);
         break;
       case 'bullet':
-        lines.push(`- ${cont}`);
+        lines.push(`- ${b.starred ? '★ ' : ''}${cont}`);
         break;
       case 'number':
         lines.push(`${n}. ${cont}`);

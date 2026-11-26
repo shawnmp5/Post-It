@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { typing, fixCaps } from '../autoCaps.js';
 import { createPortal } from 'react-dom';
 import { uid } from '../store.js';
 import { SlashMenu } from './SlashMenu.jsx';
@@ -90,7 +91,8 @@ function caretLine(ta) {
 const stop = (e) => e.stopPropagation();
 const keep = (e) => e.preventDefault(); // keep focus where it is
 
-function AutoTextarea({ inputRef, value, sizeKey, className, ...rest }) {
+function AutoTextarea({ inputRef, value, sizeKey, className, onChange, ...rest }) {
+  const caps = !className.includes('is-mono'); // never in code blocks
   const ref = useRef(null);
   useLayoutEffect(() => {
     const el = ref.current;
@@ -107,7 +109,12 @@ function AutoTextarea({ inputRef, value, sizeKey, className, ...rest }) {
       value={value}
       className={className}
       spellCheck
+      autoCapitalize={caps && typing.autoCaps ? 'sentences' : 'off'}
       onPointerDown={stop}
+      onChange={(e) => {
+        if (caps) fixCaps(e.target, value);
+        onChange?.(e);
+      }}
       {...rest}
     />
   );
@@ -275,8 +282,26 @@ function Block({ b, i, n, start, sole, mode, images, query, sizeKey, ed, onToggl
       return <div className={`blk blk-${b.type}`}>{field()}</div>;
     case 'bullet':
       return (
-        <div className="blk blk-bullet">
-          <span className="blk-mark" aria-hidden="true" />
+        <div className={`blk blk-bullet ${b.starred ? 'is-starred' : ''}`}>
+          <button
+            type="button"
+            className="blk-mark blk-star"
+            aria-pressed={!!b.starred}
+            aria-label={b.starred ? 'Unstar' : 'Star'}
+            title={b.starred ? 'Unstar' : 'Star'}
+            onPointerDown={stop}
+            onMouseDown={keep}
+            onClick={(e) => {
+              e.stopPropagation();
+              const patch = { starred: !b.starred };
+              if (edit) ed.patch(i, patch);
+              else onPatch(i, patch);
+            }}
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M8 1.6l1.95 3.95 4.36.63-3.15 3.08.74 4.34L8 11.55l-3.9 2.05.74-4.34L1.69 6.18l4.36-.63z" />
+            </svg>
+          </button>
           {field()}
         </div>
       );
@@ -847,7 +872,7 @@ export function BlockEditor({ note, api, focusReq, tint, onExitTop }) {
         for (const [p, t] of SHORTCUTS) {
           if (b.type === 'bullet' && t !== 'check') continue;
           if (value.startsWith(p) && caret === p.length) {
-            return commit(set(blocks, i, { type: t, text: value.slice(p.length), checked: false }), { key: b.id, offset: 0 });
+            return commit(set(blocks, i, { type: t, text: value.slice(p.length), checked: false, starred: false }), { key: b.id, offset: 0 });
           }
         }
       }
@@ -920,7 +945,7 @@ export function BlockEditor({ note, api, focusReq, tint, onExitTop }) {
         e.preventDefault();
         if (b.type !== 'text' && b.text === '') {
           // Enter on an empty list item / quote / heading ends it.
-          commit(set(blocks, i, { type: 'text', checked: false }), { key: b.id, offset: 0 });
+          commit(set(blocks, i, { type: 'text', checked: false, starred: false }), { key: b.id, offset: 0 });
           return;
         }
         const nextType = LISTS.has(b.type) ? b.type : 'text';
@@ -937,7 +962,7 @@ export function BlockEditor({ note, api, focusReq, tint, onExitTop }) {
         if (b.type !== 'text' && b.type !== 'code') {
           // First Backspace turns a list item / heading / quote back into text.
           e.preventDefault();
-          commit(set(blocks, i, { type: 'text', checked: false }), { key: b.id, offset: 0 });
+          commit(set(blocks, i, { type: 'text', checked: false, starred: false }), { key: b.id, offset: 0 });
           return;
         }
         if (b.type === 'code' && b.text !== '') return;

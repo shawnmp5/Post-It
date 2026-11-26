@@ -10,8 +10,8 @@
  *   - a low wash of heavy rain further off, swelling with gusts
  *   - a soft room reverb, so it sounds like outside rather than in your ear
  *   - thunder after each lightning flash (the wallpaper fires `postit:lightning`)
- *   - with the city behind the rain: now and then a car swishing past on the
- *     wet road below, panning across as it goes
+ *   - with the city skyline behind the rain: now and then a car swishing along
+ *     the wet waterfront road, panning across as it goes
  */
 
 import { makeRainSounds, RAIN_SAMPLE_RATE } from './rainDsp.js';
@@ -142,12 +142,12 @@ function build() {
   thunderBus.connect(master);
   send(thunderBus, 0.4);
 
-  // Tyres on the wet street, a few floors down: soft, through the glass.
+  // Tyres on the wet waterfront road, across the river: soft and far off.
   const carLp = ctx.createBiquadFilter();
   carLp.type = 'lowpass';
-  carLp.frequency.value = 2600;
+  carLp.frequency.value = 1500;
   const carBus = ctx.createGain();
-  carBus.gain.value = 0.55;
+  carBus.gain.value = 0.3;
   carLp.connect(carBus).connect(master);
   send(carBus, 0.3);
 

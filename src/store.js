@@ -116,7 +116,8 @@ export const DEFAULT_SETTINGS = {
   rainSound: false,
   rainVolume: 0.6,
   lightning: true,
-  city: false, // rain wallpaper: city lights and traffic behind the glass
+  city: false, // rain wallpaper: a city skyline behind the glass
+  autoCaps: true, // capitalise the first letter of sentences while typing
 };
 
 /* ------------------------------------------------------------------ */
